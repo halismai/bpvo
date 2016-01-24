@@ -11,17 +11,18 @@ struct BitPlanesData
   /**
    * the channels
    */
-  std::array<cv::Mat,8> I;
+  std::array<cv::Mat,8> cn;
 
   /**
-   * gradients. Each pixel has [Ix Iy] 2 elements per pixel CV_32FC2
+   * an image of the absolute gradient magnitude for all channels.
+   * We use this to determine if a pixel is suitable for alignment. Pixels with
+   * no gradient no effect on the optimization
    */
-  std::array<cv::Mat,8> G;
+  cv::Mat gradientAbsMag;
 
   /**
-   * compute the gradients at channel i
    */
-  void computeGradients(int i);
+  void computeGradientAbsMag();
 }; // BitPlanesData
 
 BitPlanesData computeBitPlanes(const cv::Mat&, float s1, float s2);

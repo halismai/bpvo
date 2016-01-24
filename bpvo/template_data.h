@@ -9,9 +9,11 @@ class Mat;
 
 namespace bpvo {
 
+class DataExtractor;
 
 class TemplateData
 {
+ public:
   typedef Eigen::Matrix<float,1,6> Jacobian;
   typedef typename EigenAlignedContainer<Point>::value_type PointVector;
   typedef typename EigenAlignedContainer<Jacobian>::value_type JacobianVector;
@@ -26,6 +28,8 @@ class TemplateData
    * the high resolution
    */
   TemplateData(const AlgorithmParameters& params, const Matrix33& K, const float& baseline, int pyr_level);
+
+  ~TemplateData();
 
 
   /**
@@ -65,6 +69,17 @@ class TemplateData
   const typename PixelVector::value_type& I(size_t i) const;
   typename PixelVector::value_type& I(size_t i);
 
+  /**
+   * sets the input image (call this before computeResiduals)
+   */
+  void setInputImage(const cv::Mat&);
+
+  /**
+   * compute the error given an input image that was set using setInputImage
+   */
+  void computeResiduals(const Matrix44& pose, std::vector<float>& residuals,
+                        std::vector<uint8_t>& valid) const;
+
  protected:
   Matrix33 _K;
   float _baseline;
@@ -75,6 +90,14 @@ class TemplateData
   JacobianVector _jacobians;
   PointVector    _points;
   PixelVector    _pixels;
+
+  void clear();
+  void resize(size_t n);
+
+  struct InputData;
+  UniquePointer<InputData> _input_data;
+
+  friend class DataExtractor;
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

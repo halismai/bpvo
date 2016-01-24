@@ -12,7 +12,8 @@ class VisualOdometry
    * \param ImageSize
    * \param AlgorithmParameters
    */
-  VisualOdometry(ImageSize, AlgorithmParameters = AlgorithmParameters());
+  VisualOdometry(const Matrix33& K, float baseline, ImageSize,
+                 AlgorithmParameters = AlgorithmParameters());
 
   /**
    */

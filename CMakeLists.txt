@@ -45,5 +45,9 @@ if(TCMALLOC_FOUND)
   list(APPEND MY_LIBRARIES ${TCMALLOC_LIBRARIES})
 endif()
 
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lprofiler")
+
 add_subdirectory(bpvo)
+add_subdirectory(test)
 

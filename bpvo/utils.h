@@ -13,6 +13,18 @@
 
 namespace bpvo {
 
+// TODO the arguments are ambigious! watch out
+inline int sub2ind(const int stride, int r, int c)
+{
+  return r*stride + c;
+}
+
+inline void ind2sub(const int stride, const int ind, int& r, int& c)
+{
+  r = ind / stride;
+  c = ind % stride;
+}
+
 template <int Alignment = 16, class T> inline
 bool IsAligned(const T* ptr)
 {
