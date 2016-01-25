@@ -29,6 +29,9 @@ class TemplateData
    */
   TemplateData(const AlgorithmParameters& params, const Matrix33& K, const float& baseline, int pyr_level);
 
+  /**
+   * to prevent compiler auto generated
+   */
   ~TemplateData();
 
 
@@ -84,8 +87,6 @@ class TemplateData
   Matrix33 _K;
   float _baseline;
   int _pyr_level;
-  float _sigma_ct;
-  float _sigma_bp;
 
   JacobianVector _jacobians;
   PointVector    _points;

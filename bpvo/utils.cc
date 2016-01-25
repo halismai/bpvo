@@ -161,6 +161,13 @@ string timeAsString()
   return std::string( buf );
 }
 
+string errno_string()
+{
+  char buf[128];
+  strerror_r(errno, buf, 128);
+  return string(buf);
+}
+
 double wallclock()
 {
   struct timeval tv;

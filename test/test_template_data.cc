@@ -2,17 +2,24 @@
 #include <bpvo/timer.h>
 #include <opencv2/core.hpp>
 
+#include <cstdlib>
+
 using namespace bpvo;
 
-int main()
+int main(int argc, char** argv)
 {
+  int nrep = argc > 1 ? std::atoi(argv[1]) : 10;
+
   AlgorithmParameters p;
   Matrix33 K(Matrix33::Identity());
 
   TemplateData data(p, K, 1.0f, 0);
 
-  cv::Mat I(480, 640, CV_8UC1);
-  cv::Mat D(480, 640, CV_32FC1);
+  int rows = 480;
+  int cols = 640;
+
+  cv::Mat I(rows, cols, CV_8UC1);
+  cv::Mat D(rows, cols, CV_32FC1);
 
   {
     auto I_ptr = I.ptr<uint8_t>();
@@ -24,9 +31,23 @@ int main()
   }
 
   data.compute(I, D);
+  data.setInputImage(I);
+  std::vector<float> residuals;
+  std::vector<uint8_t> valid;
+  data.computeResiduals(Matrix44::Identity(), residuals, valid);
 
-  auto t = TimeCode(100, [&]() { data.compute(I,D); });
-  printf("time: %0.2f ms [%d] points\n", t, data.numPoints());
+  printf("error %f\n", std::accumulate(residuals.begin(), residuals.end(), 0.0f));
+  printf("valid %f\n", std::count(valid.begin(), valid.end(), 1) / (double) valid.size());
+
+  {
+    auto t = TimeCode(nrep, [&]() { data.computeResiduals(Matrix44::Identity(), residuals, valid); });
+    printf("computeResiduals time; %f ms\n", t);
+  }
+
+  {
+    auto t = TimeCode(nrep, [&]() { data.compute(I,D); });
+    printf("compute time: %0.2f ms for %d points\n", t, data.numPoints());
+  }
 
   return 0;
 }

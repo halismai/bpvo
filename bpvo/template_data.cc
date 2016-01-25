@@ -3,7 +3,9 @@
 #include "bpvo/utils.h"
 #include "bpvo/debug.h"
 #include <opencv2/core.hpp>
+
 #include <utility>
+#include <iostream>
 
 #define TEMPLATE_DATA_EXTRACT_SERIAL 0
 
@@ -56,14 +58,21 @@ struct TemplateData::InputData
 
 struct DataExtractor
 {
+  /**
+   * first element is the index in the image, which will convert back to row and
+   * column coordinates. The last element is the disparity from the disparity map
+   */
   typedef std::vector<std::pair<int,float>> IndicesAndDisparity;
+
   typedef Eigen::Matrix<float,2,6> WarpJacobian;
   typedef Eigen::Matrix<float,1,2> ImageGradient;
 
+  /**
+   */
   DataExtractor(TemplateData& data, const IndicesAndDisparity& inds)
       : _data(data), _stride(data._input_data->_data.gradientAbsMag.cols), _inds(inds)
   {
-    _data.resize(inds.size());
+    _data.resize(_inds.size());
 
     float fx = _data._K(0,0), fy = _data._K(1,1),
           cx = _data._K(0,2), cy = _data._K(1,2);
@@ -71,23 +80,25 @@ struct DataExtractor
 
     // set the points
     for(size_t i = 0; i < _inds.size(); ++i) {
-      int r, c;
-      ind2sub(_stride, _inds[i].first, r, c);
+      int x, y;
+      ind2sub(_stride, _inds[i].first, y, x);
 
       _data._points[i].z() = Bf * (1.0 / _inds[i].second);
-      _data._points[i].x() = (c - cx) * _data._points[i].z() / fx;
-      _data._points[i].y() = (r - cy) * _data._points[i].z() / fy;
+      _data._points[i].x() = (x - cx) * _data._points[i].z() / fx;
+      _data._points[i].y() = (y - cy) * _data._points[i].z() / fy;
     }
+
+    assert( _data.numPoints() == (int) _inds.size() );
   }
 
   FORCE_INLINE void operator()(const tbb::blocked_range<int>& range) const
   {
     auto fx = _data._K(0,0), fy = _data._K(1,1);
 
+    const auto& bitplanes = _data._input_data->_data;
     for(int j = range.begin(); j != range.end(); ++j) {
       // the j-th channel
-      //const cv::Mat_<float>& B = (const cv::Mat_<float>&) _data._input_data->_data.cn[j];
-      const float* B_ptr = _data._input_data->_data.cn[j].ptr<const float>();
+      const float* B_ptr = bitplanes.cn[j].ptr<const float>();
 
       // pointer to jacobians and pixels for channel 'j'
       int offset = j * _data.numPoints();
@@ -98,11 +109,13 @@ struct DataExtractor
         int ii = _inds[i].first;
 
         P[i] = B_ptr[ii];
+
         ImageGradient IxIy;
         IxIy[0] = 0.5f * fx * ( B_ptr[ii+1] - B_ptr[ii-1] );
         IxIy[1] = 0.5f * fy * ( B_ptr[ii+_stride] - B_ptr[ii-_stride] );
 
-        auto x = _data.X(i).x(), y = _data.X(i).y(), z = _data.X(i).z(),
+        const auto& pt = _data.X(i);
+        auto x = pt.x(), y = pt.y(), z = pt.z(),
              xx = x*x, yy = y*y, xy = x*y, zz = z*z;
         // TODO inline
         J[i] = IxIy * (
@@ -119,12 +132,10 @@ struct DataExtractor
   const IndicesAndDisparity& _inds;
 };
 
-
 TemplateData::TemplateData(const AlgorithmParameters& p, const Matrix33& K,
                            const float& baseline, int pyr_level)
     : _K(K), _baseline(baseline), _pyr_level(pyr_level)
-    , _sigma_ct(p.sigmaPriorToCensusTransform)
-    , _sigma_bp(p.sigmaBitPlanes), _input_data(make_unique<InputData>(_sigma_ct, _sigma_bp)) {}
+    , _input_data(make_unique<InputData>(p.sigmaPriorToCensusTransform, p.sigmaBitPlanes)) {}
 
 TemplateData::~TemplateData() {}
 
@@ -301,8 +312,8 @@ void TemplateData::compute(const cv::Mat& image, const cv::Mat& disparity)
   assert( disparity.type() == cv::DataType<float>::type );
   assert( image.type() == cv::DataType<uint8_t>::type );
 
-  // we reuse the memory in InputData
-  _input_data->_data = computeBitPlanes(image, _sigma_ct, _sigma_bp);
+  _input_data->setImage(image);
+
   auto& bitplanes = _input_data->_data;
   bitplanes.computeGradientAbsMag();
 
@@ -314,12 +325,11 @@ void TemplateData::compute(const cv::Mat& image, const cv::Mat& disparity)
   // and improve cache locality
   int nms_radius = 1;
   auto inds = getValidPixelsLocations(DisparityPyramidLevel(disparity, _pyr_level),
-                                      bitplanes.gradientAbsMag, nms_radius,
-                                      do_nonmax_supp);
+                                      bitplanes.gradientAbsMag, nms_radius, do_nonmax_supp);
 
   DataExtractor de(*this, inds);
-  tbb::blocked_range<int> range(0, 8);
 
+  tbb::blocked_range<int> range(0, 8);
 #if TEMPLATE_DATA_EXTRACT_SERIAL
   tbb::serial::parallel_for(range, de);
 #else
@@ -334,57 +344,128 @@ static FORCE_INLINE int Floor(double v)
   return i - (i > v);
 }
 
+void TemplateData::setInputImage(const cv::Mat& image)
+{
+  _input_data->setImage(image);
+}
+
+
+struct ResidualComputer
+{
+  typedef EigenAlignedContainer<Eigen::Vector4f>::value_type XyCoeffVector;
+  typedef EigenAlignedContainer<Eigen::Vector2i>::value_type UvVector;
+  ResidualComputer(const BitPlanesData& bitplanes,
+                   const std::vector<float>& pixels,
+                   const XyCoeffVector& xy_coeff,
+                   const UvVector& uv,
+                   const std::vector<uint8_t>& valid,
+                   std::vector<float>& residuals)
+      : _bitplanes(bitplanes), _pixels(pixels), _xy_coeff(xy_coeff), _uv(uv)
+      , _valid(valid), _residuals(residuals)
+  {
+    assert( _residuals.size() == 8*_valid.size() );
+    assert( _residuals.size() == _pixels.size() );
+
+    _stride = _bitplanes.cn.front().cols;
+  }
+
+  FORCE_INLINE void operator()(const tbb::blocked_range<int>& range) const
+  {
+    auto n_pts = _valid.size();
+    auto residuals_ptr = _residuals.data() + n_pts*range.begin();
+    auto I0_ptr = _pixels.data() + n_pts*range.begin();
+
+    using Eigen::Vector4f;
+
+    for(int c = range.begin(); c != range.end(); ++c, residuals_ptr += n_pts, I0_ptr += n_pts) {
+
+      auto I1_ptr = _bitplanes.cn[c].ptr<const float>();
+      for(size_t i = 0; i < n_pts; ++i) {
+        if(_valid[i]) {
+          auto ii = _uv[i].y()*_stride + _uv[i].x();
+          auto Iw = _xy_coeff[i].dot(Vector4f(I1_ptr[ii], I1_ptr[ii+1],
+                                              I1_ptr[ii+_stride], I1_ptr[ii+_stride+1]));
+          residuals_ptr[i] = Iw - I0_ptr[i];
+        } else {
+          residuals_ptr[i] = 0.0f;
+        }
+      }
+    }
+  }
+
+  const BitPlanesData& _bitplanes;
+  const std::vector<float>& _pixels;
+  const XyCoeffVector& _xy_coeff;
+  const UvVector& _uv;
+  const std::vector<uint8_t>& _valid;
+  std::vector<float>& _residuals;
+
+  int _stride;
+}; // ResidualComputer
 
 void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& residuals,
                                     std::vector<uint8_t>& valid) const
 {
-  residuals.resize( _pixels.size() );
-  valid.resize( _points.size() );
-
-  typename EigenAlignedContainer<Eigen::Vector4f>::value_type xy_coeff(_points.size());
-  typename EigenAlignedContainer<Eigen::Vector2i>::value_type uv(_points.size());
-  std::vector<int> inds(_points.size());
-
   const auto& bitplanes = _input_data->_data;
-  auto stride = bitplanes.cn.front().cols;
+  auto  max_rows = bitplanes.cn.front().rows - 1,
+        max_cols = bitplanes.cn.front().cols - 1;
 
-  for(size_t i = 0; i < _points.size(); ++i) {
+  auto n_pts = _points.size();
+
+  typename EigenAlignedContainer<Eigen::Vector4f>::value_type xy_coeff(n_pts);
+  typename EigenAlignedContainer<Eigen::Vector2i>::value_type uv(n_pts);
+
+  valid.resize(n_pts);
+  for(size_t i = 0; i < n_pts; ++i) {
     Eigen::Vector3f x = _K * (pose * _points[i]).head<3>();
-    x.head<2>() *= (1.0 / x[2]);
+    x.head<2>() *= (1.0f / x[2]);
 
-    valid[i] = _input_data->isValid(x);
+    int xi = Floor(x[0]), yi = Floor(x[1]);
 
-    int xi = Floor(x[0]),
-        yi = Floor(x[1]);
+    valid[i] = xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows;
 
-    uv[i] = Eigen::Vector2i(xi, yi);
+    if(valid[i]) {
+      uv[i] = Eigen::Vector2i(xi, yi);
 
-    float xf = x.x() - xi,
-          yf = x.y() - yi;
+      float xf = x[0] - xi,
+            yf = x[1] - yi;
 
-    xy_coeff[i] = Eigen::Vector4f(
-        (1.0f - yf) * (1.0f - xf),
-        (1.0f - yf) * xf,
-        yf * (1.0f - xf),
-        yf * xf);
+      xy_coeff[i] = Eigen::Vector4f(
+          (1.0f - yf) * (1.0f - xf),
+          (1.0f - yf) * xf,
+          yf * (1.0f - xf),
+          yf * xf);
+    }
   }
 
-  auto* ptr = residuals.data();
-  for(size_t c = 0; c < bitplanes.cn.size(); ++c, ptr += valid.size()) {
+  residuals.resize(_pixels.size());
+  ResidualComputer rc(bitplanes, _pixels, xy_coeff, uv, valid, residuals);
+
+  tbb::blocked_range<int> range(0, bitplanes.cn.size());
+
+  tbb::parallel_for(range, rc);
+
+#if 0
+  auto* residuals_ptr = residuals.data();
+  const auto* I0_ptr = _pixels.data();
+  const auto n_channels = bitplanes.cn.size();
+  for(size_t c = 0; c < n_channels; ++c, residuals_ptr += n_pts, I0_ptr += n_pts) {
 
     const auto I_ptr = bitplanes.cn[c].ptr<const float>();
 
-    for(size_t i = 0; i < valid.size(); ++i) {
+    for(size_t i = 0; i < n_pts; ++i) {
       if(valid[i]) {
-        int xi = uv[i].x(),
-            yi = uv[i].y();
+        int xi = uv[i].x(), yi = uv[i].y();
         int ii = yi*stride + xi;
         Eigen::Vector4f v(I_ptr[ii], I_ptr[ii+1], I_ptr[ii+stride], I_ptr[ii+stride+1]);
         auto Iw = v.dot(xy_coeff[i]);
-        ptr[i] = Iw - _pixels[i];
+        residuals_ptr[i] = Iw - I0_ptr[i];
+      } else {
+        residuals_ptr[i] = 0.0f;
       }
     }
   }
+#endif
 }
 
 } // bpvo

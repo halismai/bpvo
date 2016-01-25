@@ -40,11 +40,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
 list(APPEND MY_LIBRARIES ${OpenCV_LIBS} ${OpenCV_LIB_DIR} ${TBB_LIBRARIES})
 
-pkg_check_modules(TCMALLOC libtcmalloc)
-if(TCMALLOC_FOUND)
-  list(APPEND MY_LIBRARIES ${TCMALLOC_LIBRARIES})
-endif()
-
+#pkg_check_modules(TCMALLOC libtcmalloc)
+#if(TCMALLOC_FOUND)
+#  list(APPEND MY_LIBRARIES ${TCMALLOC_LIBRARIES})
+#endif()
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lprofiler")
 

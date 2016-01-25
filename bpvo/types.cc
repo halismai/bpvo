@@ -25,6 +25,7 @@ std::string ToString(LossFunctionType t)
   switch(t) {
     case kHuber: return "Huber";
     case kTukey: return "Tukey";
+    case kL2: return "L2";
   }
 
   return "Unknown";

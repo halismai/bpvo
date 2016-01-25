@@ -77,8 +77,9 @@ struct EigenAlignedContainer
 enum LossFunctionType
 {
   kHuber,
-  kTukey
-}; // RobustFunctionType
+  kTukey,
+  kL2 // not robust (ordinary least squares)
+}; // LossFunctionType
 
 enum VerbosityType
 {

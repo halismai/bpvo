@@ -1,6 +1,7 @@
 #ifndef BPVO_UTILS_H
 #define BPVO_UTILS_H
 
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <cstdint>
@@ -185,6 +186,40 @@ struct Error : public std::logic_error
 
 #define THROW_ERROR_IF(cond, msg) if( !!(cond) ) THROW_ERROR( (msg) )
 
+
+template <typename Iterator> static inline typename
+Iterator::value_type median(Iterator first, Iterator last)
+{
+  auto n = std::distance(first, last);
+  auto middle = first + n/2;
+  std::nth_element(first, middle, last);
+
+  if(n % 2 != 0) {
+    return *middle;
+  } else {
+    auto m = std::max_element(first, middle);
+    return (*m + *middle) / 2.0;
+  }
+}
+
+template <typename T> static inline
+T median(std::vector<T>& data)
+{
+  if(data.size() < 3)
+    return data[0];
+
+  return median(std::begin(data), std::end(data));
+}
+
+template <typename T> static inline
+T medianAbsoluteDeviation(std::vector<T>& data)
+{
+  auto m = median(data);
+  for(auto& v : data)
+    v = std::abs(v - m);
+
+  return median(data);
+}
 
 }; // bpvo
 
