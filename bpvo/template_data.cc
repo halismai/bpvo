@@ -235,30 +235,6 @@ struct IsLocalMax
 }; // IsLocalMax
 
 
-typedef Eigen::Matrix<float,2,6> WarpJacobian;
-
-WarpJacobian MakeJacobian(const Point& xyz, float fx, float fy)
-{
-  auto x = xyz[0], y = xyz[1], z = xyz[2];
-
-  WarpJacobian J;
-  J(0,0) = -fx*x*y*1.0/(z*z);
-  J(0,1) =  fx*1.0/(z*z)*(x*x+z*z);
-  J(0,2) = -(fx*y)/z;
-  J(0,3) = fx/z;
-  J(0,4) = 0.0;
-  J(0,5) = -fx*x*1.0/(z*z);
-
-  J(1,0) = -fy*1.0/(z*z)*(y*y+z*z);
-  J(1,1) = fy*x*y*1.0/(z*z);
-  J(1,2) = (fy*x)/z;
-  J(1,3) = 0.0;
-  J(1,4) = fy/z;
-  J(1,5) = -fy*y*1.0/(z*z);
-
-  return J;
-}
-
 /**
  * allows to subsample the disparities using a pyramid level
  */
