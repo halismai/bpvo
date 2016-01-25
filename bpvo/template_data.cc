@@ -80,12 +80,13 @@ struct DataExtractor
 
     // set the points
     for(size_t i = 0; i < _inds.size(); ++i) {
-      int x, y;
+      int x=0, y=0;
       ind2sub(_stride, _inds[i].first, y, x);
 
       _data._points[i].z() = Bf * (1.0 / _inds[i].second);
       _data._points[i].x() = (x - cx) * _data._points[i].z() / fx;
       _data._points[i].y() = (y - cy) * _data._points[i].z() / fy;
+      _data._points[i].w() = 1.0f;
     }
 
     assert( _data.numPoints() == (int) _inds.size() );
@@ -117,7 +118,8 @@ struct DataExtractor
         const auto& pt = _data.X(i);
         auto x = pt.x(), y = pt.y(), z = pt.z(),
              xx = x*x, yy = y*y, xy = x*y, zz = z*z;
-        // TODO inline
+
+        // TODO inline or try pre-computing this as well
         J[i] = IxIy * (
             WarpJacobian() <<
             -xy/zz, (1.0f + xx/zz), -y/z, 1.0f/z, 0.0f, -x/zz,
@@ -149,6 +151,7 @@ void TemplateData::reserve(size_t n)
 void TemplateData::resize(size_t npts)
 {
   _points.resize(npts);
+
   _jacobians.resize(8 * npts);
   _pixels.resize(8 * npts);
 }
@@ -354,6 +357,10 @@ struct ResidualComputer
 {
   typedef EigenAlignedContainer<Eigen::Vector4f>::value_type XyCoeffVector;
   typedef EigenAlignedContainer<Eigen::Vector2i>::value_type UvVector;
+
+  /**
+   * \param bitplanes the bitplanes input
+   */
   ResidualComputer(const BitPlanesData& bitplanes,
                    const std::vector<float>& pixels,
                    const XyCoeffVector& xy_coeff,
@@ -361,12 +368,10 @@ struct ResidualComputer
                    const std::vector<uint8_t>& valid,
                    std::vector<float>& residuals)
       : _bitplanes(bitplanes), _pixels(pixels), _xy_coeff(xy_coeff), _uv(uv)
-      , _valid(valid), _residuals(residuals)
+      , _valid(valid), _residuals(residuals), _stride(_bitplanes.cn.front().cols)
   {
     assert( _residuals.size() == 8*_valid.size() );
     assert( _residuals.size() == _pixels.size() );
-
-    _stride = _bitplanes.cn.front().cols;
   }
 
   FORCE_INLINE void operator()(const tbb::blocked_range<int>& range) const
@@ -400,15 +405,15 @@ struct ResidualComputer
   const std::vector<uint8_t>& _valid;
   std::vector<float>& _residuals;
 
-  int _stride;
+  int _stride = 0;
 }; // ResidualComputer
 
 void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& residuals,
                                     std::vector<uint8_t>& valid) const
 {
   const auto& bitplanes = _input_data->_data;
-  auto  max_rows = bitplanes.cn.front().rows - 1,
-        max_cols = bitplanes.cn.front().cols - 1;
+  int max_rows = bitplanes.cn.front().rows - 1,
+      max_cols = bitplanes.cn.front().cols - 1;
 
   auto n_pts = _points.size();
 
@@ -416,19 +421,21 @@ void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& re
   typename EigenAlignedContainer<Eigen::Vector2i>::value_type uv(n_pts);
 
   valid.resize(n_pts);
+
   for(size_t i = 0; i < n_pts; ++i) {
     Eigen::Vector3f x = _K * (pose * _points[i]).head<3>();
     x.head<2>() *= (1.0f / x[2]);
 
-    int xi = Floor(x[0]), yi = Floor(x[1]);
+    int xi = Floor(x[0]);
+    int yi = Floor(x[1]);
 
     valid[i] = xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows;
 
     if(valid[i]) {
       uv[i] = Eigen::Vector2i(xi, yi);
 
-      float xf = x[0] - xi,
-            yf = x[1] - yi;
+      float xf = x[0] - xi;
+      float yf = x[1] - yi;
 
       xy_coeff[i] = Eigen::Vector4f(
           (1.0f - yf) * (1.0f - xf),
@@ -439,33 +446,11 @@ void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& re
   }
 
   residuals.resize(_pixels.size());
+
   ResidualComputer rc(bitplanes, _pixels, xy_coeff, uv, valid, residuals);
 
   tbb::blocked_range<int> range(0, bitplanes.cn.size());
-
   tbb::parallel_for(range, rc);
-
-#if 0
-  auto* residuals_ptr = residuals.data();
-  const auto* I0_ptr = _pixels.data();
-  const auto n_channels = bitplanes.cn.size();
-  for(size_t c = 0; c < n_channels; ++c, residuals_ptr += n_pts, I0_ptr += n_pts) {
-
-    const auto I_ptr = bitplanes.cn[c].ptr<const float>();
-
-    for(size_t i = 0; i < n_pts; ++i) {
-      if(valid[i]) {
-        int xi = uv[i].x(), yi = uv[i].y();
-        int ii = yi*stride + xi;
-        Eigen::Vector4f v(I_ptr[ii], I_ptr[ii+1], I_ptr[ii+stride], I_ptr[ii+stride+1]);
-        auto Iw = v.dot(xy_coeff[i]);
-        residuals_ptr[i] = Iw - I0_ptr[i];
-      } else {
-        residuals_ptr[i] = 0.0f;
-      }
-    }
-  }
-#endif
 }
 
 } // bpvo
