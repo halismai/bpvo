@@ -38,7 +38,7 @@ find_package(Eigen REQUIRED)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
-list(APPEND MY_LIBRARIES ${OpenCV_LIBS} ${OpenCV_LIB_DIR} ${TBB_LIBRARIES})
+list(APPEND MY_LIBRARIES ${OpenCV_LIBS} ${TBB_LIBRARIES})
 
 #pkg_check_modules(TCMALLOC libtcmalloc)
 #if(TCMALLOC_FOUND)

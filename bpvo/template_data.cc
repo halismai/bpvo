@@ -2,6 +2,7 @@
 #include "bpvo/bitplanes.h"
 #include "bpvo/utils.h"
 #include "bpvo/debug.h"
+#include "bpvo/partial_warp.h"
 #include <opencv2/core.hpp>
 
 #include <utility>
@@ -399,31 +400,34 @@ void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& re
   valid.resize(n_pts);
 
   const Matrix34 KT = _K * pose.block<3,4>(0,0);
+
+#if 1
+  computeInterpolationData(KT, _points, max_rows + 1, max_cols + 1, xy_coeff, uv, valid);
+#else
+
+
   for(size_t i = 0; i < n_pts; ++i) {
     Eigen::Vector3f x = KT * _points[i];
-    x.head<2>() *= (1.0f / x[2]);
+    x.head<2>() /= x[2];
 
     int xi = Floor(x[0]);
     int yi = Floor(x[1]);
 
     valid[i] = xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows;
-
-    if(valid[i]) {
-      uv[i] = Eigen::Vector2i(xi, yi);
-
-      float xf = x[0] - xi;
-      float yf = x[1] - yi;
-
-      xy_coeff[i] = Eigen::Vector4f(
-          (1.0f - yf) * (1.0f - xf),
-          (1.0f - yf) * xf,
-          yf * (1.0f - xf),
-          yf * xf);
-    }
+    uv[i] = Eigen::Vector2i(xi, yi);
+    // NOTE: we do not need to compute the coefficients for invalid points, but
+    // it is more efficient to eliminate the branch
+    float xf = x[0] - xi;
+    float yf = x[1] - yi;
+    xy_coeff[i] = Eigen::Vector4f(
+        (1.0f - yf) * (1.0f - xf),
+        (1.0f - yf) * xf,
+        yf * (1.0f - xf),
+        yf * xf);
   }
+#endif
 
   residuals.resize(_pixels.size());
-
   ResidualComputer rc(bitplanes, _pixels, xy_coeff, uv, valid, residuals);
 
   tbb::blocked_range<int> range(0, bitplanes.cn.size());

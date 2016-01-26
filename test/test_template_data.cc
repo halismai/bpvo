@@ -35,21 +35,26 @@ int main(int argc, char** argv)
 
   std::vector<float> residuals;
   std::vector<uint8_t> valid;
-  data.computeResiduals(Matrix44::Identity(), residuals, valid);
+  Matrix44 pose = Matrix44::Identity();
+  data.computeResiduals(pose, residuals, valid);
 
+#if 0
   printf("error %f\n", std::accumulate(residuals.begin(), residuals.end(), 0.0f));
   printf("valid %f\n", std::count(valid.begin(), valid.end(), 1) / (double) valid.size());
   printf("ERROR NORM:  %f\n",
          Eigen::VectorXf::Map(residuals.data(), residuals.size()).lpNorm<Eigen::Infinity>());
+#endif
 
   {
     auto t = TimeCode(nrep, [&]() { data.computeResiduals(Matrix44::Identity(), residuals, valid); });
-    printf("computeResiduals time; %f ms\n", t);
+    printf("computeResiduals() time: %0.2f ms for %d points\n", t, data.numPoints());
   }
+
+  return 0;
 
   {
     auto t = TimeCode(nrep, [&]() { data.compute(I,D); });
-    printf("compute time: %0.2f ms for %d points\n", t, data.numPoints());
+    printf("compute() time: %0.2f ms for %d points\n", t, data.numPoints());
   }
 
   return 0;
