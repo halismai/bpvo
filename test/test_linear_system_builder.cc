@@ -4,6 +4,23 @@
 
 using namespace bpvo;
 
+void doLinearSystemReduction(const typename LinearSystemBuilder::JacobianVector& J,
+                             const typename LinearSystemBuilder::ResidualsVector& R,
+                             const typename LinearSystemBuilder::ValidVector& V,
+                             typename LinearSystemBuilder::Hessian& H,
+                             typename LinearSystemBuilder::Gradient& G)
+{
+  H.setZero();
+  G.setZero();
+
+  for(size_t i = 0; i < J.size(); ++i) {
+    if(V[i]) {
+      H.noalias() += J[i].transpose() * J[i];
+      G.noalias() += J[i].transpose() * R[i];
+    }
+  }
+}
+
 int main()
 {
   int N = 20 * 1000; //480 * 640 * 8;
@@ -54,7 +71,7 @@ int main()
 
   printf("\n\nTiminng for %d points\n", N);
 
-  auto t = TimeCode(100, [&] () { sys_builder.run(J, R, V, A, b); });
+  auto t = TimeCode(50, [&] () { sys_builder.run(J, R, V, A, b); });
   printf("time: %0.2f ms\n", t);
 
 

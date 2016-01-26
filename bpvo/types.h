@@ -50,6 +50,11 @@ typedef Eigen::Matrix<float, 3, 3> Matrix33;
 typedef Eigen::Matrix<float, 4, 4> Matrix44;
 
 /**
+ * 3x3 matrix
+ */
+typedef Eigen::Matrix<float, 3, 4> Matrix34;
+
+/**
  * The pose is also a 4x4 matrix
  */
 typedef Matrix44 Pose;

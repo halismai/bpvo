@@ -219,3 +219,4 @@ auto LinearSystemBuilderReduction<L>::toEigen(const float* _data) const  -> Hess
 
 #undef LINEAR_SYSTEM_BUILDER_SERIAL
 #undef WITH_GPL_CODE
+

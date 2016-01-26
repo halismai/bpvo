@@ -398,8 +398,9 @@ void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& re
 
   valid.resize(n_pts);
 
+  const Matrix34 KT = _K * pose.block<3,4>(0,0);
   for(size_t i = 0; i < n_pts; ++i) {
-    Eigen::Vector3f x = _K * (pose * _points[i]).head<3>();
+    Eigen::Vector3f x = KT * _points[i];
     x.head<2>() *= (1.0f / x[2]);
 
     int xi = Floor(x[0]);
