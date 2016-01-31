@@ -203,7 +203,7 @@ struct DataExtractor
       int x=0, y=0;
       ind2sub(_stride, _inds[i].first, y, x);
 
-      _data._points[i].z() = Bf * (1.0 / _inds[i].second);
+      _data._points[i].z() = Bf / _inds[i].second;
       _data._points[i].x() = (x - cx) * _data._points[i].z() / fx;
       _data._points[i].y() = (y - cy) * _data._points[i].z() / fy;
       _data._points[i].w() = 1.0f;
@@ -385,7 +385,7 @@ getValidPixelsLocations(const DisparityPyramidLevel& dmap, const cv::Mat_<float>
                         int nms_radius, bool do_nonmax_supp)
 {
   std::vector<std::pair<int,float>> inds;
-  inds.reserve( 0.5 * gmag.rows * gmag.cols );
+  inds.reserve( 0.25 * gmag.rows * gmag.cols );
   auto gmag_ptr = gmag.ptr<const float>();
   const IsLocalMax<float> is_local_max(gmag_ptr, gmag.cols, nms_radius);
 
@@ -431,6 +431,7 @@ void TemplateData::compute(const cv::Mat& image, const cv::Mat& disparity)
   DataExtractor de(*this, inds);
 
   tbb::blocked_range<int> range(0, 8);
+
 #if TEMPLATE_DATA_EXTRACT_SERIAL
   tbb::serial::parallel_for(range, de);
 #else
@@ -525,12 +526,9 @@ void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& re
   valid.resize(n_pts);
 
   const Matrix34 KT = _K * pose.block<3,4>(0,0);
-
 #if 1
   computeInterpolationData(KT, _points, max_rows + 1, max_cols + 1, xy_coeff, uv, valid);
 #else
-
-
   for(size_t i = 0; i < n_pts; ++i) {
     Eigen::Vector3f x = KT * _points[i];
     x.head<2>() /= x[2];

@@ -31,7 +31,7 @@ else()
 endif()
 
 
-find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui contrib)
 find_package(TBB REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(Eigen REQUIRED)

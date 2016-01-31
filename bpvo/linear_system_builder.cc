@@ -158,7 +158,10 @@ LinearSystemBuilderReduction<L>::
 LinearSystemBuilderReduction(const JacobianVector& J, const ResidualsVector& R,
                              const ValidVector& V, float sigma)
   : _J(J), _residuals(R), _valid(V), _loss_func(sigma)
-  , _H(Hessian::Zero()), _G(Gradient::Zero()), _residuals_norm(0.0f) {}
+  , _H(Hessian::Zero()), _G(Gradient::Zero()), _residuals_norm(0.0f)
+{
+  assert(_residuals.size() == _valid.size());
+}
 
 template <class L> inline
 LinearSystemBuilderReduction<L>::

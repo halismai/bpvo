@@ -11,6 +11,7 @@
 #include <cmath>
 #include <limits>
 #include <vector>
+#include <iostream>
 
 #include <Eigen/Cholesky>
 
@@ -53,8 +54,8 @@ struct PoseEstimator
     static constexpr float sqrtEps = std::sqrt(std::numeric_limits<float>::epsilon());
 
     if(_params.verbosity == VerbosityType::kIteration) {
-      printf("\n                            1st-order     norm of           delta\n");
-      printf(" Iteration      Residual    Optimality     step             error\n");
+      printf("\n                            1st-order        norm of           delta\n");
+      printf(" Iteration      Residual    Optimality        step             error\n");
     }
 
     OptimizerStatistics ret;
@@ -78,6 +79,10 @@ struct PoseEstimator
         ret.status = PoseEstimationStatus::kSolverError;
         break;
       }
+
+      std::cout << A << std::endl;
+      std::cout << b << std::endl;
+      std::cout << dp << std::endl;
 
       auto norm_dp = dp.squaredNorm(); // could use squaredNorm
       auto norm_e  = ret.finalError;

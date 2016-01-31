@@ -2,12 +2,15 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <execinfo.h>
 #include <errno.h>
 
 #include <algorithm>
 #include <chrono>
 #include <ctime>
+#include <iostream>
 #include <thread>
 #include <cstdarg>
 #include <functional>
@@ -191,6 +194,82 @@ double cputime()
 
 }
 
+namespace fs {
+string expand_tilde(string fn)
+{
+  if(fn.front() == '~') {
+    string home = getenv("HOME");
+    if(home.empty()) {
+      std::cerr << "could not query $HOME\n";
+      return fn;
+    }
+
+    // handle the case when name == '~' only
+    return home + dirsep(home) + ((fn.length()==1) ? "" :
+                                  fn.substr(1,std::string::npos));
+  } else {
+    return fn;
+  }
+}
+
+string dirsep(string dname)
+{
+  return (dname.back() == '/') ? "" : "/";
+}
+
+string extension(string filename)
+{
+  auto i = filename.find_last_of(".");
+  return (string::npos != i) ? filename.substr(i) : "";
+}
+
+bool exists(string path)
+{
+  struct stat buf;
+  return (0 == stat(path.c_str(), &buf));
+}
+
+bool is_regular(string path)
+{
+  struct stat buf;
+  return (0 == stat(path.c_str(), &buf)) ? S_ISREG(buf.st_mode) : false;
+}
+
+bool is_dir(string path)
+{
+  struct stat buf;
+  return (0 == stat(path.c_str(), &buf)) ? S_ISDIR(buf.st_mode) : false;
+}
+
+bool try_make_dir(string dname, int mode = 0777)
+{
+  return (0 == ::mkdir(dname.c_str(), mode));
+}
+
+string mkdir(string dname, bool try_unique, int max_tries)
+{
+  if(!try_unique) {
+    return try_make_dir(dname.c_str()) ? dname : "";
+  } else {
+    auto buf_len = dname.size() + 64;
+    char* buf = new char[buf_len];
+    int n = 0;
+    snprintf(buf, buf_len, "%s-%05d", dname.c_str(), n);
+
+    string ret;
+    while(++n < max_tries) {
+      if(try_make_dir(string(buf))) {
+        ret = string(buf);
+        break;
+      }
+    }
+
+    delete[] buf;
+    return ret;
+  }
+}
+
+}; // fs
 
 }; // bpvo
 

@@ -331,6 +331,10 @@ std::string ToString(VerbosityType);
 std::string ToString(PoseEstimationStatus);
 std::string ToString(KeyFramingReason);
 
+LossFunctionType LossFunctionTypeFromString(std::string);
+VerbosityType VerbosityTypeFromString(std::string);
+
 }; // bpvo
 
 #endif // BPVO_TYPES_H
+

@@ -128,8 +128,7 @@ cv::Mat computeGradientAbsMagChannel(const cv::Mat& src)
 #pragma omp simd
     for(int x = 1; x < cols - 2; ++x) {
       int i = y*cols + x;
-      dst_ptr[i] = fabs(src_ptr[i+1] - src_ptr[i-1]) +
-          fabs(src_ptr[i+cols] - src_ptr[i-cols]);
+      dst_ptr[i] = fabs(src_ptr[i+1] - src_ptr[i-1]) + fabs(src_ptr[i+cols] - src_ptr[i-cols]);
     }
   }
 

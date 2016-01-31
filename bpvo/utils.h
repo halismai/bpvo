@@ -233,6 +233,53 @@ T medianAbsoluteDeviation(std::vector<T>& data)
   return median(data);
 }
 
+namespace fs {
+
+/**
+ * \return directory separator, this is a slash '/'
+ */
+std::string dirsep(std::string fn);
+
+/**
+ * Expands '~' to user's home directory
+ */
+std::string expand_tilde(std::string);
+
+
+/**
+ * \return the extension of the input filename
+ */
+std::string extension(std::string filename);
+
+/**
+ * \return true if path exists
+ */
+bool exists(std::string path);
+
+/**
+ * \return true if path is a regular file
+ */
+bool is_regular(std::string path);
+
+/**
+ * \return true if directory
+ */
+bool is_dir(std::string path);
+
+/**
+ * Creates a directory.
+ *
+ * \return name of the directory that was created (empty if we could not create
+ * one for you)
+ *
+ * if 'try_unique' is true, the function will keep trying up to 'max_tries' to
+ * create a unique directory
+ */
+std::string mkdir(std::string dname, bool try_unique = false, int max_tries = 1000);
+
+
+}; // fs
+
 }; // bpvo
 
 #endif // BPVO_UTILS_H

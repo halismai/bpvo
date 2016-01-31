@@ -31,7 +31,7 @@ static inline void RunTimingComputeData(const cv::Mat& I, const cv::Mat& D, int 
          t, data.numPoints(), I.cols, I.rows);
 }
 
-int main(int argc, char** argv)
+int main()
 {
   auto I = cv::imread("/home/halismai/data/NewTsukubaStereoDataset/illumination/fluorescent/left/tsukuba_fluorescent_L_00001.png",
                       cv::IMREAD_GRAYSCALE);
