@@ -46,7 +46,7 @@ class TemplateData
 
   inline const JacobianVector& jacobians()  const { return _jacobians; }
   inline const PointVector&    points()     const { return _points; }
-  inline const PixelVector& pixels() const { return _pixels; }
+  inline const PixelVector&    pixels()     const { return _pixels; }
 
   inline int numPoints() const { return static_cast<int>(_points.size()); }
   inline int numPixels() const { return static_cast<int>(_pixels.size()); }

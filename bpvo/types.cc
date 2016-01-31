@@ -50,7 +50,7 @@ std::string ToString(PoseEstimationStatus s)
     case kFunctionTolReached: return "FunctionTolReached";
     case kGradientTolReached: return "GradientTolReached";
     case kMaxIterations: return "MaxIterations";
-    case kShitHappened: return "ShitHappened";
+    case kSolverError: return "SolverError";
   }
 
   return "Unknown";
@@ -91,8 +91,9 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
 std::ostream& operator<<(std::ostream& os, const OptimizerStatistics& s)
 {
   os << "numIterations: " << s.numIterations << "\n"
-     << " finalError: " << s.finalError << "\n"
-     << "firstOrderOptimality: " << s.firstOrderOptimality;
+     << "finalError: " << s.finalError << "\n"
+     << "firstOrderOptimality: " << s.firstOrderOptimality << "\n"
+     << "status: " << ToString(s.status);
 
   return os;
 }

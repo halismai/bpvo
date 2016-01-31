@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <iosfwd>
+#include <string>
 
 namespace bpvo {
 
@@ -228,7 +229,7 @@ enum PoseEstimationStatus
   kFunctionTolReached,  //< ditto function value
   kGradientTolReached,  //< ditto gradient value (J'*F)
   kMaxIterations,       //< Maximum number of iteration
-  kShitHappened         //< !
+  kSolverError         //< !
 }; // PoseEstimationStatus
 
 
@@ -263,6 +264,11 @@ struct OptimizerStatistics
    * first order optimiality at the end of the optimization
    */
   float firstOrderOptimality;
+
+  /**
+   *
+   */
+  PoseEstimationStatus status;
 
   friend std::ostream& operator<<(std::ostream& os, const OptimizerStatistics&);
 }; // OptimizerStats
@@ -299,7 +305,7 @@ struct Result
   /**
    * stream insertion
    */
-  //friend std::ostream& operator<<(std::ostream&, const Result&);
+  friend std::ostream& operator<<(std::ostream&, const Result&);
 
   Result();
 
@@ -318,6 +324,12 @@ struct ImageSize
   int rows;
   int cols;
 }; // ImageSize
+
+
+std::string ToString(LossFunctionType);
+std::string ToString(VerbosityType);
+std::string ToString(PoseEstimationStatus);
+std::string ToString(KeyFramingReason);
 
 }; // bpvo
 

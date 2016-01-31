@@ -24,7 +24,13 @@ static int getNumberOfPyramidLevels(int min_image_dim, int min_allowed_res)
 template <typename T> static inline
 cv::Mat ToOpenCV(const T* data, int rows, int cols)
 {
-  return cv::Mat(rows, cols, data, cv::DataType<T>::type);
+  return cv::Mat(rows, cols, cv::DataType<T>::type, (void*) data);
+}
+
+template <typename T> static inline
+cv::Mat ToOpenCV(const T* data, const ImageSize& imsize)
+{
+  return ToOpenCV(data, imsize.rows, imsize.cols);
 }
 
 struct KeyFrameCandidate
@@ -54,17 +60,24 @@ struct PoseEstimator
     OptimizerStatistics ret;
     ret.numIterations = 0;
     ret.firstOrderOptimality = 0;
+    ret.status = PoseEstimationStatus::kMaxIterations;
 
     typename LinearSystemBuilder::Hessian A;
     typename LinearSystemBuilder::Gradient b;
     typename LinearSystemBuilder::Gradient dp;
-    float norm_e_prev = 0.0f; //std::numeric_limits<float>::max();
+    float norm_e_prev = 0.0f,
+          norm_dp_prev = 0.0f;
 
     while(ret.numIterations++ < _params.maxIterations) {
       data->computeResiduals(T, _residuals, _valid);
       ret.finalError = _sys_builder.run(data->jacobians(), _residuals, _valid, A, b);
       ret.firstOrderOptimality = b.lpNorm<Eigen::Infinity>();
-      dp = A.ldlt().solve(b); // TODO check the solution
+      dp = A.ldlt().solve(b);
+      if(!(A * dp).isApprox(b)) {
+        Warn("Failed to solve linear system\n");
+        ret.status = PoseEstimationStatus::kSolverError;
+        break;
+      }
 
       auto norm_dp = dp.squaredNorm(); // could use squaredNorm
       auto norm_e  = ret.finalError;
@@ -75,7 +88,31 @@ struct PoseEstimator
         printf(fmt_str, ret.numIterations, norm_e, norm_g, norm_dp, delta_error);
       }
 
+      if(delta_error < _params.functionTolerance ||
+         delta_error < _params.functionTolerance * (sqrtEps + norm_e_prev)) {
+        ret.status = PoseEstimationStatus::kFunctionTolReached;
+        break;
+      }
+
+      if(norm_dp < _params.parameterTolerance ||
+         fabs(norm_dp_prev - norm_dp) < _params.parameterTolerance * (sqrtEps + norm_dp_prev)) {
+        ret.status = PoseEstimationStatus::kParameterTolReached;
+        break;
+      }
+
+      if(ret.firstOrderOptimality < _params.gradientTolerance) {
+        ret.status = PoseEstimationStatus::kGradientTolReached;
+        break;
+      }
+
       norm_e_prev = norm_e;
+      norm_dp_prev = norm_dp;
+
+      T = T * math::se3::exp(dp);
+    }
+
+    if(_params.verbosity == VerbosityType::kIteration || _params.verbosity == VerbosityType::kFinal) {
+      printf("\nOptimizer termination reason: %s\n", ToString(ret.status).c_str());
     }
 
     return ret;
@@ -140,7 +177,7 @@ struct VisualOdometry::Impl
       auto d = make_unique<TemplateData>(i != 0 ? params_low_res : params, K, b, i);
       _template_data_pyr.push_back(std::move(d));
       K *= 0.5; K(2,2) = 1.0; // K is cut by half
-      b *= 2.0; // b *2, this was pose does not need rescaling across levels
+      b *= 2.0; // b *2, this way pose does not need rescaling across levels
 
       _pose_estimator_pyr.push_back(i != 0 ? params_low_res : params);
     }
@@ -161,6 +198,7 @@ struct VisualOdometry::Impl
   void setImagePyramid(cv::Mat I)
   {
     assert(_image_pyramid.size() != 0);
+
     _image_pyramid[0] = I;
     for(size_t i = 1; i < _image_pyramid.size(); ++i)
       cv::pyrDown(_image_pyramid[i-1], _image_pyramid[i]);
@@ -193,8 +231,9 @@ void VisualOdometry::Impl::setAsKeyFrame(const cv::Mat& D)
 Result VisualOdometry::Impl::addFrame(const uint8_t* image, const float* disparity)
 {
   cv::Mat I, D;
-  cv::Mat(_image_size.rows, _image_size.cols, CV_8UC1, (void*)image).copyTo(I);
-  cv::Mat(_image_size.rows, _image_size.cols, CV_32FC1, (void*)disparity).copyTo(D);
+
+  ToOpenCV(image, _image_size).copyTo(I);
+  ToOpenCV(disparity, _image_size).copyTo(D);
 
   setImagePyramid(I);
 
@@ -225,6 +264,11 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* image, const float* dispari
 int VisualOdometry::numPointsAtLevel(int level) const
 {
   return _impl->_template_data_pyr[level]->numPoints();
+}
+
+auto VisualOdometry::pointsAtLevel(int level) const -> const PointVector&
+{
+  return _impl->_template_data_pyr[level]->points();
 }
 
 }; // bpvo

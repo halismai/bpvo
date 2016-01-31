@@ -7,6 +7,8 @@ namespace bpvo {
 
 class VisualOdometry
 {
+  typedef typename EigenAlignedContainer<Point>::type PointVector;
+
  public:
   /**
    * \param ImageSize
@@ -40,7 +42,7 @@ class VisualOdometry
   /**
    * \return the points at the specified level
    */
-
+  const PointVector& pointsAtLevel(int level = 0) const;
 
  private:
   struct Impl;
