@@ -66,8 +66,7 @@ float RunSystemBuilder(const typename LinearSystemBuilder::JacobianVector& J,
                       typename LinearSystemBuilder::Gradient& g)
 {
   LinearSystemBuilderReduction<RobustLoss> func(J, R, valid, sigma);
-  tbb::blocked_range<int> range(0, (int) J.size());
-
+  tbb::blocked_range<int> range(0, (int) R.size());
   tbb::parallel_reduce(range, func);
 
   H = func.hessian();
@@ -75,36 +74,77 @@ float RunSystemBuilder(const typename LinearSystemBuilder::JacobianVector& J,
   return func.residualsSquaredNorm();
 }
 
-float LinearSystemBuilder::run(const JacobianVector& J, const ResidualsVector& residuals,
-                             const std::vector<uint8_t>& valid, Hessian& A, Gradient& b)
+static inline void getValidResiduals(const std::vector<uint8_t>& valid,
+                                     const std::vector<float>& residuals,
+                                     std::vector<float>& valid_residuals)
 {
-  assert( J.size() == residuals.size() && valid.size() == residuals.size() );
+#define USE_ALL_DATA 0
+  // residuals size is 8 times the size of valid
+  // valid is stored per channel, so we loop 8 times!
+  valid_residuals.clear();
+
+#if USE_ALL_DATA
+  valid_residuals.reserve(residuals.size());
+  auto* ptr = residuals.data();
+
+  for(int b = 0; b < 8; ++b) {
+    for(size_t i=0; i < valid.size(); ++i, ++ptr)
+      if(valid[i])
+        valid_residuals.push_back(*ptr);
+  }
+#else
+  // most of the other residuals will look the same. We'll cut the cost by
+  // inspecting a single channel only
+  valid_residuals.reserve(valid.size());
+  for(size_t i = 0; i < valid.size(); ++i)
+    if(valid[i])
+      valid_residuals.push_back(residuals[i]);
+
+#endif
+#undef USE_ALL_DATA
+}
+
+static inline std::vector<uint8_t> makeValidFlags(const std::vector<uint8_t>& v)
+{
+  std::vector<uint8_t> ret(v.size()*8);
+  auto* p = ret.data();
+
+  for(int b = 0; b < 8; ++b)
+    for(size_t i = 0; i < v.size(); ++i)
+      *p++ = v[i];
+
+  return ret;
+}
+
+float LinearSystemBuilder::run(const JacobianVector& J, const ResidualsVector& residuals,
+                               const std::vector<uint8_t>& valid, Hessian& A, Gradient& b)
+{
+  assert( (J.size()-1) == residuals.size() && valid.size() == residuals.size()/8 );
 
   float scale = 1.0f;
 
   if(_loss_func != LossFunctionType::kL2) {
     // compute the std. deviation of the data using the valid points only
-    _tmp_buffer.reserve(residuals.size());
-    for(size_t i = 0; i < residuals.size(); ++i)
-      if(valid[i])
-        _tmp_buffer.push_back(residuals[i]);
-
+    getValidResiduals(valid, residuals, _tmp_buffer);
     scale = medianAbsoluteDeviation(_tmp_buffer) / 0.6745;
   }
 
   // for the case with zero residuals
   if(scale < 1e-6) scale = 1.0f;
 
+  auto valid2 = makeValidFlags(valid);
+  assert( valid2.size() == residuals.size() );
+
   float r_norm = 0.0;
   switch(_loss_func) {
     case LossFunctionType::kHuber:
-      r_norm = RunSystemBuilder<Huber>(J, residuals, valid, scale, A, b);
+      r_norm = RunSystemBuilder<Huber>(J, residuals, valid2, scale, A, b);
       break;
     case LossFunctionType::kTukey:
-      r_norm = RunSystemBuilder<Tukey>(J, residuals, valid, scale, A, b);
+      r_norm = RunSystemBuilder<Tukey>(J, residuals, valid2, scale, A, b);
       break;
     case LossFunctionType::kL2:
-      r_norm = RunSystemBuilder<L2Loss>(J, residuals, valid, scale, A, b);
+      r_norm = RunSystemBuilder<L2Loss>(J, residuals, valid2, scale, A, b);
       break;
     default:
       THROW_ERROR("invalid robust loss");

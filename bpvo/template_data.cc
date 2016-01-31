@@ -3,7 +3,8 @@
 #include "bpvo/utils.h"
 #include "bpvo/debug.h"
 #include "bpvo/partial_warp.h"
-#include <opencv2/core.hpp>
+
+#include <opencv2/core/core.hpp>
 
 #include <utility>
 #include <iostream>
@@ -300,6 +301,8 @@ void TemplateData::compute(const cv::Mat& image, const cv::Mat& disparity)
   auto num_pixels = image.rows * image.cols;
   auto do_nonmax_supp = num_pixels >= AlgorithmParameters::MIN_NUM_FOR_PIXEL_PSELECTION;
 
+  dprintf("num_pixels: %d do_nonmax_supp: %d\n", num_pixels, do_nonmax_supp);
+
   // we'll do this in two passes, first find out the good locations, then
   // extract the data. This way we can pre-allocate the right amount of memory
   // and improve cache locality
@@ -316,6 +319,10 @@ void TemplateData::compute(const cv::Mat& image, const cv::Mat& disparity)
   tbb::parallel_for(range, de);
 #endif
 
+  // XXX we are doing some simd with the Jacobians and need a bit of padding at
+  // the end, so we will add it here (NOTE should not be used for data, or for
+  // testing data size)
+  _jacobians.push_back(Jacobian::Zero());
 }
 
 static FORCE_INLINE int Floor(double v)

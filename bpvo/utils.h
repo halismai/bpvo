@@ -1,7 +1,10 @@
 #ifndef BPVO_UTILS_H
 #define BPVO_UTILS_H
 
+#include <bpvo/debug.h>
+
 #include <algorithm>
+//#include <parallel/algorithm>
 #include <cassert>
 #include <cstring>
 #include <cstdint>
@@ -13,6 +16,13 @@
 #include <vector>
 
 namespace bpvo {
+
+template <typename T> inline constexpr void
+assert_is_floating_point()
+{
+  static_assert(std::is_floating_point<T>::value, "value must be floating point");
+}
+
 
 // TODO the arguments are ambigious! watch out
 inline int sub2ind(const int stride, int r, int c)
@@ -182,7 +192,7 @@ struct Error : public std::logic_error
 }; // Error
 
 #define THROW_ERROR(msg) \
-    throw Error(Format("[ %s:%04d ] %s", MYFILE, __LINE__, msg))
+    throw bpvo::Error(bpvo::Format("[ %s:%04d ] %s", MYFILE, __LINE__, msg))
 
 #define THROW_ERROR_IF(cond, msg) if( !!(cond) ) THROW_ERROR( (msg) )
 
@@ -193,6 +203,8 @@ Iterator::value_type median(Iterator first, Iterator last)
   auto n = std::distance(first, last);
   auto middle = first + n/2;
   std::nth_element(first, middle, last);
+  //__gnu_parallel::nth_element(first, middle, last);
+
 
   if(n % 2 != 0) {
     return *middle;

@@ -2,7 +2,7 @@
 #define BPVO_BITPLANES_H
 
 #include <array>
-#include <opencv2/core.hpp>
+#include <opencv2/core/core.hpp>
 
 namespace bpvo {
 

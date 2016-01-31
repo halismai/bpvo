@@ -31,6 +31,11 @@ class VisualOdometry
    */
   Result addFrame(const uint8_t* image, const float* disparity);
 
+
+  /**
+   */
+  int numPointsAtLevel(int level = 0) const;
+
  private:
   struct Impl;
   Impl* _impl;

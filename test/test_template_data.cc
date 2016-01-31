@@ -1,6 +1,6 @@
 #include <bpvo/template_data.h>
 #include <bpvo/timer.h>
-#include <opencv2/core.hpp>
+#include <opencv2/core/core.hpp>
 
 #include <cstdlib>
 
@@ -15,8 +15,8 @@ int main(int argc, char** argv)
 
   TemplateData data(p, K, 1.0f, 0);
 
-  int rows = 480 * 1;
-  int cols = 640 * 1;
+  int rows = 480 * 0.25;
+  int cols = 640 * 0.25;
 
   cv::Mat I(rows, cols, CV_8UC1);
   cv::Mat D(rows, cols, CV_32FC1);
@@ -49,8 +49,6 @@ int main(int argc, char** argv)
     auto t = TimeCode(nrep, [&]() { data.computeResiduals(Matrix44::Identity(), residuals, valid); });
     printf("computeResiduals() time: %0.2f ms for %d points\n", t, data.numPoints());
   }
-
-  return 0;
 
   {
     auto t = TimeCode(nrep, [&]() { data.compute(I,D); });

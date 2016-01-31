@@ -1,8 +1,8 @@
 #include "bpvo/census.h"
 #include "bpvo/v128.h"
 
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace bpvo {
 
@@ -48,14 +48,14 @@ cv::Mat census(const cv::Mat& src, float s)
   auto src_ptr = image.ptr<const uint8_t>();
   auto dst_ptr = dst.ptr<uint8_t>();
 
-  memset(dst_ptr, 0, src.cols);
+  memset(dst_ptr, 0, src.cols); // set two rows to 0
   src_ptr += src.cols;
   dst_ptr += dst.cols;
 
   for(int r = 2; r < src.rows; ++r, src_ptr += src.cols, dst_ptr += dst.cols)
   {
-    *(dst_ptr  + 0) = 0;
-    for(int c = 0; c < W; c += 16)
+    *(dst_ptr + 0) = 0;
+    for(int c = 1; c < W; c += 16)
       censusOp(src_ptr + c, src.cols, dst_ptr + c);
 
     if(W != src.cols - 1)
