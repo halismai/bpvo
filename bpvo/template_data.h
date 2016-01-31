@@ -15,8 +15,8 @@ class TemplateData
 {
  public:
   typedef Eigen::Matrix<float,1,6> Jacobian;
-  typedef typename EigenAlignedContainer<Point>::value_type PointVector;
-  typedef typename EigenAlignedContainer<Jacobian>::value_type JacobianVector;
+  typedef typename EigenAlignedContainer<Point>::type PointVector;
+  typedef typename EigenAlignedContainer<Jacobian>::type JacobianVector;
   typedef std::vector<float> PixelVector;
 
  public:

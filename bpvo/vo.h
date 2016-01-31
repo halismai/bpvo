@@ -33,8 +33,14 @@ class VisualOdometry
 
 
   /**
+   * \return the number of points at the specified pyramid level
    */
   int numPointsAtLevel(int level = 0) const;
+
+  /**
+   * \return the points at the specified level
+   */
+
 
  private:
   struct Impl;

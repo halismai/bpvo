@@ -10,7 +10,7 @@ static const char* IMAGE_FILENAME =
 static const char* DMAP_FILENAME =
 "/home/halismai/data/NewTsukubaStereoDataset/groundtruth/disparity_maps/left/tsukuba_disparity_L_00001.png";
 
-int main(int argc, char** argv)
+int main()
 {
   auto I = cv::imread(IMAGE_FILENAME, cv::IMREAD_GRAYSCALE);
   THROW_ERROR_IF( I.empty(), "could not read image" );

@@ -339,8 +339,8 @@ void TemplateData::setInputImage(const cv::Mat& image)
 
 struct ResidualComputer
 {
-  typedef EigenAlignedContainer<Eigen::Vector4f>::value_type XyCoeffVector;
-  typedef EigenAlignedContainer<Eigen::Vector2i>::value_type UvVector;
+  typedef EigenAlignedContainer<Eigen::Vector4f>::type XyCoeffVector;
+  typedef EigenAlignedContainer<Eigen::Vector2i>::type UvVector;
 
   /**
    * \param bitplanes the bitplanes input
@@ -401,8 +401,8 @@ void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& re
 
   auto n_pts = _points.size();
 
-  typename EigenAlignedContainer<Eigen::Vector4f>::value_type xy_coeff(n_pts);
-  typename EigenAlignedContainer<Eigen::Vector2i>::value_type uv(n_pts);
+  typename EigenAlignedContainer<Eigen::Vector4f>::type xy_coeff(n_pts);
+  typename EigenAlignedContainer<Eigen::Vector2i>::type uv(n_pts);
 
   valid.resize(n_pts);
 

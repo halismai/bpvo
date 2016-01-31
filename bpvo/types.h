@@ -71,8 +71,8 @@ typedef Eigen::Matrix<float,6,6> PoseCovariance;
 template <class MatrixType, template<class, class> class Container = std::vector>
 struct EigenAlignedContainer
 {
-  typedef Eigen::aligned_allocator<MatrixType> allocator_type;
-  typedef Container<MatrixType, allocator_type> value_type;
+  typedef Eigen::aligned_allocator<MatrixType>  allocator_type;
+  typedef Container<MatrixType, allocator_type> type;
 }; // EigenAlignedContainer
 
 

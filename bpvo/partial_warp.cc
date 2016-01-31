@@ -106,7 +106,7 @@ int do_partial_warp(const Matrix34& P, const float* xyzw, int N, int rows, int c
 
 void computeInterpolationData(const Matrix34& P, const typename TemplateData::PointVector& xyzw,
                               int rows, int cols, typename TemplateData::PointVector& interp_coeffs,
-                              typename EigenAlignedContainer<Eigen::Vector2i>::value_type& uv,
+                              typename EigenAlignedContainer<Eigen::Vector2i>::type& uv,
                               std::vector<uint8_t>& valid)
 {
   int N = xyzw.size();
