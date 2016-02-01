@@ -27,6 +27,12 @@
 
 namespace bpvo {
 
+static void GaussianBlur(cv::Mat& I, cv::Size ks, float s)
+{
+  if(s > 0.0f)
+    cv::GaussianBlur(I, I, ks, s, s);
+}
+
 
 /**
  * Extracts the b-th  channel from the census transformed image and converts
@@ -59,16 +65,14 @@ struct BitPlanesChannelMaker
    * \param sigma smoothing to apply after extracting the bit
    * \param data output data
    */
-  BitPlanesChannelMaker(const cv::Mat& C, float sigma, BitPlanesData& data)
+  BitPlanesChannelMaker(cv::Mat C, float sigma, BitPlanesData& data)
       : _C(C), _sigma(sigma), _data(data) {}
 
   void operator()(const tbb::blocked_range<int>& range) const
   {
     for(int i = range.begin(); i != range.end(); ++i) {
-      extractChannel<float>(_C, _data.cn[i], i);
-
-      if(_sigma > 0.0)
-        cv::GaussianBlur(_data.cn[i], _data.cn[i], cv::Size(5,5), _sigma, _sigma);
+      extractChannel<float>(_C, _data._channels[i], i);
+      GaussianBlur(_data._channels[i], cv::Size(5,5), _sigma);
     }
   }
 
@@ -77,6 +81,7 @@ struct BitPlanesChannelMaker
   BitPlanesData& _data;
 }; // BitPlanesChannelMaker
 
+#if 0
 BitPlanesData computeBitPlanes(const cv::Mat& I, float s1, float s2)
 {
   auto C = census(I, s1);
@@ -94,6 +99,25 @@ BitPlanesData computeBitPlanes(const cv::Mat& I, float s1, float s2)
 
   return ret;
 }
+#endif
+
+BitPlanesData::BitPlanesData(float s1, float s2)
+  : _sigma_ct(s1), _sigma_bp(s2) {}
+
+BitPlanesData::BitPlanesData(float s1, float s2, const cv::Mat& image)
+  : BitPlanesData(s1, s2)
+{
+  computeChannels(image);
+}
+
+BitPlanesData& BitPlanesData::computeChannels(const cv::Mat& image)
+{
+  tbb::parallel_for(
+      tbb::blocked_range<int>(0,8),
+      BitPlanesChannelMaker(census(image, _sigma_ct), _sigma_bp, *this));
+
+  return *this;
+}
 
 template <typename TSrc> static FORCE_INLINE
 cv::Mat computeGradientAbsMagChannel(const cv::Mat& src)
@@ -101,25 +125,6 @@ cv::Mat computeGradientAbsMagChannel(const cv::Mat& src)
 
   int rows = src.rows, cols = src.cols;
   cv::Mat dst(rows, cols, cv::DataType<TSrc>::type);
-
-#if 0
-  using namespace Eigen;
-  typedef Matrix<TSrc, Dynamic, Dynamic, RowMajor> MatrixType;
-  typedef Map<const MatrixType, Aligned> SrcMap;
-  typedef Map<MatrixType, Aligned> DstMap;
-
-  SrcMap I(src.ptr<const TSrc>(), rows, cols);
-  DstMap G(dst.ptr<TSrc>(), rows, cols);
-
-  // we are ignoring the borders here and proper normalization of the gradient
-  // abs(Iy) + abs(Ix)
-  // TODO check if Eigen is creating temporaries here
-  G.block(1, 0, rows - 2, cols) =
-      (I.block(0, 2, rows - 2, cols) -
-       I.block(0, 0, rows - 2, cols)).array().abs() +
-      (I.block(0, 2, rows, cols - 2) -
-       I.block(0, 0, rows, cols - 2)).array().abs();
-#endif
 
   auto dst_ptr = dst.ptr<TSrc>();
   auto src_ptr = src.ptr<const TSrc>();
@@ -156,13 +161,46 @@ void accumulateGradientAbsMag(const cv::Mat& src, cv::Mat& dst)
 
 void BitPlanesData::computeGradientAbsMag()
 {
-  assert( !cn.front().empty() );
+  assert( !_channels.front().empty() );
 
-  int rows = cn.front().rows, cols = cn.front().cols;
-  gradientAbsMag = cv::Mat(rows, cols, CV_32FC1, cv::Scalar(0));
+  int rows = _channels.front().rows, cols = _channels.front().cols;
+  _gmag.create(rows, cols, CV_32FC1);
 
-  for(const auto& c : cn) {
-    accumulateGradientAbsMag<float>(c, gradientAbsMag);
+
+  // first loop we compute the gradientAbsMag for the first channnel.
+  // In the second loop we do +=
+
+  memset(_gmag.ptr<float>(), 0.0, sizeof(float)*cols);
+
+  for(int y = 1; y < rows - 2; ++y) {
+    auto s0 = _channels[0].ptr<const float>(y-1),
+         s1 = _channels[0].ptr<const float>(y+1),
+         s = _channels[0].ptr<const float>(y);
+
+    auto d = _gmag.ptr<float>(y);
+#pragma omp simd
+    for(int x = 1; x < cols - 2; ++x) {
+      d[x] = std::fabs(s[x+1] - s[x-1]) + std::fabs(s1[x] - s0[x]);
+    }
+
+    d[cols - 1] = 0.0f;
+  }
+
+  memset(_gmag.ptr<float>(rows-1), 0, sizeof(float)*cols);
+
+  for(int cn = 1; cn < 8; ++cn) {
+    for(int y = 1; y < rows - 2; ++y) {
+      auto s0 = _channels[0].ptr<const float>(y-1),
+           s1 = _channels[0].ptr<const float>(y+1),
+           s = _channels[0].ptr<const float>(y);
+
+      auto d = _gmag.ptr<float>(y);
+
+#pragma omp simd
+      for(int x = 1; x < cols - 2; ++x) {
+        d[x] += std::fabs(s[x+1] - s[x-1]) + std::fabs(s1[x] - s0[x]);
+      }
+    }
   }
 }
 

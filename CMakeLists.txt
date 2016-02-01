@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -mtune=native -march=native -mf
 set(CMAKE_EXE_LINKER_FLAGS "-lpthread -lm -lrt -lgomp")
 
 
-option(BUILD_STATIC   "Build static libraries" ON)
+option(BUILD_STATIC   "Build static libraries" OFF)
 
 if(BUILD_STATIC)
   set(LIBRARY_TYPE STATIC)
@@ -30,15 +30,20 @@ else()
   set(LIBRARY_TYPE SHARED)
 endif()
 
-
 find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui contrib)
 find_package(TBB REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(Eigen REQUIRED)
 
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_RUNTIME ON)
+set(Boost_USE_MULTITHREAD ON)
+find_package(Boost 1.57.0 REQUIRED COMPONENTS program_options)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
-list(APPEND MY_LIBRARIES ${OpenCV_LIBS} ${TBB_LIBRARIES})
+include_directories(${Boost_INCLUDE_DIRS})
+list(APPEND MY_LIBRARIES ${OpenCV_LIBS} ${TBB_LIBRARIES} ${Boost_LIBRARIES})
 
 #pkg_check_modules(TCMALLOC libtcmalloc)
 #if(TCMALLOC_FOUND)

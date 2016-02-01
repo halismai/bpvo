@@ -1,6 +1,8 @@
 #include "bpvo/trajectory.h"
 #include <iostream>
 
+#include <Eigen/LU>
+
 namespace bpvo {
 
 static inline Matrix44 InvertPose(const Matrix44& T)
@@ -18,9 +20,9 @@ Trajectory::Trajectory() {}
 void Trajectory::push_back(const Matrix44& T)
 {
   if(!_poses.empty())
-    _poses.push_back( _poses.back() * InvertPose(T) );
+    _poses.push_back( _poses.back() * T.inverse() );
   else
-    _poses.push_back( InvertPose(T) );
+    _poses.push_back( T.inverse() );
 }
 
 const Matrix44& Trajectory::back() const { return _poses.back(); }

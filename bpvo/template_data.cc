@@ -148,8 +148,8 @@ struct TemplateData::InputData
    * \param s1 sigma to be applied before computing the CT
    * \param s2 sigma to be applied after extracting bits
    */
-  InputData(float s1, float s2):
-      _sigma_ct(s1), _sigma_bp(s2) {}
+  InputData(float s1, float s2)
+      : _data(s1, s2) {}
 
   /**
    * sets the input image
@@ -158,7 +158,7 @@ struct TemplateData::InputData
   {
     _rows = image.rows;
     _cols = image.cols;
-    _data = computeBitPlanes(image, _sigma_ct, _sigma_bp);
+    _data.computeChannels(image);
   }
 
   /**
@@ -171,7 +171,6 @@ struct TemplateData::InputData
   }
 
   BitPlanesData _data;          //< pre-computed dense bit-planes
-  float _sigma_ct, _sigma_bp;   //< bit-planes parameters
   int _rows = 0, _cols = 0;     //< rows and cols of the input image
 }; // TemplateData::InputData
 
@@ -190,7 +189,7 @@ struct DataExtractor
   /**
    */
   DataExtractor(TemplateData& data, const IndicesAndDisparity& inds)
-      : _data(data), _stride(data._input_data->_data.gradientAbsMag.cols), _inds(inds)
+      : _data(data), _stride(data._input_data->_cols), _inds(inds)
   {
     _data.resize(_inds.size());
 
@@ -219,7 +218,7 @@ struct DataExtractor
     const auto& bitplanes = _data._input_data->_data;
     for(int j = range.begin(); j != range.end(); ++j) {
       // the j-th channel
-      const float* B_ptr = bitplanes.cn[j].ptr<const float>();
+      const float* B_ptr = bitplanes[j].ptr<const float>();
 
       // pointer to jacobians and pixels for channel 'j'
       int offset = j * _data.numPoints();
@@ -405,6 +404,9 @@ getValidPixelsLocations(const DisparityPyramidLevel& dmap, const cv::Mat_<float>
   return inds;
 }
 
+void TemplateData::setData(const BitPlanesData& data, const cv::Mat& disparity)
+{
+}
 
 void TemplateData::compute(const cv::Mat& image, const cv::Mat& disparity)
 {
@@ -426,7 +428,7 @@ void TemplateData::compute(const cv::Mat& image, const cv::Mat& disparity)
   // and improve cache locality
   int nms_radius = 1;
   auto inds = getValidPixelsLocations(DisparityPyramidLevel(disparity, _pyr_level),
-                                      bitplanes.gradientAbsMag, nms_radius, do_nonmax_supp);
+                                      bitplanes.gradientAbsMag(), nms_radius, do_nonmax_supp);
 
   DataExtractor de(*this, inds);
 
@@ -471,7 +473,7 @@ struct ResidualComputer
                    const std::vector<uint8_t>& valid,
                    std::vector<float>& residuals)
       : _bitplanes(bitplanes), _pixels(pixels), _xy_coeff(xy_coeff), _uv(uv)
-      , _valid(valid), _residuals(residuals), _stride(_bitplanes.cn.front().cols)
+      , _valid(valid), _residuals(residuals), _stride(_bitplanes[0].cols)
   {
     assert( _residuals.size() == 8*_valid.size() );
     assert( _residuals.size() == _pixels.size() );
@@ -487,7 +489,7 @@ struct ResidualComputer
 
     for(int c = range.begin(); c != range.end(); ++c, residuals_ptr += n_pts, I0_ptr += n_pts) {
 
-      auto I1_ptr = _bitplanes.cn[c].ptr<const float>();
+      auto I1_ptr = _bitplanes[c].ptr<const float>();
       for(size_t i = 0; i < n_pts; ++i) {
         if(_valid[i]) {
           auto ii = _uv[i].y()*_stride + _uv[i].x();
@@ -515,8 +517,8 @@ void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& re
                                     std::vector<uint8_t>& valid) const
 {
   const auto& bitplanes = _input_data->_data;
-  int max_rows = bitplanes.cn.front().rows - 1,
-      max_cols = bitplanes.cn.front().cols - 1;
+  int max_rows = bitplanes[0].rows - 1,
+      max_cols = bitplanes[0].cols - 1;
 
   auto n_pts = _points.size();
 
@@ -553,7 +555,7 @@ void TemplateData::computeResiduals(const Matrix44& pose, std::vector<float>& re
   residuals.resize(_pixels.size());
   ResidualComputer rc(bitplanes, _pixels, xy_coeff, uv, valid, residuals);
 
-  tbb::blocked_range<int> range(0, bitplanes.cn.size());
+  tbb::blocked_range<int> range(0, bitplanes.size());
   tbb::parallel_for(range, rc);
 }
 

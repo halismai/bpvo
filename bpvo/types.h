@@ -238,10 +238,11 @@ enum PoseEstimationStatus
  */
 enum KeyFramingReason
 {
-  kLargeTranslation,     //< translation was large
-  kLargeRotation,        //< rotation was large
+  kLargeTranslation,      //< translation was large
+  kLargeRotation,         //< rotation was large
   kSmallFracOfGoodPoints, //< fraction of good points is low
-  kNoKeyFraming          //< there was no keyframe
+  kNoKeyFraming,          //< there was no keyframe
+  kFirstFrame
 }; // KeyFramingReason
 
 
@@ -301,6 +302,11 @@ struct Result
    * image)
    */
   bool isKeyFrame;
+
+  /**
+   * reason for keyframeing
+   */
+  KeyFramingReason keyFramingReason;
 
   /**
    * stream insertion

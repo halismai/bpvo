@@ -17,23 +17,38 @@
 
 namespace bpvo {
 
+/**
+ * \return number of pyramid levels such that tha coarsest level has size
+ * min_allowed_res
+ *
+ * \param min_image_dim min(image.rows, image.cols)
+ * \param min_allowed_res  minimum image resolution we want to work with
+ */
 static int getNumberOfPyramidLevels(int min_image_dim, int min_allowed_res)
 {
   return 1 + std::round(std::log2(min_image_dim / (double) min_allowed_res));
 }
 
+/**
+ */
 template <typename T> static inline
 cv::Mat ToOpenCV(const T* data, int rows, int cols)
 {
   return cv::Mat(rows, cols, cv::DataType<T>::type, (void*) data);
 }
 
+/**
+ */
 template <typename T> static inline
 cv::Mat ToOpenCV(const T* data, const ImageSize& imsize)
 {
   return ToOpenCV(data, imsize.rows, imsize.cols);
 }
 
+/**
+ * A KeyFrameCandidate is an intensity image pyramid along with the disparity
+ * map
+ */
 struct KeyFrameCandidate
 {
   std::vector<cv::Mat> image_pyramid;
@@ -66,8 +81,7 @@ struct PoseEstimator
     typename LinearSystemBuilder::Hessian A;
     typename LinearSystemBuilder::Gradient b;
     typename LinearSystemBuilder::Gradient dp;
-    float norm_e_prev = 0.0f,
-          norm_dp_prev = 0.0f;
+    float norm_e_prev = 0.0f, norm_dp_prev = 0.0f;
 
     while(ret.numIterations++ < _params.maxIterations) {
       data->computeResiduals(T, _residuals, _valid);
@@ -80,11 +94,13 @@ struct PoseEstimator
         break;
       }
 
-      std::cout << A << std::endl;
-      std::cout << b << std::endl;
-      std::cout << dp << std::endl;
+      T = T * math::TwistToMatrix(-dp);
 
-      auto norm_dp = dp.squaredNorm(); // could use squaredNorm
+      //std::cout << A << std::endl;
+      //std::cout << b << std::endl;
+      //std::cout << dp << std::endl;
+
+      auto norm_dp = dp.norm(); // could use squaredNorm
       auto norm_e  = ret.finalError;
       auto norm_g  = ret.firstOrderOptimality;
       auto delta_error = std::abs(norm_e - norm_e_prev);
@@ -112,8 +128,6 @@ struct PoseEstimator
 
       norm_e_prev = norm_e;
       norm_dp_prev = norm_dp;
-
-      T = T * math::se3::exp(dp);
     }
 
     if(_params.verbosity == VerbosityType::kIteration || _params.verbosity == VerbosityType::kFinal) {
@@ -200,7 +214,7 @@ struct VisualOdometry::Impl
 
   void setAsKeyFrame(const cv::Mat&);
 
-  void setImagePyramid(cv::Mat I)
+  void setImagePyramid(const cv::Mat& I)
   {
     assert(_image_pyramid.size() != 0);
 
@@ -249,19 +263,27 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* image, const float* dispari
     ret.isKeyFrame = true;
     ret.pose = _T_init;
     ret.covriance.setIdentity();
+    ret.keyFramingReason = KeyFramingReason::kFirstFrame;
 
     return ret; // special case for the first frame
   }
 
-  assert( _pose_estimator_pyr.size() == _template_data_pyr.size() &&
+  assert(_pose_estimator_pyr.size() == _template_data_pyr.size() &&
          _image_pyramid.size() == _pose_estimator_pyr.size() );
 
-  ret.pose = _T_init;
+  Matrix44 T_est = _T_init;
+
   for(int i = _pose_estimator_pyr.size()-1; i >= 0; --i) {
-    auto ss = _pose_estimator_pyr[i].run(_template_data_pyr[i].get(), _image_pyramid[i], ret.pose);
+    dprintf("PoseEstimator level %d\n", i);
+    auto ss = _pose_estimator_pyr[i].run(_template_data_pyr[i].get(), _image_pyramid[i], T_est);
     ret.optimizerStatistics.push_back(ss);
   }
 
+  ret.isKeyFrame = false;
+  if(!ret.isKeyFrame) {
+    ret.pose = T_est * _T_init.inverse();
+    _T_init = T_est;
+  }
 
   return ret;
 }

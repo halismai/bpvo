@@ -10,6 +10,7 @@ class Mat;
 namespace bpvo {
 
 class DataExtractor;
+class BitPlanesData;
 
 class TemplateData
 {
@@ -43,6 +44,11 @@ class TemplateData
    * pyr_level
    */
   void compute(const cv::Mat& image, const cv::Mat& disparity);
+
+  /**
+   * sets the data from a pre-computed BitPlanesData
+   */
+  void setData(const BitPlanesData&, const cv::Mat& disparity);
 
   inline const JacobianVector& jacobians()  const { return _jacobians; }
   inline const PointVector&    points()     const { return _points; }

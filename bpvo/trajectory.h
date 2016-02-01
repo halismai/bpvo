@@ -20,6 +20,8 @@ class Trajectory
     return _poses[i];
   }
 
+  inline size_t size() const { return _poses.size(); }
+
  private:
   PoseVector _poses;
 

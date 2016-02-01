@@ -113,6 +113,7 @@ std::string ToString(KeyFramingReason r)
     case kLargeRotation: return "LargeRotation";
     case kSmallFracOfGoodPoints: return "SmallFracOfGoodPoints";
     case kNoKeyFraming: return "NoKeyFraming";
+    case kFirstFrame: return "FirstFrame";
   }
 
   return "Unknown";
@@ -151,7 +152,8 @@ std::ostream& operator<<(std::ostream& os, const OptimizerStatistics& s)
 Result::Result()
   : pose(Pose::Identity())
   , covriance(PoseCovariance::Identity())
-  , isKeyFrame(false) {}
+  , isKeyFrame(false)
+  , keyFramingReason(kNoKeyFraming) {}
 
 std::ostream& operator<<(std::ostream& os, const Result& r)
 {
