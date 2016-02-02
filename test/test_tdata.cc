@@ -33,7 +33,7 @@ int main()
   {
     printf("Timing stuff\n");
     {
-      auto t = TimeCode(100, [&]() { data.setData(BitPlanes(frame->image()), frame->disparity()); });
+      auto t = TimeCode(1000, [&]() { data.setData(BitPlanes(frame->image()), frame->disparity()); });
       printf("setData time %0.2f ms\n", t);
     }
 

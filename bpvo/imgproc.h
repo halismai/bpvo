@@ -90,6 +90,18 @@ class ValidPixelPredicate
   IsLocalMax<DataType> _is_local_max;
 }; // ValidPixelPredicate
 
+
+/**
+ * computes the gradient absolute magnitude
+ */
+void gradientAbsoluteMagnitude(const cv::Mat_<float>& src, cv::Mat_<float>& dst);
+
+/**
+ * accumulates the abs gradient magnitude into dst
+ * dst must be allocated
+ */
+void gradientAbsoluteMagnitudeAcc(const cv::Mat_<float>& src, float* dst);
+
 }; // bpvo
 
 #endif // BPVO_IMGPROC_H
