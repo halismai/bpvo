@@ -11,6 +11,12 @@ namespace bpvo {
 
 namespace math {
 
+int FORCE_INLINE Floor(float v)
+{
+  int i = (int) v;
+  return i - (i > v);
+}
+
 /**
  * Contanst PI
  */
