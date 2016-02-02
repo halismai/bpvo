@@ -153,6 +153,29 @@ float LinearSystemBuilder::run(const JacobianVector& J, const ResidualsVector& r
   return std::sqrt(r_norm);
 }
 
+
+float LinearSystemBuilder::run(const ResidualsVector& residuals,
+                               const std::vector<uint8_t>& valid)
+{
+  float scale = 1.0f;
+  if(_loss_func != LossFunctionType::L2) {
+    getValidResiduals(valid, residuals, _tmp_buffer);
+    scale = medianAbsoluteDeviation(_tmp_buffer) / 0.6745;
+    if(scale < 1e-6)
+      scale = 1.0f;
+  }
+
+  auto valid2 = makeValidFlags(valid);
+  float ret = 0.0;
+
+  for(size_t i = 0; i < valid2.size(); ++i) {
+    float w = static_cast<float>(valid2[i]) * _loss_func.weight(residuals[i]);
+    ret += w * _residuals[i] * _residuals[i];
+  }
+
+  return std::sqrt(ret);
+}
+
 template <class L> inline
 LinearSystemBuilderReduction<L>::
 LinearSystemBuilderReduction(const JacobianVector& J, const ResidualsVector& R,

@@ -85,6 +85,8 @@ class TemplateData_
 
   inline const Warp warp() const { return _warp; }
 
+  inline const JacobianVector& jacobians() const { return _jacobians; }
+
  protected:
   int _pyr_level;
 

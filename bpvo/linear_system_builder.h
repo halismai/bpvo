@@ -26,6 +26,8 @@ class LinearSystemBuilder
   float run(const JacobianVector& J, const ResidualsVector& R,
             const ValidVector& valid, Hessian&, Gradient& b);
 
+  float run(const ResidualsVector& R, const ValidVector& valid);
+
  private:
   LossFunctionType _loss_func;
   ResidualsVector _tmp_buffer;

@@ -3,6 +3,8 @@
 #include "bpvo/template_data.h"
 #include "bpvo/linear_system_builder.h"
 #include "bpvo/math_utils.h"
+#include "bpvo/warps.h"
+#include "bpvo/channels.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
