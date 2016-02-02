@@ -10,6 +10,7 @@
 #include <opencv2/core/core.hpp>
 
 #include <utility>
+#include <iostream>
 
 #define TEMPLATE_DATA_SET_DATA_WITH_TBB 0
 #if TEMPLATE_DATA_SET_DATA_WITH_TBB
@@ -215,6 +216,7 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   // compute the warp jacobians
   //
   WarpJacobianVector Jw(_points.size());
+#pragma omp parallel for
   for(size_t i = 0; i < _points.size(); ++i) {
     Jw[i] = _warp.warpJacobianAtZero(_points[i]);
   }
@@ -234,7 +236,7 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
        Fy = _warp.K()(1,1) * 0.5f;
 
   for(int c = 0; c < channels.size(); ++c) {
-    auto c_ptr = channels[c].ptr();
+    auto c_ptr = channels.channelData(c);
     auto J_ptr = _jacobians.data() + c*inds.size();
     auto P_ptr = _pixels.data() + c*inds.size();
 
@@ -275,11 +277,25 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels,
   //
   for(int i = 0; i < numPoints(); ++i) {
     auto x = _warp(_points[i]);
-    int xi = cvFloor(x[0]),
-        yi = cvFloor(x[1]);
+#if 1
+    int xi = cvFloor(x[0] + 0.5f),
+        yi = cvFloor(x[1] + 0.5f);
+#else
+    int xi = std::floor(x[0] + 0.5f),
+        yi = std::floor(x[1] + 0.5f);
+#endif
     uv[i] = Eigen::Vector2i(xi, yi);
     float xf = x[0] - xi,
           yf = x[1] - yi;
+
+#if 1
+    if(fabs(xf) > 1e-3 || fabs(yf) > 1e-3) {
+      std::cout << _points[i].transpose() << std::endl;
+      printf("%f %f\n", xf, yf);
+      printf("(%f,%f) -> (%d,%d)\n", x[0], x[1], xi, yi);
+    }
+#endif
+
     valid[i] = xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows;
     interp_coeffs[i] = Eigen::Vector4f(
         (1.0f - yf) * (1.0f - xf),
@@ -301,6 +317,11 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels,
         auto Iw = interp_coeffs[i].dot(Eigen::Vector4f(
                 I_ptr[ii], I_ptr[ii+1], I_ptr[ii+stride], I_ptr[ii+stride+1]));
         r_ptr[i] = Iw - I0_ptr[i];
+
+        if(fabs(r_ptr[i]) > 1e-3) {
+          printf("%f %f\n", Iw, I0_ptr[i]);
+        }
+
       } else {
         r_ptr[i] = 0.0f;
       }

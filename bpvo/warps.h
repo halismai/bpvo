@@ -48,11 +48,11 @@ class RigidBodyWarp
 
   inline const Matrix33& K() const { return _K; }
 
-  inline void setPose(const Matrix44& T) { _T = T; }
+  inline void setPose(const Matrix44& T) { _P = _K * T.block<3,4>(0,0); }
 
   inline ImagePoint operator()(const Point& X) const
   {
-    Point xw = _T * X;
+    Eigen::Vector3f xw = _P * X;
     return ImagePoint(xw[0]/xw[2], xw[1]/xw[2]);
   }
 
@@ -60,7 +60,7 @@ class RigidBodyWarp
   Matrix33 _K;
   float _b;
 
-  Matrix44 _T;
+  Matrix34 _P;
 }; // RigidBodyWarp
 
 }; // bpvo
