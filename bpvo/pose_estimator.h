@@ -9,6 +9,8 @@
 #include <cmath>
 #include <iostream>
 
+#include <Eigen/Cholesky> // for ldlt()
+
 namespace bpvo {
 
 struct PoseEstimatorParameters

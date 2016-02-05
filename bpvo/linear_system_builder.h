@@ -32,8 +32,10 @@ class LinearSystemBuilder
    * \param G = J'*W*R
    * \return the norm of the weighted residuals
    */
-  static float Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& weights,
-                   const ValidVector& valid, Hessian* = nullptr, Gradient* = nullptr);
+  static float Run(const JacobianVector& J, const ResidualsVector& R,
+                   const ResidualsVector& weights, const ValidVector& valid,
+                   Hessian* = nullptr, Gradient* = nullptr);
+
 }; // LinearSystemBuilder
 
 }; // bpvo

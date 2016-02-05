@@ -326,8 +326,12 @@ struct Result
  */
 struct ImageSize
 {
-  int rows;
-  int cols;
+  int rows = 0;
+  int cols = 0;
+
+  inline ImageSize(int r = 0, int c = 0) : rows(r), cols(c) {}
+
+  inline int numel() const { return rows*cols; }
 }; // ImageSize
 
 

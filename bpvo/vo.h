@@ -45,7 +45,7 @@ class VisualOdometry
   const PointVector& pointsAtLevel(int level = 0) const;
 
  private:
-  struct Impl;
+  class Impl;
   Impl* _impl;
 }; // VisualOdometry
 
