@@ -33,7 +33,8 @@ struct Huber : public RobustLossFunction
 
   FORCE_INLINE float weight(float x) const noexcept
   {
-    return 1.0f / std::max(1.0f, std::fabs(RobustLossFunction::normalize(x)));
+    float r = RobustLossFunction::normalize(x);
+    return 1.0f / std::max(1.0f, std::fabs(r));
   }
 }; // Huber
 

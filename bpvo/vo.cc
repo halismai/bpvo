@@ -1,10 +1,12 @@
 #include "bpvo/vo.h"
 #include "bpvo/debug.h"
-#include "bpvo/template_data.h"
 #include "bpvo/linear_system_builder.h"
+#include "bpvo/linear_system_builder_2.h"
 #include "bpvo/math_utils.h"
 #include "bpvo/warps.h"
 #include "bpvo/channels.h"
+#include "bpvo/pose_estimator.h"
+#include "bpvo/template_data_.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -26,9 +28,14 @@ namespace bpvo {
  * \param min_image_dim min(image.rows, image.cols)
  * \param min_allowed_res  minimum image resolution we want to work with
  */
-static int getNumberOfPyramidLevels(int min_image_dim, int min_allowed_res)
+static inline int getNumberOfPyramidLevels(int min_image_dim, int min_allowed_res)
 {
   return 1 + std::round(std::log2(min_image_dim / (double) min_allowed_res));
+}
+
+static inline int getNumberOfPyramidLevels(const ImageSize& s, int min_allowed_res)
+{
+  return getNumberOfPyramidLevels(std::min(s.rows, s.cols), min_allowed_res);
 }
 
 /**
@@ -48,183 +55,62 @@ cv::Mat ToOpenCV(const T* data, const ImageSize& imsize)
 }
 
 /**
- * A KeyFrameCandidate is an intensity image pyramid along with the disparity
- * map
  */
-struct KeyFrameCandidate
-{
-  std::vector<cv::Mat> image_pyramid;
-  cv::Mat disparity;
-}; // KeyFrameCandidate
-
-struct PoseEstimator
-{
- public:
-  PoseEstimator(AlgorithmParameters params)
-      : _params(params), _sys_builder(_params.lossFunction) {}
-
-  OptimizerStatistics run(TemplateData* data, const cv::Mat& image, Matrix44& T)
-  {
-    data->setInputImage(image);
-
-    static const char* fmt_str = "%3d        %13.6g  %12.3g    %12.6g   %12.6g\n";
-    static constexpr float sqrtEps = std::sqrt(std::numeric_limits<float>::epsilon());
-
-    if(_params.verbosity == VerbosityType::kIteration) {
-      printf("\n                            1st-order        norm of           delta\n");
-      printf(" Iteration      Residual    Optimality        step             error\n");
-    }
-
-    OptimizerStatistics ret;
-    ret.numIterations = 0;
-    ret.firstOrderOptimality = 0;
-    ret.status = PoseEstimationStatus::kMaxIterations;
-
-    typename LinearSystemBuilder::Hessian A;
-    typename LinearSystemBuilder::Gradient b;
-    typename LinearSystemBuilder::Gradient dp;
-    float norm_e_prev = 0.0f, norm_dp_prev = 0.0f;
-
-    while(ret.numIterations++ < _params.maxIterations) {
-      data->computeResiduals(T, _residuals, _valid);
-      ret.finalError = _sys_builder.run(data->jacobians(), _residuals, _valid, A, b);
-      ret.firstOrderOptimality = b.lpNorm<Eigen::Infinity>();
-      dp = A.ldlt().solve(b);
-      if(!(A * dp).isApprox(b)) {
-        Warn("Failed to solve linear system\n");
-        ret.status = PoseEstimationStatus::kSolverError;
-        break;
-      }
-
-      T = T * math::TwistToMatrix(-dp);
-
-      //std::cout << A << std::endl;
-      //std::cout << b << std::endl;
-      //std::cout << dp << std::endl;
-
-      auto norm_dp = dp.norm(); // could use squaredNorm
-      auto norm_e  = ret.finalError;
-      auto norm_g  = ret.firstOrderOptimality;
-      auto delta_error = std::abs(norm_e - norm_e_prev);
-
-      if(_params.verbosity == VerbosityType::kIteration) {
-        printf(fmt_str, ret.numIterations, norm_e, norm_g, norm_dp, delta_error);
-      }
-
-      if(delta_error < _params.functionTolerance ||
-         delta_error < _params.functionTolerance * (sqrtEps + norm_e_prev)) {
-        ret.status = PoseEstimationStatus::kFunctionTolReached;
-        break;
-      }
-
-      if(norm_dp < _params.parameterTolerance ||
-         fabs(norm_dp_prev - norm_dp) < _params.parameterTolerance * (sqrtEps + norm_dp_prev)) {
-        ret.status = PoseEstimationStatus::kParameterTolReached;
-        break;
-      }
-
-      if(ret.firstOrderOptimality < _params.gradientTolerance) {
-        ret.status = PoseEstimationStatus::kGradientTolReached;
-        break;
-      }
-
-      norm_e_prev = norm_e;
-      norm_dp_prev = norm_dp;
-    }
-
-    if(_params.verbosity == VerbosityType::kIteration || _params.verbosity == VerbosityType::kFinal) {
-      printf("\nOptimizer termination reason: %s\n", ToString(ret.status).c_str());
-    }
-
-    return ret;
-  }
-
-  AlgorithmParameters _params;
-  LinearSystemBuilder _sys_builder;
-  std::vector<float> _residuals;
-  std::vector<uint8_t> _valid;
-}; // PoseEstimator
-
 struct VisualOdometry::Impl
 {
-  /** size of the image at the highest resolution */
-  ImageSize _image_size;
+  typedef RawIntensity ChannelsT;
+  typedef RigidBodyWarp WarpT;
+  typedef TemplateData_<ChannelsT, WarpT> TData;
+  typedef PoseEstimator<TData, LinearSystemBuilder> PoseEstimatorT;
 
-  /** parameters */
-  AlgorithmParameters _params;
+  typedef UniquePointer<TData> TDataPointer;
+  typedef std::vector<TDataPointer> TDataPyramid;
 
-  /** pyramid of template data */
-  std::vector<UniquePointer<TemplateData>> _template_data_pyr;
+  AlgorithmParameters _params;         //< algorithm parameters
+  PoseEstimatorParameters _pose_est_params;
+  PoseEstimatorParameters _pose_est_params_low_res;
 
-  /** pose initialization in between keyframes */
-  Matrix44 _T_init;
+  ImageSize _image_size;               //< image size at the finest resolution
+  TDataPyramid _tdata_pyr;             //< pyramid of template data
+  PoseEstimatorT _pose_estimator;      //< the pose estimator
+  std::vector<ChannelsT> _channels_pyr; //< the channels
 
-  std::vector<cv::Mat> _image_pyramid;
-  KeyFrameCandidate _kf_candidate;
+  Matrix44 _T_kf; //< current estimate of pose from the last keyframe
 
-  std::vector<PoseEstimator> _pose_estimator_pyr;
-
-  /**
-   * \param K the intrinsic matrix at the highest resolution
-   * \param b the stereo baseline at the highest resolution
-   * \param params AlgorithmParameters
-   */
-  Impl(const Matrix33& KK, float b, ImageSize image_size, AlgorithmParameters params)
-      : _image_size(image_size), _params(params), _T_init(Matrix44::Identity())
+  Impl(const Matrix33& K_, const float& b_, ImageSize image_size, AlgorithmParameters params)
+      : _params(params), _image_size(image_size), _pose_estimator(params), _T_kf(Matrix44::Identity())
   {
     assert( _image_size.rows > 0 && _image_size.cols > 0 );
 
-    // auto decide the number of levels of params.numPyramidLevels <= 0
-    int num_levels = params.numPyramidLevels <= 0 ?
-        getNumberOfPyramidLevels(std::min(_image_size.rows, _image_size.cols), 40) :
-        params.numPyramidLevels;
+    // auto set the number of pyramid levels if requested
+    if(_params.numPyramidLevels <= 0)
+      _params.numPyramidLevels = getNumberOfPyramidLevels(_image_size, 40);
 
-    _params.numPyramidLevels = num_levels;
-    dprintf("numPyramidLevels = %d\n", num_levels);
+    _pose_est_params = PoseEstimatorParameters(_params);
+    _pose_est_params_low_res = _pose_est_params;
+    if(_params.relaxTolerancesForCoarseLevels)
+      _pose_est_params_low_res.relaxTolerance();
 
-    AlgorithmParameters params_low_res = _params;
-
-    // relatex the tolerance for low pyramid levels (for speed)
-    if(params.relaxTolerancesForCoarseLevels) {
-      params_low_res.parameterTolerance *= 10;
-      params_low_res.functionTolerance *= 10;
-      params_low_res.gradientTolerance *= 10;
-      params_low_res.maxIterations = std::min(_params.maxIterations, 42);
+    // create the pyramid. Note, _params_low_res is irrelevant here. Basically,
+    // we should have a different struct for the optimization parameters
+    Matrix33 K(K_);
+    float b = b_;
+    for(int i = 0; i < _params.numPyramidLevels; ++i) {
+      _tdata_pyr.push_back(make_unique<TData>(K, b, i));
+      b *= 2.0;
+      K *= 0.5f; K(2,2) = 1.0f;
     }
 
-    // create the data per pyramid level
-    Matrix33 K(KK);
-    for(int i = 0; i < num_levels; ++i) {
-      auto d = make_unique<TemplateData>(i != 0 ? params_low_res : params, K, b, i);
-      _template_data_pyr.push_back(std::move(d));
-      K *= 0.5; K(2,2) = 1.0; // K is cut by half
-      b *= 2.0; // b *2, this way pose does not need rescaling across levels
-
-      _pose_estimator_pyr.push_back(i != 0 ? params_low_res : params);
+    for(int i = 0; i < _params.numPyramidLevels; ++i) {
+      _channels_pyr.push_back(ChannelsT(_params.sigmaPriorToCensusTransform,
+                                        _params.sigmaBitPlanes));
     }
-
-    _image_pyramid.resize(num_levels);
   }
 
-  ~Impl() {}
+  inline ~Impl() {}
 
-  /**
-   * \param I pointer to the image
-   * \param D poitner to the disparity
-   */
   Result addFrame(const uint8_t*, const float*);
-
-  void setAsKeyFrame(const cv::Mat&);
-
-  void setImagePyramid(const cv::Mat& I)
-  {
-    assert(_image_pyramid.size() != 0);
-
-    _image_pyramid[0] = I;
-    for(size_t i = 1; i < _image_pyramid.size(); ++i)
-      cv::pyrDown(_image_pyramid[i-1], _image_pyramid[i]);
-  }
-
+  void setAsKeyFrame(const std::vector<ChannelsT>&, const cv::Mat&);
 }; // Impl
 
 VisualOdometry::VisualOdometry(const Matrix33& K, float baseline,
@@ -238,66 +124,68 @@ Result VisualOdometry::addFrame(const uint8_t* image, const float* disparity)
   return _impl->addFrame(image, disparity);
 }
 
-void VisualOdometry::Impl::setAsKeyFrame(const cv::Mat& D)
-{
-  assert( _image_pyramid.size() == _template_data_pyr.size() );
-
-  for(size_t i = 0; i < _image_pyramid.size(); ++i) {
-    _template_data_pyr[i]->compute(_image_pyramid[i], D);
-    dprintf("[%dx%d] -> %d points\n", _image_pyramid[i].cols, _image_pyramid[i].rows,
-            _template_data_pyr[i]->numPoints());
-  }
-}
-
-Result VisualOdometry::Impl::addFrame(const uint8_t* image, const float* disparity)
-{
-  cv::Mat I, D;
-
-  ToOpenCV(image, _image_size).copyTo(I);
-  ToOpenCV(disparity, _image_size).copyTo(D);
-
-  setImagePyramid(I);
-
-  Result ret;
-  ret.optimizerStatistics.resize(_params.numPyramidLevels);
-  if(0 == _template_data_pyr.front()->numPoints()) {
-    setAsKeyFrame(D);
-    ret.isKeyFrame = true;
-    ret.pose = _T_init;
-    ret.covriance.setIdentity();
-    ret.keyFramingReason = KeyFramingReason::kFirstFrame;
-
-    return ret; // special case for the first frame
-  }
-
-  assert(_pose_estimator_pyr.size() == _template_data_pyr.size() &&
-         _image_pyramid.size() == _pose_estimator_pyr.size() );
-
-  Matrix44 T_est = _T_init;
-
-  for(int i = _pose_estimator_pyr.size()-1; i >= 0; --i) {
-    dprintf("PoseEstimator level %d\n", i);
-    auto ss = _pose_estimator_pyr[i].run(_template_data_pyr[i].get(), _image_pyramid[i], T_est);
-    ret.optimizerStatistics.push_back(ss);
-  }
-
-  ret.isKeyFrame = false;
-  if(!ret.isKeyFrame) {
-    ret.pose = T_est * _T_init.inverse();
-    _T_init = T_est;
-  }
-
-  return ret;
-}
 
 int VisualOdometry::numPointsAtLevel(int level) const
 {
-  return _impl->_template_data_pyr[level]->numPoints();
+  return _impl->_tdata_pyr[level]->numPoints();
 }
 
 auto VisualOdometry::pointsAtLevel(int level) const -> const PointVector&
 {
-  return _impl->_template_data_pyr[level]->points();
+  return _impl->_tdata_pyr[level]->points();
+}
+
+Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
+{
+  cv::Mat I, D;
+  ToOpenCV(I_ptr, _image_size).copyTo(I);
+  ToOpenCV(D_ptr, _image_size).copyTo(D);
+
+  //
+  // compute the channels
+  //
+  _channels_pyr[0].compute(I);
+  for(size_t i = 1; i < _channels_pyr.size(); ++i) {
+    cv::pyrDown(I, I);
+    _channels_pyr[i].compute(I);
+  }
+
+  Result ret;
+  ret.optimizerStatistics.resize(_channels_pyr.size());
+  if(0 == _tdata_pyr.front()->numPoints()) {
+    // the first frame
+    setAsKeyFrame(_channels_pyr, D);
+    ret.isKeyFrame = true;
+    ret.pose = _T_kf;
+    ret.covariance.setIdentity();
+    ret.keyFramingReason = KeyFramingReason::kFirstFrame;
+    return ret;
+  }
+
+  Matrix44 T_est = _T_kf;
+  _pose_estimator.setParameters(_pose_est_params_low_res);
+  for(int i = _channels_pyr.size()-1; i >= 0; --i) {
+    if(i == 0)
+      _pose_estimator.setParameters(_pose_est_params);
+    auto stats = _pose_estimator.run(_tdata_pyr[i].get(), _channels_pyr[i], T_est);
+    ret.optimizerStatistics[i] = stats;
+  }
+
+  ret.isKeyFrame = false;
+  ret.pose = T_est * _T_kf.inverse();
+  _T_kf = T_est;
+
+  return ret;
+}
+
+void VisualOdometry::Impl::setAsKeyFrame(const std::vector<ChannelsT>& cn,
+                                         const cv::Mat& disparity)
+{
+  assert( _tdata_pyr.size() == cn.size() );
+
+  for(size_t i = 0; i < cn.size(); ++i) {
+    _tdata_pyr[i]->setData(cn[i], disparity);
+  }
 }
 
 }; // bpvo

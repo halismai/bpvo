@@ -151,7 +151,7 @@ std::ostream& operator<<(std::ostream& os, const OptimizerStatistics& s)
 
 Result::Result()
   : pose(Pose::Identity())
-  , covriance(PoseCovariance::Identity())
+  , covariance(PoseCovariance::Identity())
   , isKeyFrame(false)
   , keyFramingReason(kNoKeyFraming) {}
 
@@ -159,7 +159,8 @@ std::ostream& operator<<(std::ostream& os, const Result& r)
 {
   os << r.pose << "\n";
   os << "isKeyFrame: " << std::boolalpha << r.isKeyFrame << std::noboolalpha << "\n";
-  os << r.optimizerStatistics.front();
+  if(!r.optimizerStatistics.empty())
+    os << r.optimizerStatistics.front();
 
   return os;
 }

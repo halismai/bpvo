@@ -7,8 +7,37 @@
 
 #include <limits>
 #include <cmath>
+#include <iostream>
 
 namespace bpvo {
+
+struct PoseEstimatorParameters
+{
+  int maxIterations = 50;
+  float functionTolerance = 1e-6;
+  float parameterTolerance = 1e-6;
+  float gradientTolerance = 1e-6;
+
+  VerbosityType verbosity = VerbosityType::kSilent;
+
+  inline PoseEstimatorParameters() {}
+
+  explicit PoseEstimatorParameters(const AlgorithmParameters& p)
+      : maxIterations(p.maxIterations)
+        , functionTolerance(p.functionTolerance)
+        , parameterTolerance(p.parameterTolerance)
+        , gradientTolerance(p.gradientTolerance)
+        , verbosity(p.verbosity) {}
+
+  inline void relaxTolerance(int it = 42, float scale_by = 10.0f)
+  {
+    maxIterations = std::min(maxIterations, it);
+    functionTolerance *= scale_by;
+    parameterTolerance *= scale_by;
+    gradientTolerance *= scale_by;
+  }
+}; // PoseEstimatorParameters
+
 
 template <class TemplateDataT, class SystemBuilderT>
 class PoseEstimator
@@ -22,21 +51,27 @@ class PoseEstimator
  public:
   /**
    */
-  PoseEstimator(AlgorithmParameters p)
-      : _params(p), _sys_builder(_params.lossFunction) {}
+  PoseEstimator(AlgorithmParameters p = AlgorithmParameters())
+      : _params(p), _sys_builder(p.lossFunction) {}
+
+  inline void setParameters(const PoseEstimatorParameters& p) {
+    _params = p;
+  }
+
+  inline const PoseEstimatorParameters& parameters() const { return _params; }
 
   /**
    */
   OptimizerStatistics run(TemplateDataT*, const Channels&, Matrix44& T);
 
  protected:
-  AlgorithmParameters _params;
+  PoseEstimatorParameters _params;
   SystemBuilderT _sys_builder;
   std::vector<float> _residuals;
   std::vector<uint8_t> _valid;
 
  protected:
-  float runIteration(TemplateDataT, const Channels&, const Matrix44& T,
+  float runIteration(TemplateDataT*, const Channels&, const Matrix44& T,
                      Hessian* A, Gradient* g);
 }; // PoseEstimator
 
@@ -45,8 +80,10 @@ template <class TemplateDataT, class SystemBuilderT> inline
 OptimizerStatistics PoseEstimator<TemplateDataT, SystemBuilderT>::
 run(TemplateDataT* tdata, const Channels& channels, Matrix44& T)
 {
-  static const char* FMT_STR = "%3d      %13.6g  %12.3g    %12.6g   %12.6g\n";
+  static const char* FMT_STR = "   %3d      %13.6g  %12.3g    %12.6g   %12.6g\n";
   static constexpr float sqrt_eps = std::sqrt(std::numeric_limits<float>::epsilon());
+
+  _sys_builder.resetSigma();
 
   OptimizerStatistics ret;
   ret.numIterations = 0;
@@ -77,13 +114,14 @@ run(TemplateDataT* tdata, const Channels& channels, Matrix44& T)
     return ret;
   }
 
-  if(VerbosityType::kIteration = _params.verbosity) {
-    printf(" Iteration  |F|  |G|  step norm  delta error\n");
+  if(VerbosityType::kIteration == _params.verbosity) {
+    printf("\n");
+    printf(" Iteration    Residuals          |G|         step norm       delta error\n");
     printf(FMT_STR, 0, F_norm, G_norm, 0.0f, 0.0f);
   }
 
   float dp_norm_prev= 0.0f;
-  float f_norm_prev = 0.0f;
+  float f_norm_prev = F_norm;
   bool converged = false;
 
   while(ret.numIterations++ < _params.maxIterations) {
@@ -97,7 +135,8 @@ run(TemplateDataT* tdata, const Channels& channels, Matrix44& T)
     }
 
     // TODO: LM style check if error is not increasing
-    T = T * math::TwistToMatrix(-dp);
+    Matrix44 T_est = tdata->warp().paramsToPose(-dp);
+    T = T * T_est;
 
     if(converged)
       break;
@@ -108,7 +147,7 @@ run(TemplateDataT* tdata, const Channels& channels, Matrix44& T)
     float dp_norm = dp.norm();
     if(dp_norm < p_tol || dp_norm < p_tol * ( sqrt_eps + dp_norm_prev )) {
       ret.status = PoseEstimationStatus::kParameterTolReached;
-      break;
+      converged = true;
     }
 
     //
@@ -132,18 +171,21 @@ run(TemplateDataT* tdata, const Channels& channels, Matrix44& T)
     }
 
     if(VerbosityType::kIteration == _params.verbosity) {
-      printf(FMT, ret.numIterations, dp_norm, G_norm, delta_error);
+      printf(FMT_STR, ret.numIterations, F_norm, G_norm, dp_norm, delta_error);
     }
 
     dp_norm_prev = dp_norm;
     f_norm_prev = F_norm;
   }
 
-  return ret
+  ret.finalError = F_norm;
+  ret.firstOrderOptimality = G_norm;
+
+  return ret;
 }
 
 template <class TemplateDataT, class SystemBuilderT> inline
-void PoseEstimator<TemplateDataT, SystemBuilderT>::
+float PoseEstimator<TemplateDataT, SystemBuilderT>::
 runIteration(TemplateDataT* tdata, const Channels& channels, const Matrix44& pose,
              Hessian* H, Gradient* G)
 {

@@ -205,7 +205,6 @@ Iterator::value_type median(Iterator first, Iterator last)
   std::nth_element(first, middle, last);
   //__gnu_parallel::nth_element(first, middle, last);
 
-
   if(n % 2 != 0) {
     return *middle;
   } else {

@@ -14,7 +14,7 @@
 
 namespace bpvo {
 
-RawIntensity::RawIntensity() {}
+RawIntensity::RawIntensity(float,float) {}
 
 RawIntensity::RawIntensity(const cv::Mat& I)
 {
@@ -23,8 +23,8 @@ RawIntensity::RawIntensity(const cv::Mat& I)
 
 void RawIntensity::compute(const cv::Mat& I)
 {
-  assert( I.type() == cv::DataType<uint8_t>::type );
-  _I = I.clone();
+  //assert( I.type() == cv::DataType<uint8_t>::type );
+  I.convertTo(_I, CV_32FC1);
 }
 
 cv::Mat_<float> RawIntensity::computeSaliencyMap() const
@@ -38,15 +38,15 @@ cv::Mat_<float> RawIntensity::computeSaliencyMap() const
   dst_ptr += cols;
 
   for(int y = 1; y < rows - 1; ++y) {
-    auto s0 = _I.ptr<uint8_t>(y - 1),
-         s1 = _I.ptr<uint8_t>(y + 1),
-         s = _I.ptr<uint8_t>(y);
+    auto s0 = _I.ptr<ChannelDataType>(y - 1),
+         s1 = _I.ptr<ChannelDataType>(y + 1),
+         s = _I.ptr<ChannelDataType>(y);
 
     dst_ptr[0] = 0.0f;
 #pragma omp simd
     for(int x = 1; x < cols - 1; ++x) {
-      dst_ptr[x] = std::fabs(static_cast<float>(s[x+1]) - static_cast<float>(s[x-1])) +
-          std::fabs(static_cast<float>(s1[x]) - static_cast<float>(s0[x]));
+      dst_ptr[x] = 0.5f*std::fabs(static_cast<float>(s[x+1]) - static_cast<float>(s[x-1])) +
+          0.5f*std::fabs(static_cast<float>(s1[x]) - static_cast<float>(s0[x]));
     }
 
     dst_ptr[cols - 1] = 0.0f;

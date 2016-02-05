@@ -14,8 +14,8 @@
 
 using namespace bpvo;
 
-//typedef RawIntensity ChannelsType;
-typedef BitPlanes ChannelsType;
+typedef RawIntensity ChannelsType;
+//typedef BitPlanes ChannelsType;
 
 int main()
 {
@@ -31,6 +31,10 @@ int main()
 
   printf("got %d points\n", data.numPoints());
 
+  //
+  // computing the residuals with the original image should give us back zero
+  // error up to some tiny floating point errors
+  //
   std::vector<float> residuals;
   std::vector<uint8_t> valid;
   ChannelsType channels(frame->image());

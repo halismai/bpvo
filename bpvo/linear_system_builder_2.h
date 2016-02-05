@@ -1,12 +1,12 @@
-#ifndef LINEAR_SYSTEM_BUILDER_H
-#define LINEAR_SYSTEM_BUILDER_H
+#ifndef LINEAR_SYSTEM_BUILDER2_H
+#define LINEAR_SYSTEM_BUILDER2_H
 
 #include <bpvo/template_data.h>
 #include <bpvo/types.h>
 
 namespace bpvo {
 
-class LinearSystemBuilder
+class LinearSystemBuilder2
 {
  public:
   typedef typename TemplateData::JacobianVector JacobianVector;
@@ -18,7 +18,7 @@ class LinearSystemBuilder
   typedef Eigen::Matrix<float, 6, 6> Hessian;
 
  public:
-  LinearSystemBuilder(LossFunctionType = LossFunctionType::kHuber);
+  LinearSystemBuilder2(LossFunctionType = LossFunctionType::kHuber);
 
   /**
    * \return the norm of the weighted residuals
@@ -28,17 +28,12 @@ class LinearSystemBuilder
 
   float run(const ResidualsVector& R, const ValidVector& valid);
 
-
-  void resetSigma();
  private:
-  LossFunctionType _loss_func;
+  LossFunctionType _loss_func_type;
   ResidualsVector _tmp_buffer;
-  float _sigma;
-  float _delta_sigma;
 
-  void estimateSigma(const ResidualsVector&, const ValidVector&);
-}; // LinearSystemBuilder
+}; // LinearSystemBuilder2
 
 }; // bpvo
 
-#endif // LINEAR_SYSTEM_BUILDER_H
+#endif

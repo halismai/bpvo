@@ -1,7 +1,9 @@
 #include "bpvo/linear_system_builder.h"
-#include "bpvo/robust_loss.h"
+//#include "bpvo/robust_loss.h"
 #include "bpvo/utils.h"
 #include "bpvo/debug.h"
+#include "bpvo/math_utils.h"
+#include "bpvo/utils.h"
 
 #define LINEAR_SYSTEM_BUILDER_SERIAL 1
 
@@ -11,13 +13,110 @@
 
 #include <tbb/parallel_reduce.h>
 #include <tbb/blocked_range.h>
+#include <tbb/mutex.h>
 
-#define WITH_GPL_CODE 1
+#include <iostream>
+#include <limits>
+
+#define WITH_GPL_CODE 0
+#define DEBUG_THE_STUFF 0
 
 namespace bpvo {
 
-LinearSystemBuilder::LinearSystemBuilder(LossFunctionType loss_func)
-    : _loss_func(loss_func) {}
+template <typename T = float>
+struct L2Op
+{
+  inline L2Op(T = 0.0) {}
+
+  inline T operator()(T) const { return 1.0f; }
+};
+
+template <typename T = float>
+struct HuberOp
+{
+  inline HuberOp(T k = T(1.345)) : _k(k) { }
+
+  inline T operator()(T r) const
+  {
+    T x = std::fabs(r);
+    return (x < _k) ? 1.0f : (_k / x);
+  }
+
+  T _k;
+}; // HuberOp
+
+template <typename T = float>
+struct TukeyOp
+{
+  inline TukeyOp(T t = T(4.685)) : _t(t), _t_inv(1.0 / t) {}
+
+  inline T operator()(T r) const
+  {
+    T x = std::fabs(r);
+    return (x < 1e-6) ? 1.0 : (x > _t) ? 0.0f : math::sq(1.0f - math::sq(_t_inv * x));
+  }
+
+  T _t, _t_inv;
+}; // TukeyOp
+
+template <typename T = float>
+struct L1Op
+{
+  inline L1Op(T = 0.0) {}
+
+  inline T operator()(T x) const
+  {
+    return T(1.0) / std::abs(x);
+  }
+}; // L1Op
+
+template <typename T = float>
+struct CauchyOp
+{
+  inline CauchyOp(T c = 2.3849) : _c_inv( T(1.0) / c ) {}
+
+  inline T operator()(T x) const
+  {
+    return T(1) / (T(1) + math::sq(_c_inv * x));
+  }
+
+  T _c_inv;
+}; // Cauchy
+
+template <typename T = float>
+struct GemanMcClure
+{
+  GemanMcClure(T = T(0)) {}
+
+  inline T operator()(T x) const
+  {
+    return T(1) / math::sq(T(1) + math::sq(x));
+  }
+}; // GemanMcClure
+
+template <typename T = float>
+struct Welsch
+{
+  inline Welsch(T c = 2.9846) : _c_inv(T(1) / c) {}
+
+  inline T operator()(T x) const
+  {
+    return std::exp( -math::sq(_c_inv*x) );
+  }
+
+  T _c_inv;
+}; // Welsch
+
+
+template <class Container> static inline typename
+Container::value_type computeRobustStandarDeviation(Container& residuals, int p = 6)
+{
+#pragma omp simd
+  for(size_t i = 0; i < residuals.size(); ++i)
+    residuals[i] = std::abs(residuals[i]);
+
+  return 1.4826f * (1.0 + 5.0/(residuals.size()-p)) * median(residuals);
+}
 
 template <class LossFunction>
 struct LinearSystemBuilderReduction
@@ -48,10 +147,11 @@ struct LinearSystemBuilderReduction
   const ResidualsVector& _residuals;
   const ValidVector& _valid;
   LossFunction _loss_func;
+  float _sigma_inv;
 
-  Hessian _H;
-  Gradient _G;
-  float _residuals_norm;
+  Hessian _H = Hessian::Zero();
+  Gradient _G = Gradient::Zero();
+  float _residuals_norm = 0.0f;
 
 #if WITH_GPL_CODE
   Hessian toEigen(const float*) const;
@@ -71,6 +171,7 @@ float RunSystemBuilder(const typename LinearSystemBuilder::JacobianVector& J,
 
   H = func.hessian();
   g = func.gradient();
+
   return func.residualsSquaredNorm();
 }
 
@@ -109,6 +210,7 @@ static inline std::vector<uint8_t> makeValidFlags(const std::vector<uint8_t>& v)
   std::vector<uint8_t> ret(v.size()*8);
   auto* p = ret.data();
 
+  // XXX it is not always 8 channels
   for(int b = 0; b < 8; ++b)
     for(size_t i = 0; i < v.size(); ++i)
       *p++ = v[i];
@@ -116,35 +218,34 @@ static inline std::vector<uint8_t> makeValidFlags(const std::vector<uint8_t>& v)
   return ret;
 }
 
+LinearSystemBuilder::LinearSystemBuilder(LossFunctionType loss_func)
+    : _loss_func(loss_func), _sigma(1.0), _delta_sigma(std::numeric_limits<float>::max()) {}
+
 float LinearSystemBuilder::run(const JacobianVector& J, const ResidualsVector& residuals,
                                const std::vector<uint8_t>& valid, Hessian& A, Gradient& b)
 {
-  assert( (J.size()-1) == residuals.size() && valid.size() == residuals.size()/8 );
+  //assert( (J.size()-1) == residuals.size() && valid.size() == residuals.size()/8 );
+  assert( (J.size()-1) == residuals.size() && valid.size() == residuals.size() );
 
-  float scale = 1.0f;
-
-  if(_loss_func != LossFunctionType::kL2) {
-    // compute the std. deviation of the data using the valid points only
-    getValidResiduals(valid, residuals, _tmp_buffer);
-    scale = medianAbsoluteDeviation(_tmp_buffer) / 0.6745;
+  if(_loss_func != LossFunctionType::kL2 && _delta_sigma > 1e-3) {
+    estimateSigma(residuals, valid);
+  } else {
+    dprintf("sigma is stable\n");
   }
 
-  // for the case with zero residuals
-  if(scale < 1e-6) scale = 1.0f;
-
-  auto valid2 = makeValidFlags(valid);
+  auto valid2 = residuals.size() != valid.size() ? makeValidFlags(valid) : valid;
   assert( valid2.size() == residuals.size() );
 
   float r_norm = 0.0;
   switch(_loss_func) {
     case LossFunctionType::kHuber:
-      r_norm = RunSystemBuilder<Huber>(J, residuals, valid2, scale, A, b);
+      r_norm = RunSystemBuilder<HuberOp<float>>(J, residuals, valid2, _sigma, A, b);
       break;
     case LossFunctionType::kTukey:
-      r_norm = RunSystemBuilder<Tukey>(J, residuals, valid2, scale, A, b);
+      r_norm = RunSystemBuilder<TukeyOp<float>>(J, residuals, valid2, _sigma, A, b);
       break;
     case LossFunctionType::kL2:
-      r_norm = RunSystemBuilder<L2Loss>(J, residuals, valid2, scale, A, b);
+      r_norm = RunSystemBuilder<L2Op<float>>(J, residuals, valid2, _sigma, A, b);
       break;
     default:
       THROW_ERROR("invalid robust loss");
@@ -153,43 +254,82 @@ float LinearSystemBuilder::run(const JacobianVector& J, const ResidualsVector& r
   return std::sqrt(r_norm);
 }
 
+void LinearSystemBuilder::estimateSigma(const ResidualsVector& residuals,
+                                        const ValidVector& valid)
+{
+  getValidResiduals(valid, residuals, _tmp_buffer);
+  auto scale = computeRobustStandarDeviation(_tmp_buffer);
+  _delta_sigma = std::fabs(scale - _sigma);
+  _sigma = scale;
+  if(_sigma < 1e-6)
+    _sigma = 1e-6; // for the case with zero residuals
+}
+
+void LinearSystemBuilder::resetSigma()
+{
+  _delta_sigma = std::numeric_limits<float>::max();
+  _sigma = 1.0f;
+}
+
+template <class RobustLoss> static inline
+float ComputeWeightedResidualsNorm(const std::vector<float>& residuals,
+                                   const std::vector<uint8_t>& valid,
+                                   const float& scale)
+{
+  assert( residuals.size() == valid.size() );
+  RobustLoss loss_fn(scale);
+  float ret = 0.0f;
+  for(size_t i = 0; i < residuals.size(); ++i) {
+    float w = loss_fn(residuals[i]) * (float) valid[i];
+    ret += w * residuals[i] * residuals[i];
+  }
+
+  return ret;
+}
 
 float LinearSystemBuilder::run(const ResidualsVector& residuals,
                                const std::vector<uint8_t>& valid)
 {
-  float scale = 1.0f;
-  if(_loss_func != LossFunctionType::L2) {
-    getValidResiduals(valid, residuals, _tmp_buffer);
-    scale = medianAbsoluteDeviation(_tmp_buffer) / 0.6745;
-    if(scale < 1e-6)
-      scale = 1.0f;
+  if(_loss_func != LossFunctionType::kL2 && _delta_sigma > 1e-3) {
+    estimateSigma(residuals, valid);
   }
 
-  auto valid2 = makeValidFlags(valid);
-  float ret = 0.0;
+  auto valid2 = residuals.size() != valid.size() ? makeValidFlags(valid) : valid;
 
-  for(size_t i = 0; i < valid2.size(); ++i) {
-    float w = static_cast<float>(valid2[i]) * _loss_func.weight(residuals[i]);
-    ret += w * _residuals[i] * _residuals[i];
+  float r_norm = 0.0;
+  switch(_loss_func) {
+    case LossFunctionType::kHuber:
+      r_norm = ComputeWeightedResidualsNorm<HuberOp<float>>(residuals, valid2, _sigma);
+      break;
+    case LossFunctionType::kTukey:
+      r_norm = ComputeWeightedResidualsNorm<TukeyOp<float>>(residuals, valid2, _sigma);
+      break;
+    case LossFunctionType::kL2:
+      r_norm = ComputeWeightedResidualsNorm<L2Op<float>>(residuals, valid2, _sigma);
+      break;
+    default:
+      THROW_ERROR("invalid robust less");
   }
 
-  return std::sqrt(ret);
+  return std::sqrt(r_norm);
 }
 
 template <class L> inline
 LinearSystemBuilderReduction<L>::
 LinearSystemBuilderReduction(const JacobianVector& J, const ResidualsVector& R,
                              const ValidVector& V, float sigma)
-  : _J(J), _residuals(R), _valid(V), _loss_func(sigma)
+  : _J(J), _residuals(R), _valid(V), _sigma_inv(1.0f/sigma)
   , _H(Hessian::Zero()), _G(Gradient::Zero()), _residuals_norm(0.0f)
 {
   assert(_residuals.size() == _valid.size());
 }
 
+
 template <class L> inline
 LinearSystemBuilderReduction<L>::
 LinearSystemBuilderReduction(LinearSystemBuilderReduction& other, tbb::split)
-  : _J(other._J), _residuals(other._residuals), _valid(other._valid), _loss_func(other._loss_func)
+  : _J(other._J), _residuals(other._residuals), _valid(other._valid)
+    , _loss_func(other._loss_func), _sigma_inv(other._sigma_inv)
   , _H(Hessian::Zero()), _G(Gradient::Zero()), _residuals_norm(0.0f) {}
 
 template <class L> inline
@@ -203,6 +343,10 @@ void LinearSystemBuilderReduction<L>::join(const LinearSystemBuilderReduction& o
   _residuals_norm += other._residuals_norm;
 }
 
+#if DEBUG_THE_STUFF
+tbb::mutex MUTEX;
+#endif
+
 template <class L> inline
 void LinearSystemBuilderReduction<L>::operator()(const tbb::blocked_range<int>& range)
 {
@@ -215,9 +359,17 @@ void LinearSystemBuilderReduction<L>::operator()(const tbb::blocked_range<int>& 
   memset(_data, 0, sizeof(float)*LENGTH);
 #endif
 
+#if DEBUG_THE_STUFF
+  MUTEX.lock();
+  std::cout << "before\n";
+  std::cout << _H << std::endl;
+  std::cout << "HHH\n";
+#endif
+
   for(int i = range.begin(); i != range.end(); ++i) {
     if(_valid[i]) {
-      float w = _loss_func.weight(_residuals[i]);
+      float w = _loss_func(_sigma_inv * _residuals[i]);
+
 #if WITH_GPL_CODE
       __m128 wwww = _mm_set1_ps(w);
       __m128 v1234 = _mm_loadu_ps(_J[i].data());
@@ -243,16 +395,31 @@ void LinearSystemBuilderReduction<L>::operator()(const tbb::blocked_range<int>& 
 
       _G.noalias() += _J[i].transpose() * _residuals[i] * w;
 #else
+
+#if DEBUG_THE_STUFF
+      std::cout << "pt: " << i << ": " << _J[i] << "\n";
+      std::cout << "w: " << w << " r: " << _residuals[i] << std::endl << "\n";
+#endif
+
       Gradient JwT = w * _J[i].transpose();
       _H.noalias() += JwT * _J[i];
       _G.noalias() += JwT * _residuals[i];
 #endif
+
       r_norm += w * _residuals[i] * _residuals[i];
     }
   }
 
 #if WITH_GPL_CODE
   _H.noalias() += toEigen(_data);
+#endif
+
+#if DEBUG_THE_STUFF
+  std::cout << _H << std::endl;
+  std::cout << "num points: " << range.end() - range.begin() << std::endl;
+  int dummy;
+  std::cin >> dummy;
+  MUTEX.unlock();
 #endif
 
   _residuals_norm = r_norm;

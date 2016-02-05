@@ -55,11 +55,6 @@ template <typename T> FORCE_INLINE T sq(const T v) { return v*v; }
 template <typename T> FORCE_INLINE
 T invsqrt(const T v) { return 1.0f / sqrt(v); }
 
-/**
- * compute the median of elements in the container
- */
-template <class Container> inline
-typename Container::value_type median(Container& data);
 
 /**
  * Makes a skew (anti-symmetric) 3x3 matrix from 3 numbers

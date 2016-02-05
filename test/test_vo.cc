@@ -15,6 +15,7 @@ int main()
 {
   AlgorithmParameters params("../conf/tsukuba.cfg");
   std::cout << params << std::endl;
+  std::cout << "---------------------------------------\n";
 
   TsukubaDataLoader data_loader;
   auto calib = data_loader.calibration();
@@ -26,9 +27,9 @@ int main()
 
   double total_time = 0.0;
   int f_i = 1, k = 0;
-  while( nullptr != (frame = data_loader.getFrame(f_i++)) && k != 'q' && f_i < 125)
+  while( nullptr != (frame = data_loader.getFrame(f_i++)) && k != 'q' && f_i < 100)
   {
-    dprintf("FRAME %d\n", f_i);
+    dprintf("FRAME %d\n", f_i-1);
 
     cv::imshow("image", frame->image());
     cv::imshow("disparity", colorizeDisparity(frame->disparity()));
@@ -40,6 +41,8 @@ int main()
     total_time += timer.stop().count() / 1000.0;
 
     trajectory.push_back(result.pose);
+
+    //std::cout << result << std::endl;
   }
 
   Info("done %0.2f Hz\n", f_i / total_time);

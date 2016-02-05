@@ -11,10 +11,10 @@ class RawIntensity
  public:
   static constexpr int NumChannels = 1;
   typedef std::vector<float> PixelVector;
-  typedef uint8_t ChannelDataType;
+  typedef float ChannelDataType;
 
  public:
-  RawIntensity();
+  RawIntensity(float, float);
   explicit RawIntensity(const cv::Mat& I);
 
   inline int size() const { return NumChannels; }

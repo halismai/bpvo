@@ -12,7 +12,10 @@ namespace bpvo {
 struct DisparityPyramidLevel
 {
   DisparityPyramidLevel(const cv::Mat& D, int pyr_level)
-      : _D_ptr(D.ptr<float>()), _stride(D.cols), _scale(1 << pyr_level) {}
+      : _D_ptr(D.ptr<float>()), _stride(D.cols), _scale(1 << pyr_level)
+  {
+    assert( D.type() == cv::DataType<float>::type );
+  }
 
   FORCE_INLINE float operator()(int r, int c) const
   {

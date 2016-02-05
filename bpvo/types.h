@@ -289,7 +289,7 @@ struct Result
   /**
    * Covariance of the estimated parameters
    */
-  PoseCovariance covriance;
+  PoseCovariance covariance;
 
   /**
    * optimizer statistics from every iteration. The first element corresponds to

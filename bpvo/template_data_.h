@@ -11,6 +11,7 @@
 
 #include <utility>
 #include <iostream>
+#include <fstream>
 
 #define TEMPLATE_DATA_SET_DATA_WITH_TBB 0
 #if TEMPLATE_DATA_SET_DATA_WITH_TBB
@@ -86,6 +87,7 @@ class TemplateData_
   inline const Warp warp() const { return _warp; }
 
   inline const JacobianVector& jacobians() const { return _jacobians; }
+  inline const PointVector& points() const { return _points; }
 
  protected:
   int _pyr_level;
@@ -198,9 +200,6 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   auto inds = getValidPixelsLocations(DisparityPyramidLevel(D, _pyr_level),
                                       smap, nms_radius, do_nonmax_supp);
 
-  //this->clear();
-  //this->resize(inds.size());
-
   _points.resize(inds.size());
   auto stride = smap.cols;
 
@@ -213,6 +212,7 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
     _points[i] = _warp.makePoint(x, y, inds[i].second);
   }
 
+  _warp.setNormalization(_points);
 
   //
   // compute the warp jacobians
@@ -234,8 +234,8 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   // compute the pixels and jacobians for all channels
   //
   typedef Eigen::Matrix<float,1,2> ImageGradient;
-  auto Fx = _warp.K()(0,0) * 0.5f,
-       Fy = _warp.K()(1,1) * 0.5f;
+  auto fx = 0.5f * _warp.K()(0,0),
+       fy = 0.5f * _warp.K()(1,1);
 
   for(int c = 0; c < channels.size(); ++c) {
     auto c_ptr = channels.channelData(c);
@@ -244,17 +244,16 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
 
     for(size_t i = 0; i < inds.size(); ++i) {
       auto ii = inds[i].first;
-      P_ptr[i] = static_cast<float>(c_ptr[ii]);
-      auto Ix = static_cast<float>(c_ptr[ii+1]) - static_cast<float>(c_ptr[ii-1]),
-           Iy = static_cast<float>(c_ptr[ii+stride]) - static_cast<float>(c_ptr[ii-stride]);
-      J_ptr[i] = ImageGradient(Fx*Ix, Fy*Iy) * Jw[i];
+      P_ptr[i] = c_ptr[ii];
+      float Ix = c_ptr[ii+1] - c_ptr[ii-1],
+            Iy = c_ptr[ii+stride] - c_ptr[ii-stride];
+      J_ptr[i] = ImageGradient(fx*Ix, fy*Iy) * Jw[i];
     }
   }
 #endif
 
   // NOTE: we push an empty Jacobian at the end because of SSE code loading
   _jacobians.push_back(Jacobian::Zero());
-
 }
 
 template <class CN, class W> inline
@@ -265,10 +264,11 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels,
 {
   int max_rows = channels[0].rows-1;
   int max_cols = channels[0].cols-1;
+  int stride = channels[0].cols;
   auto n = numPoints();
 
   typename EigenAlignedContainer<Eigen::Vector4f>::type interp_coeffs(n);
-  typename EigenAlignedContainer<Eigen::Vector2i>::type uv(n);
+  std::vector<int> inds(n);
   valid.resize(n);
 
   // set the pose for the warp
@@ -277,53 +277,41 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels,
   //
   // pre-compute the interpolation coefficients, integer parts and valid flags
   //
-  for(int i = 0; i < numPoints(); ++i) {
+  for(size_t i = 0; i < _points.size(); ++i) {
     auto x = _warp(_points[i]);
-#if 1
-    int xi = cvFloor(x[0] + 0.5f),
-        yi = cvFloor(x[1] + 0.5f);
-#else
-    int xi = std::floor(x[0] + 0.5f),
-        yi = std::floor(x[1] + 0.5f);
-#endif
-    uv[i] = Eigen::Vector2i(xi, yi);
+
+    int xi = cvFloor( x[0] + 0.5f ),
+        yi = cvFloor( x[1] + 0.5f );
+
     float xf = x[0] - xi,
-          yf = x[1] - yi;
+          yf = x[1]  - yi;
 
-#if 1
-    if(fabs(xf) > 1e-3 || fabs(yf) > 1e-3) {
-      std::cout << _points[i].transpose() << std::endl;
-      printf("%f %f\n", xf, yf);
-      printf("(%f,%f) -> (%d,%d)\n", x[0], x[1], xi, yi);
-    }
-#endif
+    inds[i] = yi*stride + xi;
+    valid[i] = (xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows);
 
-    valid[i] = xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows;
     interp_coeffs[i] = Eigen::Vector4f(
-        (1.0f - yf) * (1.0f - xf),
-        (1.0f - yf) * xf,
-        yf * (1.0f - xf),
+        (1.0 - yf) * (1.0 - xf),
+        (1.0 - yf) * xf,
+        yf * (1.0 - xf),
         yf * xf);
   }
 
   // compute the residuals
   residuals.resize(_pixels.size());
   for(int c = 0; c < channels.size(); ++c) {
-    auto r_ptr = residuals.data() + c*n; // n points per channel
-    auto I0_ptr = _pixels.data() + c*n;
-    auto I_ptr = channels.channelData(c);
-    auto stride = channels[c].cols;
+    auto* r_ptr = residuals.data() + c*n; // n points per channel
+    const auto* I0_ptr = _pixels.data() + c*n;
+    const auto* I_ptr = channels.channelData(c);
     for(int i = 0; i < n; ++i) {
       if(valid[i]) {
-        auto ii = uv[i].y()*stride + uv[i].x();
-        auto Iw = interp_coeffs[i].dot(Eigen::Vector4f(
-                I_ptr[ii], I_ptr[ii+1], I_ptr[ii+stride], I_ptr[ii+stride+1]));
+        const auto* p0 = I_ptr + inds[i];
+        float i0 = static_cast<float>( *p0 ),
+              i1 = static_cast<float>( *(p0 + 1) ),
+              i2 = static_cast<float>( *(p0 + stride) ),
+              i3 = static_cast<float>( *(p0 + stride + 1) );
+        Eigen::Vector4f I0(i0, i1, i2, i3);
+        auto Iw = interp_coeffs[i].dot(I0);
         r_ptr[i] = Iw - I0_ptr[i];
-
-        if(fabs(r_ptr[i]) > 1e-3) {
-          printf("%f %f\n", Iw, I0_ptr[i]);
-        }
-
       } else {
         r_ptr[i] = 0.0f;
       }
