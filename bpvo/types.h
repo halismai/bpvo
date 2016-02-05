@@ -76,7 +76,6 @@ struct EigenAlignedContainer
   typedef Container<MatrixType, allocator_type> type;
 }; // EigenAlignedContainer
 
-
 /**
  * Supported types of the robust function to use during IRLS
  */

@@ -1,17 +1,18 @@
 #ifndef LINEAR_SYSTEM_BUILDER_H
 #define LINEAR_SYSTEM_BUILDER_H
 
-#include <bpvo/template_data.h>
 #include <bpvo/types.h>
+#include <bpvo/warps.h>
 
 namespace bpvo {
 
 class LinearSystemBuilder
 {
  public:
-  typedef typename TemplateData::JacobianVector JacobianVector;
-  typedef typename TemplateData::PixelVector    ResidualsVector;
-  typedef typename TemplateData::Jacobian       Jacobian;
+  typedef typename RigidBodyWarp::JacobianVector JacobianVector;
+  typedef typename RigidBodyWarp::Jacobian       Jacobian;
+
+  typedef std::vector<float>   ResidualsVector;
   typedef std::vector<uint8_t> ValidVector;
 
   typedef Eigen::Matrix<float, 6, 1> Gradient;
