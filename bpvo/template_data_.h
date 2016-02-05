@@ -13,10 +13,12 @@
 #include <iostream>
 #include <fstream>
 
+#if defined(WITH_TBB)
 #define TEMPLATE_DATA_SET_DATA_WITH_TBB 0
 #if TEMPLATE_DATA_SET_DATA_WITH_TBB
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
+#endif
 #endif
 
 namespace bpvo {
@@ -140,6 +142,7 @@ getValidPixelsLocations(const DisparityPyramidLevel& dmap, const SaliencyMapT& s
   return ret;
 }
 
+#if defined(WITH_TBB)
 #if TEMPLATE_DATA_SET_DATA_WITH_TBB
 
 template <class TData>
@@ -185,6 +188,8 @@ class TemplateDataExtractor
 }; // TemplateDataExtractor
 
 #endif // TEMPLATE_DATA_SET_DATA_WITH_TBB
+#endif // WITH_TBB
+
 
 }; // namespace
 
@@ -218,7 +223,6 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   // compute the warp jacobians
   //
   WarpJacobianVector Jw(_points.size());
-#pragma omp parallel for
   for(size_t i = 0; i < _points.size(); ++i) {
     Jw[i] = _warp.warpJacobianAtZero(_points[i]);
   }
@@ -226,7 +230,7 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   _pixels.resize(_points.size() * NumChannels);
   _jacobians.resize(_points.size() * NumChannels);
 
-#if TEMPLATE_DATA_SET_DATA_WITH_TBB
+#if defined(WITH_TBB) && TEMPLATE_DATA_SET_DATA_WITH_TBB
   TemplateDataExtractor<TemplateData_<CN,W>> tde(*this, Jw, inds, channels);
   tbb::parallel_for(tbb::blocked_range<int>(0,NumChannels), tde);
 #else
@@ -320,7 +324,9 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels,
 
 }
 
+#if defined(WITH_TBB)
 #undef TEMPLATE_DATA_SET_DATA_WITH_TBB
+#endif
 
 }; // bpvo
 

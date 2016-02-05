@@ -3,7 +3,7 @@
 
 #include <bpvo/types.h>
 #include <bpvo/debug.h>
-#include <bpvo/math_utils.h>
+#include <bpvo/mestimator.h>
 
 #include <limits>
 #include <cmath>
@@ -14,9 +14,10 @@ namespace bpvo {
 struct PoseEstimatorParameters
 {
   int maxIterations = 50;
-  float functionTolerance = 1e-6;
-  float parameterTolerance = 1e-6;
-  float gradientTolerance = 1e-6;
+  float functionTolerance   = 1e-6;
+  float parameterTolerance  = 1e-6;
+  float gradientTolerance   = 1e-6;
+  LossFunctionType lossFunction = LossFunctionType::kHuber;
 
   VerbosityType verbosity = VerbosityType::kSilent;
 
@@ -27,6 +28,7 @@ struct PoseEstimatorParameters
         , functionTolerance(p.functionTolerance)
         , parameterTolerance(p.parameterTolerance)
         , gradientTolerance(p.gradientTolerance)
+        , lossFunction(p.lossFunction)
         , verbosity(p.verbosity) {}
 
   inline void relaxTolerance(int it = 42, float scale_by = 10.0f)
@@ -52,7 +54,7 @@ class PoseEstimator
   /**
    */
   PoseEstimator(AlgorithmParameters p = AlgorithmParameters())
-      : _params(p), _sys_builder(p.lossFunction) {}
+      : _params(p) {}
 
   inline void setParameters(const PoseEstimatorParameters& p) {
     _params = p;
@@ -66,8 +68,9 @@ class PoseEstimator
 
  protected:
   PoseEstimatorParameters _params;
-  SystemBuilderT _sys_builder;
+  AutoScaleEstimator _scale_estimator;
   std::vector<float> _residuals;
+  std::vector<float> _weights;
   std::vector<uint8_t> _valid;
 
  protected:
@@ -83,7 +86,7 @@ run(TemplateDataT* tdata, const Channels& channels, Matrix44& T)
   static const char* FMT_STR = "   %3d      %13.6g  %12.3g    %12.6g   %12.6g\n";
   static constexpr float sqrt_eps = std::sqrt(std::numeric_limits<float>::epsilon());
 
-  _sys_builder.resetSigma();
+  _scale_estimator.reset(); // reset the scale for a new run
 
   OptimizerStatistics ret;
   ret.numIterations = 0;
@@ -106,7 +109,6 @@ run(TemplateDataT* tdata, const Channels& channels, Matrix44& T)
 
   ret.firstOrderOptimality = G_norm;
   ret.finalError = F_norm;
-
 
   if(G_norm < g_tol) {
     printf("Initial value is optimal\n");
@@ -190,10 +192,10 @@ runIteration(TemplateDataT* tdata, const Channels& channels, const Matrix44& pos
              Hessian* H, Gradient* G)
 {
   tdata->computeResiduals(channels, pose, _residuals, _valid);
+  auto sigma = _scale_estimator.estimateScale(_residuals, _valid);
+  computeWeights(_params.lossFunction, _residuals, _valid, sigma, _weights);
 
-  return H ?
-      _sys_builder.run(tdata->jacobians(), _residuals, _valid, *H, *G) :
-      _sys_builder.run(_residuals, _valid);
+  return SystemBuilderT::Run(tdata->jacobians(), _residuals, _weights, _valid, H, G);
 }
 
 }; // bpvo
