@@ -6,6 +6,7 @@
 #include <bpvo/utils.h>
 #include <bpvo/imgproc.h>
 #include <bpvo/math_utils.h>
+#include <bpvo/interp_util.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -99,7 +100,6 @@ class TemplateData_
   PixelVector _pixels;
 
   Warp _warp;
-  //Channels _channels;
 
   inline void clear()
   {
@@ -107,7 +107,6 @@ class TemplateData_
     _points.clear();
     _pixels.clear();
   }
-
 
   inline void resize(size_t n)
   {
@@ -120,8 +119,22 @@ class TemplateData_
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 }; // TemplateData_
 
+
 namespace {
 
+template <class Points>
+static void writePointsToFile(std::string filename, const Points& pts)
+{
+  std::ofstream ofs(filename);
+  if(!ofs.is_open())
+    Fatal("Failed to open %s\n", filename.c_str());
+
+  for(const auto& p : pts) {
+    ofs << p.transpose() << std::endl;
+  }
+
+  ofs.close();
+}
 
 template <class SaliencyMapT> std::vector<std::pair<int,float>>
 getValidPixelsLocations(const DisparityPyramidLevel& dmap, const SaliencyMapT& smap,
@@ -198,7 +211,6 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
 {
   assert( D.type() == cv::DataType<float>::type );
 
-
   const auto smap = channels.computeSaliencyMap();
   auto do_nonmax_supp = smap.rows*smap.cols >= AlgorithmParameters::MIN_NUM_FOR_PIXEL_PSELECTION;
   int nms_radius = 1;
@@ -216,6 +228,10 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
     ind2sub(stride, inds[i].first, y, x);
     _points[i] = _warp.makePoint(x, y, inds[i].second);
   }
+
+  //char buf[128];
+  //snprintf(buf, 128, "points_%d.txt", _pyr_level);
+  //writePointsToFile(std::string(buf), _points);
 
   _warp.setNormalization(_points);
 
@@ -260,69 +276,73 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   _jacobians.push_back(Jacobian::Zero());
 }
 
-template <class CN, class W> inline
-void TemplateData_<CN,W>::computeResiduals(const Channels& channels,
-                                           const Matrix44& pose,
-                                           std::vector<float>& residuals,
-                                           std::vector<uint8_t>& valid)
-{
-  int max_rows = channels[0].rows-1;
-  int max_cols = channels[0].cols-1;
-  int stride = channels[0].cols;
-  auto n = numPoints();
 
-  typename EigenAlignedContainer<Eigen::Vector4f>::type interp_coeffs(n);
-  std::vector<int> inds(n);
+#if 0
+// working version
+template <class CN, class W> inline
+void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matrix44& pose,
+                                           std::vector<float>& residuals, std::vector<uint8_t>& valid)
+{
+  int max_rows = channels[0].rows - 1,
+      max_cols = channels[0].cols - 1,
+      stride = channels[0].cols,
+      n = numPoints();
+
+  _warp.setPose(pose);
+  residuals.resize(n);
   valid.resize(n);
 
-  // set the pose for the warp
-  _warp.setPose(pose);
-
-  //
-  // pre-compute the interpolation coefficients, integer parts and valid flags
-  //
-  for(size_t i = 0; i < _points.size(); ++i) {
+  for(int i = 0; i < n; ++i) {
     auto x = _warp(_points[i]);
+    float xf = x[0],
+          yf = x[1];
+    int xi = static_cast<int>(xf),
+        yi = static_cast<int>(yf);
 
-    int xi = cvFloor( x[0] + 0.5f ),
-        yi = cvFloor( x[1] + 0.5f );
-
-    float xf = x[0] - xi,
-          yf = x[1]  - yi;
-
-    inds[i] = yi*stride + xi;
-    valid[i] = (xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows);
-
-    interp_coeffs[i] = Eigen::Vector4f(
-        (1.0 - yf) * (1.0 - xf),
-        (1.0 - yf) * xf,
-        yf * (1.0 - xf),
-        yf * xf);
-  }
-
-  // compute the residuals
-  residuals.resize(_pixels.size());
-  for(int c = 0; c < channels.size(); ++c) {
-    auto* r_ptr = residuals.data() + c*n; // n points per channel
-    const auto* I0_ptr = _pixels.data() + c*n;
-    const auto* I_ptr = channels.channelData(c);
-    for(int i = 0; i < n; ++i) {
-      if(valid[i]) {
-        const auto* p0 = I_ptr + inds[i];
-        float i0 = static_cast<float>( *p0 ),
+    valid[i] = xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows;
+    if(valid[i]) {
+      xf -= xi;
+      yf -= yi;
+      const float* p0 = channels.channelData(0) + yi*stride + xi;
+      float i0 = static_cast<float>( *p0 ),
               i1 = static_cast<float>( *(p0 + 1) ),
               i2 = static_cast<float>( *(p0 + stride) ),
-              i3 = static_cast<float>( *(p0 + stride + 1) );
-        Eigen::Vector4f I0(i0, i1, i2, i3);
-        auto Iw = interp_coeffs[i].dot(I0);
-        r_ptr[i] = Iw - I0_ptr[i];
-      } else {
-        r_ptr[i] = 0.0f;
-      }
+              i3 = static_cast<float>( *(p0 + stride + 1) ),
+              Iw = (1.0f-yf) * ((1.0f-xf)*i0 + xf*i1) +
+                  yf  * ((1.0f-xf)*i2 + xf*i3);
+      residuals[i] = Iw - _pixels[i];
+    } else {
+      residuals[i] = 0.0f;
+    }
+  }
+}
+#endif
+
+template <class CN, class W> inline
+void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matrix44& pose,
+                                           std::vector<float>& residuals, std::vector<uint8_t>& valid)
+{
+  _warp.setPose(pose);
+
+  BilinearInterp<float> interp;
+  interp.init(_warp, _points, channels[0].rows, channels[0].cols);
+
+  residuals.resize(_pixels.size());
+  for(int c = 0; c < channels.size(); ++c) {
+    int off = c*numPoints();
+    auto* I0_ptr = _pixels.data() + off;
+    auto* I1_ptr = channels.channelData(c);
+    auto* r_ptr = residuals.data() + off;
+    for(int i = 0; i < numPoints(); ++i) {
+      r_ptr[i] = interp(I1_ptr, i) - I0_ptr[i];
     }
   }
 
+  valid.swap(interp.valid());
 }
+
+
+
 
 #if defined(WITH_TBB)
 #undef TEMPLATE_DATA_SET_DATA_WITH_TBB

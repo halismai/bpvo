@@ -3,6 +3,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <iostream>
+
 namespace bpvo {
 
 /**
@@ -20,7 +22,6 @@ cv::Mat ToOpenCV(const T* data, const ImageSize& imsize)
 {
   return ToOpenCV(data, imsize.rows, imsize.cols);
 }
-
 
 /**
  * \return number of pyramid levels such that tha coarsest level has size
@@ -65,7 +66,7 @@ VisualOdometry::Impl::Impl(const Matrix33& K, const float& b, ImageSize image_si
   for(int i = 1; i < _params.numPyramidLevels; ++i) {
     K_pyr *= 0.5; K_pyr(2,2) = 1.0f;
     b_pyr *= 2.0;
-    _tdata_pyr.push_back(make_unique<TData>(K_pyr, b_pyr, 0));
+    _tdata_pyr.push_back(make_unique<TData>(K_pyr, b_pyr, i));
   }
 
   for(int i= 0; i < _params.numPyramidLevels; ++i)

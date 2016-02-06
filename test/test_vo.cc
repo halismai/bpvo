@@ -31,17 +31,16 @@ int main()
   {
     dprintf("FRAME %d\n", f_i-1);
 
-    cv::imshow("image", frame->image());
-    cv::imshow("disparity", colorizeDisparity(frame->disparity()));
-    k = cv::waitKey(5) & 0xff;
-
     Timer timer;
     auto result = vo.addFrame(frame->image().ptr<uint8_t>(),
                               frame->disparity().ptr<float>());
     total_time += timer.stop().count() / 1000.0;
 
-    trajectory.push_back(result.pose);
+    cv::imshow("image", frame->image());
+    cv::imshow("disparity", colorizeDisparity(frame->disparity()));
+    k = cv::waitKey(5) & 0xff;
 
+    trajectory.push_back(result.pose);
     //std::cout << result << std::endl;
   }
 

@@ -24,6 +24,23 @@ auto RigidBodyWarp::makePoint(float x, float y, float d) const -> Point
   return Point(X, Y, Z, 1.0);
 }
 
+void RigidBodyWarp::setPose(const Matrix44& T)
+{
+  _P = _K * T.block<3,4>(0,0);
+}
+
+auto RigidBodyWarp::operator()(const Point& X) const -> ImagePoint
+{
+  Eigen::Vector3f x = _P * X;
+  float z_i = 1.0f / x.z();
+  return ImagePoint(z_i * x[0], z_i * x[1]);
+}
+
+Matrix44 RigidBodyWarp::scalePose(const Matrix44& T) const
+{
+  return _T_inv * T * _T;
+}
+
 auto RigidBodyWarp::warpJacobianAtZero(const Point& p) const -> WarpJacobian
 {
   auto x = p.x(), y = p.y(), z = p.z(), z2 = z*z;

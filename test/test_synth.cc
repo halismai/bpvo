@@ -83,14 +83,15 @@ int main()
   VisualOdometry vo(calib.K, calib.baseline, data_loader.imageSize(), params);
 
   cv::imshow("image", f0.image());
-  cv::waitKey(0);
+  cv::waitKey(10);
 
   vo.addFrame(f0.image().ptr<uint8_t>(), f0.disparity().ptr<float>());
   auto result = vo.addFrame(f1->image().ptr<uint8_t>(), f1->disparity().ptr<float>());
 
   auto pose_error = (math::MatrixToTwist(result.pose.inverse() * T));
 
-  std::cout << result << std::endl;
+  std::cout << "\n\n";
+  std::cout << result << "\n" << std::endl;
   std::cout << "ERROR: " << pose_error.norm() << std::endl;
   std::cout << pose_error.transpose() << std::endl;
 

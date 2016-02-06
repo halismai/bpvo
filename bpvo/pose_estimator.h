@@ -23,23 +23,17 @@ struct PoseEstimatorParameters
 
   VerbosityType verbosity = VerbosityType::kSilent;
 
+  /**
+   */
   inline PoseEstimatorParameters() {}
 
-  explicit PoseEstimatorParameters(const AlgorithmParameters& p)
-      : maxIterations(p.maxIterations)
-        , functionTolerance(p.functionTolerance)
-        , parameterTolerance(p.parameterTolerance)
-        , gradientTolerance(p.gradientTolerance)
-        , lossFunction(p.lossFunction)
-        , verbosity(p.verbosity) {}
+  /**
+   */
+  explicit PoseEstimatorParameters(const AlgorithmParameters& p);
 
-  inline void relaxTolerance(int it = 42, float scale_by = 10.0f)
-  {
-    maxIterations = std::min(maxIterations, it);
-    functionTolerance *= scale_by;
-    parameterTolerance *= scale_by;
-    gradientTolerance *= scale_by;
-  }
+  /**
+   */
+  void relaxTolerance(int max_it = 42, float scale_by = 10.0f);
 }; // PoseEstimatorParameters
 
 
@@ -56,7 +50,7 @@ class PoseEstimator
   /**
    */
   PoseEstimator(AlgorithmParameters p = AlgorithmParameters())
-      : _params(p) {}
+      : _params(p), _scale_estimator(1e-3) {}
 
   inline void setParameters(const PoseEstimatorParameters& p) {
     _params = p;
@@ -203,3 +197,4 @@ runIteration(TemplateDataT* tdata, const Channels& channels, const Matrix44& pos
 }; // bpvo
 
 #endif // BPVO_POSE_ESTIMATOR_H
+

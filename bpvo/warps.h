@@ -3,6 +3,7 @@
 
 #include <bpvo/types.h>
 #include <bpvo/math_utils.h>
+#include <iostream>
 
 namespace bpvo {
 
@@ -51,27 +52,19 @@ class RigidBodyWarp
   WarpJacobian warpJacobianAtZero(const Point&) const;
 
   inline const Matrix33& K() const { return _K; }
+  inline const Matrix34& P() const { return _P; }
 
-  inline void setPose(const Matrix44& T) { _P = _K * T.block<3,4>(0,0); }
+  void setPose(const Matrix44& T);
 
-  inline ImagePoint operator()(const Point& X) const
-  {
-    Eigen::Vector3f x = _P * X;
-    float z_i = 1.0f / x[2];
-    return ImagePoint(x[0]*z_i, x[1]*z_i);
-  }
+  ImagePoint operator()(const Point& X) const;
 
-  inline Matrix44 scalePose(const Matrix44& T) const
-  {
-    return _T_inv * T * _T;
-  }
+  Matrix44 scalePose(const Matrix44& T) const;
 
   template <class Derived> inline
   Matrix44 paramsToPose(const Eigen::MatrixBase<Derived>& p) const
   {
-    return _T_inv * math::TwistToMatrix(p) * _T;
+    return scalePose(math::TwistToMatrix(p));
   }
-
 
  protected:
   Matrix33 _K;
