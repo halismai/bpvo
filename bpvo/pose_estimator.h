@@ -4,6 +4,7 @@
 #include <bpvo/types.h>
 #include <bpvo/debug.h>
 #include <bpvo/mestimator.h>
+#include <bpvo/pose_estimator_params.h>
 
 #include <limits>
 #include <cmath>
@@ -12,30 +13,6 @@
 #include <Eigen/Cholesky> // for ldlt()
 
 namespace bpvo {
-
-struct PoseEstimatorParameters
-{
-  int maxIterations = 50;
-  float functionTolerance   = 1e-6;
-  float parameterTolerance  = 1e-6;
-  float gradientTolerance   = 1e-6;
-  LossFunctionType lossFunction = LossFunctionType::kHuber;
-
-  VerbosityType verbosity = VerbosityType::kSilent;
-
-  /**
-   */
-  inline PoseEstimatorParameters() {}
-
-  /**
-   */
-  explicit PoseEstimatorParameters(const AlgorithmParameters& p);
-
-  /**
-   */
-  void relaxTolerance(int max_it = 42, float scale_by = 10.0f);
-}; // PoseEstimatorParameters
-
 
 template <class TemplateDataT, class SystemBuilderT>
 class PoseEstimator
