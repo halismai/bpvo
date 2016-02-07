@@ -3,7 +3,7 @@
 
 #include <bpvo/types.h>
 #include <bpvo/warps.h>
-#include <bpvo/pose_estimator.h>
+#include <bpvo/pose_estimator_gn.h>
 #include <bpvo/mestimator.h>
 #include <bpvo/vo.h>
 #include <bpvo/template_data_.h>
@@ -26,7 +26,8 @@ class VisualOdometry::Impl
   typedef RawIntensity ChannelsT;
   typedef RigidBodyWarp WarpT;
   typedef TemplateData_<ChannelsT, WarpT> TData;
-  typedef PoseEstimator<TData, LinearSystemBuilder> PoseEstimatorT;
+  typedef PoseEstimatorGN<TData> PoseEstimatorT_;
+  typedef PoseEstimatorBase<PoseEstimatorT_> PoseEstimatorT;
 
   typedef UniquePointer<TData> TDataPointer;
   typedef std::vector<TDataPointer> TDataPyramid;

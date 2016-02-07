@@ -14,7 +14,7 @@ class RawIntensity
   typedef float ChannelDataType;
 
  public:
-  RawIntensity(float, float);
+  RawIntensity(float = 0.0f, float = 0.0f);
   explicit RawIntensity(const cv::Mat& I);
 
   inline int size() const { return NumChannels; }

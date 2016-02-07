@@ -115,7 +115,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     ret.optimizerStatistics[i] = _pose_estimator.run(_tdata_pyr[i].get(), _channels_pyr[i], T_est);
   }
 
-  if(0) {
+  if(1) {
     // process the finest pyramid level
     _pose_estimator.setParameters(_pose_est_params);
     ret.optimizerStatistics.front() =
