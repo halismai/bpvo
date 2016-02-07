@@ -1,4 +1,8 @@
 #include "test/data_loader.h"
+#include "test/scoped_profiler.h"
+#include "test/bounded_buffer.h"
+#include "test/program_options.h"
+
 #include "bpvo/vo.h"
 #include "bpvo/trajectory.h"
 #include "bpvo/debug.h"
@@ -11,50 +15,64 @@
 
 using namespace bpvo;
 
-int main()
+int main(int argc, char* argv[])
 {
-  AlgorithmParameters params("../conf/tsukuba.cfg");
+  ProgramOptions options;
+  options
+      ("config,c", "../conf/tsukuba.cfg", "config file")
+      ("output,o", "output.txt", "trajectory output file")
+      ("numframes,n", int(100), "number of frames").parse(argc, argv);
+
+  auto max_frames = options.get<int>("numframes");
+  auto conf_fn = options.get<std::string>("config");
+
+  AlgorithmParameters params(conf_fn);
   std::cout << params << std::endl;
   std::cout << "---------------------------------------\n";
 
-  TsukubaDataLoader data_loader;
-  auto calib = data_loader.calibration();
+  UniquePointer<DataLoader> data_loader(new TsukubaDataLoader);
+  typename DataLoaderThread::BufferType image_buffer(32);
+  auto calib = data_loader->calibration();
+  VisualOdometry vo(calib.K, calib.baseline, data_loader->imageSize(), params);
 
-  VisualOdometry vo(calib.K, calib.baseline, data_loader.imageSize(), params);
+
+  DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
 
   Trajectory trajectory;
-  UniquePointer<ImageFrame> frame;
+  SharedPointer<ImageFrame> frame;
 
   double total_time = 0.0;
-  int f_i = 1, k = 0;
-  while( nullptr != (frame = data_loader.getFrame(f_i++)) && k != 'q' && f_i < 100)
-  {
-    dprintf("FRAME %d\n", f_i-1);
-
-    Timer timer;
-    auto result = vo.addFrame(frame->image().ptr<uint8_t>(),
+  int k = 0, f_i = 1;
+  while('q' != (k = cv::waitKey(5) & 0xff) && f_i < max_frames) {
+    if(image_buffer.pop(&frame)) {
+      ++f_i;
+      Timer timer;
+      auto result = vo.addFrame(frame->image().ptr<uint8_t>(),
                               frame->disparity().ptr<float>());
-    total_time += timer.stop().count() / 1000.0;
+      total_time += timer.stop().count() / 1000.0;
 
-    cv::imshow("image", frame->image());
-    cv::imshow("disparity", colorizeDisparity(frame->disparity()));
-    k = cv::waitKey(5) & 0xff;
+      trajectory.push_back(result.pose);
 
-    trajectory.push_back(result.pose);
-    //std::cout << result << std::endl;
+      cv::imshow("image", frame->image());
+      cv::imshow("disparity", colorizeDisparity(frame->disparity()));
+    }
   }
-
   Info("done %0.2f Hz\n", f_i / total_time);
 
-  std::ofstream ofs("output.txt");
-  if(ofs.is_open()) {
-    for(size_t i = 0; i < trajectory.size(); ++i) {
-      const auto T = trajectory[i];
-      ofs << T(0,3) << " " << T(1,3) << " " << T(2,3) << std::endl;
+  {
+    auto output_fn = options.get<std::string>("output");
+    if(!output_fn.empty()) {
+      Info("Writing trajectory to %s\n", output_fn.c_str());
+      std::ofstream ofs(output_fn);
+      if(ofs.is_open()) {
+        for(size_t i = 0; i < trajectory.size(); ++i) {
+          const auto T = trajectory[i];
+          ofs << T(0,3) << " " << T(1,3) << " " << T(2,3) << std::endl;
+        }
+      }
     }
-
-    ofs.close();
   }
 
   return 0;
 }
+

@@ -2,9 +2,12 @@
 #define DATA_LOADER_H
 
 #include <bpvo/types.h>
+#include <test/bounded_buffer.h>
 
 #include <iosfwd>
 #include <string>
+#include <thread>
+#include <atomic>
 
 #include <opencv2/core/core.hpp>
 
@@ -56,14 +59,20 @@ struct StereoCalibration
 
 struct DataLoader
 {
+  typedef SharedPointer<ImageFrame> ImageFramePointer;
+
   virtual StereoCalibration calibration() const = 0;
-  virtual UniquePointer<ImageFrame> getFrame(int f_i) const = 0;
+  virtual ImageFramePointer getFrame(int f_i) const = 0;
   virtual ImageSize imageSize() const = 0;
+  virtual int firstFrameNumber() const { return 0; }
 }; // DataLoader
 
 
-class TsukubaDataLoader
+class TsukubaDataLoader : public DataLoader
 {
+ public:
+  typedef typename DataLoader::ImageFramePointer ImageFramePointer;
+
  public:
   TsukubaDataLoader(std::string root_dir = "~/data/NewTsukubaStereoDataset/",
                     std::string illumination = "fluorescent");
@@ -71,13 +80,44 @@ class TsukubaDataLoader
   virtual ~TsukubaDataLoader();
 
   StereoCalibration calibration() const;
-  UniquePointer<ImageFrame> getFrame(int) const;
+  ImageFramePointer getFrame(int) const;
   ImageSize imageSize() const;
+
+  inline int firstFrameNumber() const { return 1; }
 
  private:
   std::string _root_dir;
   std::string _illumination;
 }; // TsukubaDataLoader
+
+
+//
+// starts a data loaders in its own thread
+//
+class DataLoaderThread
+{
+ public:
+  typedef BoundedBuffer<typename DataLoader::ImageFramePointer> BufferType;
+
+ public:
+  DataLoaderThread(UniquePointer<DataLoader> data_loader, BufferType& buffer);
+  ~DataLoaderThread();
+
+  void stop();
+
+  bool isRunning() const;
+
+ protected:
+  UniquePointer<DataLoader> _data_loader;
+  BufferType& _buffer;
+
+  void start();
+
+  std::atomic<bool> _stop_requested{false};
+  std::atomic<bool> _is_running{false};
+
+  std::thread _thread;
+}; // DataLoaderThread
 
 }; // bpvo
 

@@ -10,7 +10,13 @@ ProgramOptions::ProgramOptions(std::string name)
 
 void ProgramOptions::parse(int argc, char** argv)
 {
-  po::store(po::parse_command_line(argc, argv, _desc), _vm);
+  try {
+    po::store(po::parse_command_line(argc, argv, _desc), _vm);
+  } catch(const std::exception& ex) {
+    std::cerr << "error: " << ex.what() << std::endl;
+    throw ex;
+  }
+
   po::notify(_vm);
 
   if(hasOption("help"))

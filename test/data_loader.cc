@@ -47,7 +47,7 @@ StereoCalibration TsukubaDataLoader::calibration() const
 
 ImageSize TsukubaDataLoader::imageSize() const { return {480,640}; }
 
-UniquePointer<ImageFrame> TsukubaDataLoader::getFrame(int f_i) const
+auto TsukubaDataLoader::getFrame(int f_i) const -> ImageFramePointer
 {
   if(f_i < 1 || f_i > 1800) {
     return nullptr;
@@ -70,7 +70,7 @@ UniquePointer<ImageFrame> TsukubaDataLoader::getFrame(int f_i) const
   THROW_ERROR_IF(D.empty(), "could not read image from");
   D.convertTo(D, CV_32FC1);
 
-  return UniquePointer<ImageFrame>(new StereoFrame(I1, I2, D));
+  return SharedPointer<ImageFrame>(new StereoFrame(I1, I2, D));
 }
 
 
@@ -86,5 +86,33 @@ cv::Mat colorizeDisparity(const cv::Mat& D)
   return ret;
 }
 
+DataLoaderThread::DataLoaderThread(UniquePointer<DataLoader> data_loader,
+                                   BufferType& buffer)
+  : _data_loader(std::move(data_loader)), _buffer(buffer), _thread([=] { this->start(); }) {}
+
+DataLoaderThread::~DataLoaderThread() { stop(); }
+
+void DataLoaderThread::stop()
+{
+  _stop_requested = true;
+  if(_thread.joinable())
+    _thread.join();
+}
+
+bool DataLoaderThread::isRunning() const { return _is_running; }
+
+void DataLoaderThread::start()
+{
+  typename BufferType::value_type frame;
+  int f_i = _data_loader->firstFrameNumber();
+
+  _is_running = true;
+  while( !_stop_requested && (nullptr != (frame=_data_loader->getFrame(f_i++))))
+  {
+    _buffer.push(std::move(frame));
+  }
+
+  _is_running = false;
+}
 
 } // bpvo

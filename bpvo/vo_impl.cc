@@ -154,3 +154,4 @@ auto VisualOdometry::Impl::pointsAtLevel(int level) const -> const PointVector&
 }
 
 } // bpvo
+

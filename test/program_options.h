@@ -3,6 +3,7 @@
 
 #include <string>
 #include <boost/program_options.hpp>
+#include <iostream>
 
 namespace bpvo {
 
@@ -32,7 +33,12 @@ class ProgramOptions
 
   template <class T> inline
   T get(std::string name) const {
-    return _vm[name].template as<T>();
+    try {
+      return _vm[name].template as<T>();
+    } catch(const std::exception& ex) {
+      std::cerr << "Error: " << ex.what() << std::endl;
+      throw ex;
+    }
   }
 
   void parse(int argc, char** argv);

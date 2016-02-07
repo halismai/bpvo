@@ -1,6 +1,7 @@
 add_library(bpvo_test ${LIBRARY_TYPE}
   data_loader.cc
-  program_options.cc)
+  program_options.cc
+  scoped_profiler.cc)
 
 set_target_properties(bpvo_test PROPERTIES LINKER_LANGUAGE CXX)
 

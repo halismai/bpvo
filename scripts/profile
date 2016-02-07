@@ -1,0 +1,13 @@
+#!/bin/bash
+
+prof_file="/tmp/prof"
+
+if [ -z "$1" ]; then
+  echo "usage ./profile binary_name"
+  exit
+fi
+
+bin_file="$1"
+env CPUPROFILE=${prof_file} ${bin_file}
+pprof --gv ${bin_file} ${prof_file}
+

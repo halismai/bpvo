@@ -341,9 +341,6 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matri
   valid.swap(interp.valid());
 }
 
-
-
-
 #if defined(WITH_TBB)
 #undef TEMPLATE_DATA_SET_DATA_WITH_TBB
 #endif
