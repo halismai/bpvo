@@ -80,7 +80,8 @@ OptimizerStatistics PoseEstimator<TemplateDataT, SystemBuilderT>::
 run(TemplateDataT* tdata, const Channels& channels, Matrix44& T)
 {
   static const char* FMT_STR = "   %3d      %13.6g  %12.3g    %12.6g   %12.6g\n";
-  static constexpr float sqrt_eps = std::sqrt(std::numeric_limits<float>::epsilon());
+  // icc does not like constexpr here
+  static const float sqrt_eps = std::sqrt(std::numeric_limits<float>::epsilon());
 
   _scale_estimator.reset(); // reset the scale for a new run
 

@@ -254,8 +254,8 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   // compute the pixels and jacobians for all channels
   //
   typedef Eigen::Matrix<float,1,2> ImageGradient;
-  auto fx = 0.5f * _warp.K()(0,0),
-       fy = 0.5f * _warp.K()(1,1);
+  float fx = 0.5f * _warp.K()(0,0),
+        fy = 0.5f * _warp.K()(1,1);
 
   for(int c = 0; c < channels.size(); ++c) {
     auto c_ptr = channels.channelData(c);

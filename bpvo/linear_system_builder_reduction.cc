@@ -112,7 +112,7 @@ auto LinearSystemBuilderReduction::toEigen(const float* data) -> Hessian
     }
   }
 
-  ret.template selfadjointView<Eigen::Upper>().evalTo(ret);
+  ret.selfadjointView<Eigen::Upper>().evalTo(ret);
   return ret;
 }
 

@@ -59,7 +59,7 @@ class BitPlanes
   }
 
   inline const ChannelDataType* channelData(int c) const {
-    return _channels[c].template ptr<const ChannelDataType>();
+    return _channels[c].ptr<const ChannelDataType>();
   }
 
   inline void setSigmaCensus(float s) { _sigma_ct = s; }
