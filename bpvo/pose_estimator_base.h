@@ -14,7 +14,6 @@ namespace bpvo {
 template <class TDataT> class PoseEstimatorGN;
 template <class TDataT> class PoseEstimatorLM;
 
-
 template <class> class PoseEstimatorTraits;
 
 template<> template <class TDataT>
@@ -34,7 +33,13 @@ class PoseEstimatorTraits< PoseEstimatorGN<TDataT> >
   typedef Eigen::Matrix<DataType, NumParameters, NumParameters> Hessian;
 }; // PoseEstimatorTraits
 
-template <int N>
+template<> template <class TDataT>
+class PoseEstimatorTraits< PoseEstimatorLM<TDataT> >
+  : public PoseEstimatorTraits< PoseEstimatorGN<TDataT> >
+{
+}; // PoseEstimatorTraits
+
+template <int N> // TODO add solver template
 struct PoseEstimatorData_
 {
   Eigen::Matrix<float,N,N> H;
@@ -255,7 +260,7 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
   return ret;
 }
 
-
 }; // bpvo
 
 #endif // BPVO_POSE_ESTIMATOR_BASE_H
+
