@@ -47,6 +47,35 @@ if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL 
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+include(cmake/MakeVersion.cmake)
+MakeVersion(BPVO 0 5 2)
+
+
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Direct Visual Odometry")
+set(CPACK_PACKAGE_VENDOR              "halismai")
+set(CPACK_PACKAGE_CONTACT             "halismai@cs.cmu.edu")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
+set(CPACK_RESOURCE_FILE_LICENSE    "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_SOURCE_GENERATOR "TBZ2")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${BPVO_VERSION}")
+
+set(CPACK_SOURCE_IGNORE_FILES
+  ${CPACK_SOURCE_IGNORE_FILES}
+  "/build/"
+  "/.hg/"
+  # TODO this regex could be wrong
+  "/*.swp"
+  #"/*.in"
+  "${PROJECT_SOURCE_DIR}/.hgignore")
+
+message(STATUS "ignore ${CPACK_SOURCE_IGNORE_FILES}")
+
+include(CPack)
+add_custom_target(srcdist COMMAND ${CMAKE_MAKE_PROGRAM} package_source)
+message(STATUS "dist file: ${CPACK_SOURCE_PACKAGE_FILE_NAME}")
+message(STATUS "version  : ${BPVO_VERSION}")
+
+
 # Set the compiler options
 include(cmake/SetCompilerOptions.cmake)
 
@@ -105,6 +134,11 @@ endif()
 if(WITH_SIMD)
   add_definitions(-DWITH_SIMD)
 endif()
+
+configure_file(
+  "${PROJECT_SOURCE_DIR}/bpvo_config.h.in"
+  "${PROJECT_SOURCE_DIR}/bpvo/config.h")
+
 
 add_subdirectory(bpvo)
 add_subdirectory(utils)

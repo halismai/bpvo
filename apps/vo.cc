@@ -6,6 +6,7 @@
 #include "bpvo/debug.h"
 #include "bpvo/timer.h"
 #include "bpvo/trajectory.h"
+#include "bpvo/config.h"
 
 #include <iostream>
 #include <fstream>
@@ -17,6 +18,8 @@ using namespace bpvo;
 
 int main(int argc, char** argv)
 {
+  fprintf(stdout, "%s\n", BPVO_BUILD_STR);
+
   ProgramOptions options;
   options
       ("config,c", "../conf/tsukuba.cfg", "config file")
