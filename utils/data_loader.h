@@ -2,7 +2,7 @@
 #define DATA_LOADER_H
 
 #include <bpvo/types.h>
-#include <test/bounded_buffer.h>
+#include <utils/bounded_buffer.h>
 
 #include <iosfwd>
 #include <string>
@@ -12,6 +12,8 @@
 #include <opencv2/core/core.hpp>
 
 namespace bpvo {
+
+class ConfigFile;
 
 cv::Mat colorizeDisparity(const cv::Mat&);
 
@@ -65,8 +67,17 @@ struct DataLoader
   virtual ImageFramePointer getFrame(int f_i) const = 0;
   virtual ImageSize imageSize() const = 0;
   virtual int firstFrameNumber() const { return 0; }
+  virtual void setFirstFrameNumber(int) {}
+
+
+  /**
+   * \return a data loader from a config file
+   */
+  static UniquePointer<DataLoader> FromConfig(std::string);
 }; // DataLoader
 
+
+class StereoAlgorithm;
 
 class TsukubaDataLoader : public DataLoader
 {
@@ -74,9 +85,8 @@ class TsukubaDataLoader : public DataLoader
   typedef typename DataLoader::ImageFramePointer ImageFramePointer;
 
  public:
-  TsukubaDataLoader(std::string root_dir = "~/data/NewTsukubaStereoDataset/",
-                    std::string illumination = "fluorescent");
-
+  TsukubaDataLoader(const ConfigFile& cf);
+  TsukubaDataLoader(std::string config_file_name = "");
   virtual ~TsukubaDataLoader();
 
   StereoCalibration calibration() const;
@@ -85,10 +95,62 @@ class TsukubaDataLoader : public DataLoader
 
   inline int firstFrameNumber() const { return 1; }
 
+  static UniquePointer<DataLoader> Create(const ConfigFile&);
+
  private:
   std::string _root_dir;
   std::string _illumination;
 }; // TsukubaDataLoader
+
+
+class StereoDataLoader : public DataLoader
+{
+ public:
+  typedef typename DataLoader::ImageFramePointer ImageFramePointer;
+
+ public:
+  StereoDataLoader(const ConfigFile& cf);
+  StereoDataLoader(std::string conf_fn);
+  virtual ~StereoDataLoader();
+
+  virtual StereoCalibration calibration() const = 0;
+
+  ImageSize imageSize() const;
+  ImageFramePointer getFrame(int) const;
+
+  inline int firstFrameNumber() const { return 0; }
+
+ private:
+  UniquePointer<StereoAlgorithm> _stereo_alg;
+
+ protected:
+  std::string _left_fmt;
+  std::string _right_fmt;
+  ImageSize _image_size;
+
+  void set_image_size();
+}; // StereoDataLoader
+
+
+class KittiDataLoader : public StereoDataLoader
+{
+ public:
+  typedef typename StereoDataLoader::ImageFramePointer ImageFramePointer;
+
+ public:
+  explicit KittiDataLoader(const ConfigFile& cf);
+  explicit KittiDataLoader(std::string conf_fn);
+
+  virtual ~KittiDataLoader();
+
+  StereoCalibration calibration() const;
+
+  static UniquePointer<DataLoader> Create(const ConfigFile&);
+
+ private:
+  StereoCalibration _calib;
+  void load_calibration(std::string filename);
+}; // KittiDataLoader
 
 
 //

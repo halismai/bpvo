@@ -46,10 +46,19 @@ bool icompare(const std::string& a, const std::string& b)
   return !strncasecmp(a.c_str(), b.c_str(), a.size());
 }
 
+struct NoCaseCmp {
+  inline bool operator()(const unsigned char& c1,
+                         const unsigned char& c2) const
+  {
+    return std::tolower(c1) < std::tolower(c2);
+  }
+}; // NoCaseCmp
+
 bool CaseInsenstiveComparator::operator()(const std::string& a,
                                           const std::string& b) const
 {
-  return strncasecmp(a.c_str(), b.c_str(), std::min(a.size(), b.size())) < 0;
+  return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(),
+                                      NoCaseCmp());
 }
 
 template<> int str2num<int>(const std::string& s) { return std::stoi(s); }

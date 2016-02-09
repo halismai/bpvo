@@ -3,7 +3,7 @@
 #include "bpvo/channels.h"
 #include "bpvo/timer.h"
 
-#include "test/data_loader.h"
+#include "utils/data_loader.h"
 
 #include <opencv2/highgui/highgui.hpp>
 

@@ -60,12 +60,11 @@ void ConfigFile::parse(std::ifstream& ifs)
       continue;
 
     line.erase(std::remove_if(std::begin(line), std::end(line),
-            [](char c) { return std::isspace(c); } ),
-        std::end(line));
+            [](char c) { return std::isspace(c); } ), std::end(line));
 
-    std::vector<std::string> tokens = splitstr(line, '=');
+    const auto tokens = splitstr(line, '=');
     if(tokens.size() != 2)
-      throw Error("malformed line " + line);
+      throw Error("Malformed ConfigFile line " + line);
 
     _data[tokens[0]] = tokens[1];
   }

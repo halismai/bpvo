@@ -1,7 +1,6 @@
-#include "test/data_loader.h"
-#include "test/scoped_profiler.h"
-#include "test/bounded_buffer.h"
-#include "test/program_options.h"
+#include "utils/data_loader.h"
+#include "utils/bounded_buffer.h"
+#include "utils/program_options.h"
 
 #include "bpvo/vo.h"
 #include "bpvo/trajectory.h"

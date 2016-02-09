@@ -40,7 +40,7 @@ option(ENABLE_PROFILING "enable profiling" OFF)
 option(ENABLE_FAST_MATH "enable fast math" OFF)
 option(ENABLE_OMIT_FRAME_POINTER "omit frame pointer" OFF)
 
-option(BUILD_TEST "build the testing stuff" ON)
+option(BUILD_TEST "build the testing stuff" OFF)
 
 # auto decide release configuration if not set
 if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -107,6 +107,8 @@ if(WITH_SIMD)
 endif()
 
 add_subdirectory(bpvo)
+add_subdirectory(utils)
+add_subdirectory(apps)
 
 if(BUILD_TEST)
   add_subdirectory(test)

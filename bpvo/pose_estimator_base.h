@@ -119,6 +119,8 @@ class PoseEstimatorBase
 
   inline const PoseEstimatorParameters& parameters() const { return _p; }
 
+  inline const WeightsVector& getWeights() const { return _weights; }
+
  protected:
   PoseEstimatorParameters _params;
   AutoScaleEstimator _scale_estimator;

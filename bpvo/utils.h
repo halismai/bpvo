@@ -35,6 +35,10 @@
 #include <utility>
 #include <vector>
 
+namespace std {
+inline std::string to_string(std::string s) { return s; }
+}; // std
+
 namespace bpvo {
 
 template <typename T> inline constexpr void

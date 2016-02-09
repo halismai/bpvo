@@ -155,7 +155,8 @@ T ConfigFile::get(std::string name, const T& default_val) const
   try {
     return get<T>(name);
   } catch(const std::exception& ex) {
-    dprintf("ConfigFile: get %s Error: %s\n", name.c_str(), ex.what());
+    Warn("ConfigFile: get %s Error: %s [using default %s]\n",
+         name.c_str(), ex.what(), std::to_string(default_val).c_str());
     return default_val;
   }
 }

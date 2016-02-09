@@ -21,6 +21,7 @@
 
 #include "bpvo/trajectory.h"
 #include <iostream>
+#include <fstream>
 
 #include <Eigen/LU>
 
@@ -65,6 +66,21 @@ std::ostream& operator<<(std::ostream& os, const Trajectory& t)
   }
 
   return os;
+}
+
+bool Trajectory::writeCameraPath(std::string filename) const
+{
+  std::ofstream ofs(filename);
+  if(ofs.is_open()) {
+    for(const auto& pose : _poses) {
+      ofs << pose.block<3,1>(0,3).transpose() << std::endl;
+    }
+
+    ofs.close();
+    return !ofs.bad();
+  }
+
+  return false;
 }
 
 }; // bpvo

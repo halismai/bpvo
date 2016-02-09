@@ -223,6 +223,16 @@ struct AlgorithmParameters
   float goodPointThreshold;
 
 
+  //
+  // other
+  //
+
+  /**
+   * TODO
+   */
+  int maxTestLevel;
+
+
   /**
    * Sets default parameters
    */

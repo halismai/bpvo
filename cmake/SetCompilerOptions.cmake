@@ -66,7 +66,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_INTEL)
   addExtraCompilerOptions(-qopt-report-phase=vec)
-  addExtraCompilerOptions(-opt-report=4)
+  addExtraCompilerOptions(-qopt-report=4)
   addExtraCompilerOptions(-ipo)
   addExtraCompilerOptions(-finline)
   add_definitions(-DNOALIAS)

@@ -1,4 +1,4 @@
-#include "test/data_loader.h"
+#include "utils/data_loader.h"
 #include "bpvo/types.h"
 #include "bpvo/vo.h"
 #include "bpvo/math_utils.h"

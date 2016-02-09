@@ -24,6 +24,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <algorithm>
 #include <iostream>
 
 namespace bpvo {
@@ -60,6 +61,7 @@ static inline int getNumberOfPyramidLevels(const ImageSize& s, int min_allowed_r
 {
   return getNumberOfPyramidLevels(std::min(s.rows, s.cols), min_allowed_res);
 }
+
 
 VisualOdometry::Impl::Impl(const Matrix33& K, const float& b, ImageSize image_size,
                            AlgorithmParameters params)
@@ -120,35 +122,50 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     //
     cv::Mat D = ToOpenCV(D_ptr, _image_size);
     this->setAsKeyFrame(_channels_pyr, D);
-    ret.isKeyFrame = true;
     ret.pose = _T_kf;
     ret.covariance.setIdentity();
     ret.keyFramingReason = KeyFramingReason::kFirstFrame;
+    ret.isKeyFrame = true;
+
+    _kf_candidate.channels_pyr.resize(_channels_pyr.size()); // so we can swap later
     return ret;
   }
+
+  THROW_ERROR_IF(_params.maxTestLevel != 0, "maxTestLevel must be 0 for now");
 
   //
   // initialize pose estimation for the next frame using the latest estimate
   //
   Matrix44 T_est = _T_kf;
   _pose_estimator.setParameters(_pose_est_params_low_res);
-  for(int i = _channels_pyr.size()-1; i >= 1; --i) {
+  int i = static_cast<int>(_channels_pyr.size()) - 1;
+  for( ; i >= _params.maxTestLevel; --i) {
+    dprintf("level %d\n", i);
     ret.optimizerStatistics[i] = _pose_estimator.run(_tdata_pyr[i].get(), _channels_pyr[i], T_est);
   }
 
-  if(1) {
-    // process the finest pyramid level
+  while(i >= 0) {
+    Fatal("debug\n");
     _pose_estimator.setParameters(_pose_est_params);
     ret.optimizerStatistics.front() =
         _pose_estimator.run(_tdata_pyr.front().get(), _channels_pyr.front(), T_est);
   }
 
-  //
-  // TODO test for keyframing
-  //
-  ret.isKeyFrame = false;
-  ret.pose = T_est * _T_kf.inverse(); // return the relative motion wrt to the added frame
-  _T_kf = T_est; // replace the initialization with the new motion
+
+  ret.keyFramingReason = shouldKeyFrame(T_est, _pose_estimator.getWeights());
+  ret.isKeyFrame = (ret.keyFramingReason != KeyFramingReason::kNoKeyFraming);
+
+  if(ret.isKeyFrame) {
+    std::cout << ToString(ret.keyFramingReason) << std::endl;
+    Fatal("bye\n");
+  } else {
+    // TODO test if there is enough good disparity estimates for the frame to be
+    // assigned as a keyframe candidate
+    _kf_candidate.channels_pyr.swap(_channels_pyr);
+    _kf_candidate.disparity = ToOpenCV(D_ptr, _image_size);
+    ret.pose = T_est * _T_kf.inverse(); // return the relative motion wrt to the added frame
+    _T_kf = T_est; // replace the initialization with the new motion
+  }
 
   return ret;
 }
@@ -174,6 +191,29 @@ auto VisualOdometry::Impl::pointsAtLevel(int level) const -> const PointVector&
   assert( level >= 0 && level < (int) _tdata_pyr.size() );
 
   return _tdata_pyr[level]->points();
+}
+
+KeyFramingReason
+VisualOdometry::Impl::shouldKeyFrame(const Matrix44& T, const std::vector<float>& weights)
+{
+  auto t_norm = T.block<3,1>(0,3).squaredNorm();
+  if(t_norm > math::sq(_params.minTranslationMagToKeyFrame)) {
+    return KeyFramingReason::kLargeTranslation;
+  }
+
+  auto r_norm = math::RotationMatrixToEulerAngles(T).squaredNorm();
+  if(r_norm > math::sq(_params.minRotationMagToKeyFrame)) {
+    return KeyFramingReason::kLargeRotation;
+  }
+
+  auto thresh = _params.goodPointThreshold;
+  auto num_good = std::count_if(std::begin(weights), std::end(weights),
+                                [=](float w) { return w > thresh; });
+  if(num_good < _params.maxFractionOfGoodPointsToKeyFrame) {
+    return KeyFramingReason::kSmallFracOfGoodPoints;
+  }
+
+  return KeyFramingReason::kNoKeyFraming;
 }
 
 } // bpvo

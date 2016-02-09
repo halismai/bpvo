@@ -41,7 +41,8 @@ AlgorithmParameters::AlgorithmParameters()
     , minTranslationMagToKeyFrame(0.15)
     , minRotationMagToKeyFrame(5.0)
     , maxFractionOfGoodPointsToKeyFrame(0.6)
-    , goodPointThreshold(0.85) {}
+    , goodPointThreshold(0.85)
+    , maxTestLevel(0) {}
 
 
 AlgorithmParameters::AlgorithmParameters(std::string filename)
@@ -62,6 +63,7 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   minRotationMagToKeyFrame = cf.get<float>("minRotationMagToKeyFrame", 2.5);
   maxFractionOfGoodPointsToKeyFrame = cf.get<float>("maxFractionOfGoodPointsToKeyFrame", 0.6f);
   goodPointThreshold = cf.get<float>("goodPointThreshold", 0.75);
+  maxTestLevel = cf.get<int>("maxTestLevel", 0);
 }
 
 
@@ -155,7 +157,8 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   os << "minTranslationMagToKeyFrame = " << p.minTranslationMagToKeyFrame << "\n";
   os << "minRotationMagToKeyFrame = " << p.minRotationMagToKeyFrame << "\n";
   os << "maxFractionOfGoodPointsToKeyFrame = " << p.maxFractionOfGoodPointsToKeyFrame << "\n";
-  os << "goodPointThreshold = " << p.goodPointThreshold;
+  os << "goodPointThreshold = " << p.goodPointThreshold << "\n";
+  os << "maxTestLevel = " << p.maxTestLevel;
 
   return os;
 }

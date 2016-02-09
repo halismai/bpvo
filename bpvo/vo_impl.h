@@ -91,6 +91,20 @@ class VisualOdometry::Impl
 
  protected:
   void setAsKeyFrame(const std::vector<ChannelsT>&, const cv::Mat&);
+
+  /**
+   * keyframing based on pose and valid points
+   */
+  KeyFramingReason shouldKeyFrame(const Matrix44&, const std::vector<float>& weights);
+
+
+  struct KeyFrameCandidate
+  {
+    std::vector<ChannelsT> channels_pyr;
+    cv::Mat disparity;
+  }; // KeyFrameCandidate
+
+  KeyFrameCandidate _kf_candidate;
 }; // VisualOdometry
 
 }; // bpvo

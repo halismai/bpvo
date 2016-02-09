@@ -39,6 +39,22 @@ class VisualOdometry
                  AlgorithmParameters = AlgorithmParameters());
 
   /**
+   * create VisualOdometry from CalibrationT object
+   */
+  template <class CalibrationT> inline
+  VisualOdometry(const CalibrationT& calib, ImageSize image_size,
+                 AlgorithmParameters params = AlgorithmParameters()) :
+      VisualOdometry(calib.K, calib.baseline, image_size, params) {}
+
+  /**
+   * create VisualOdometry from DataLoaderT object
+   */
+  template <class DataLoaderT> inline
+  VisualOdometry(const DataLoaderT* data_loader,
+                 AlgorithmParameters params = AlgorithmParameters()) :
+      VisualOdometry(data_loader->calibration(), data_loader->imageSize(), params) {}
+
+  /**
    */
   ~VisualOdometry();
 
