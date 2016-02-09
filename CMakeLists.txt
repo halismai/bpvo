@@ -13,18 +13,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "Installation directory")
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Config" FORCE)
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops -ftree-vectorize")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops -ftree-vectorize")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -mtune=native -march=native -mfpmath=sse")
-#set(CMAKE_EXE_LINKER_FLAGS "-lpthread -lgomp")
-
-# GCC
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xAVX -axAVX")
-
-
 option(BUILD_STATIC   "Build static libraries" OFF)
 option(WITH_TBB       "with Intel TBB"         OFF)
 option(WITH_PROFILER  "With Google Profiler"   OFF)
@@ -33,14 +21,9 @@ option(WITH_SIMD      "Use SIMD instructions"  ON)
 option(WITH_BOOST     "Use boost program_options & circular_buffer"  ON)
 option(WITH_OPENMP    "use OpenMP"  ON)
 
-option(ENABLE_SSE   "enable SSE"      ON)
-option(ENABLE_SSE2  "enable SSE2"     ON)
-option(ENABLE_SSE3  "enable SSE3"     ON)
-option(ENABLE_SSSE3 "enable SSSE3"    ON)
-option(ENABLE_SSE41 "enable SSE4.1"   ON)
-option(ENABLE_SSE42 "enable SSE4.2"   ON)
-option(ENABLE_AVX   "enable AVX"      ON)
 option(ENABLE_PROFILING "enable profiling" OFF)
+option(ENABLE_FAST_MATH "enable fast math" OFF)
+option(ENABLE_OMIT_FRAME_POINTER "omit frame pointer" OFF)
 
 option(BUILD_TEST "build the testing stuff" ON)
 
@@ -48,7 +31,6 @@ option(BUILD_TEST "build the testing stuff" ON)
 if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE Release)
 endif()
-
 
 # Set the compiler options
 include(cmake/SetCompilerOptions.cmake)
@@ -67,7 +49,6 @@ find_package(Eigen  REQUIRED)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
 list(APPEND MY_LIBRARIES ${OpenCV_LIBS})
-
 
 set(Boost_USE_STATIC_LIBS     ON)
 set(Boost_USE_STATIC_RUNTIME  ON)

@@ -7,12 +7,11 @@ set(EXTRA_EXE_LINKER_FLAGS "")
 set(EXTRA_EXE_LINKER_FLAGS_DEBUG "")
 set(EXTRA_EXE_LINKER_FLAGS_RELEASE "")
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(CMAKE_COMPILER_IS_GNUCXX 1)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(CMAKE_COMPILER_IS_CLANGCXX 1)
-endif()
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   message(STATUS "Using Intel compilers")
   set(CMAKE_COMPILER_IS_INTEL 1)
 endif()
@@ -29,10 +28,9 @@ endmacro()
 addExtraCompilerOptions(-W)
 addExtraCompilerOptions(-Wall)
 addExtraCompilerOptions(-Wextra)
-addExtraCompilerOptions(-ftree-vectorize)
 addExtraCompilerOptions(-funroll-loops)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
   addExtraCompilerOptions(-W)
   addExtraCompilerOptions(-Wall)
   addExtraCompilerOptions(-Werror=sequence-point)
@@ -47,6 +45,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   addExtraCompilerOptions(-Wcast-align)
   addExtraCompilerOptions(-fdiagnostics-show-option)
   addExtraCompilerOptions(-fdiagnostics-color=auto)
+  addExtraCompilerOptions(-ftree-vectorize)
   addExtraCompilerOptions(-pthread)
 
   if(ENABLE_OMIT_FRAME_POINTER)
@@ -57,42 +56,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 
   if(ENABLE_FAST_MATH)
     addExtraCompilerOptions(-ffast-math)
-  endif()
-
-  if(ENABLE_SSE)
-    addExtraCompilerOptions(-msse)
-  endif()
-
-  if(ENABLE_SSE2)
-    addExtraCompilerOptions(-msse2)
-  endif()
-
-  if(ENABLE_SSE3)
-    addExtraCompilerOptions(-msse3)
-  endif()
-
-  if(ENABLE_SSSE3)
-    addExtraCompilerOptions(-mssse3)
-  endif()
-
-  if(ENABLE_SSE41)
-    addExtraCompilerOptions(-msse4.1)
-  endif()
-
-  if(ENABLE_SSE42)
-    addExtraCompilerOptions(-msse4.2)
-  endif()
-
-  if(ENABLE_AVX)
-    addExtraCompilerOptions(-mavx)
-  endif()
-
-  if(ENABLE_POPCNT)
-    addExtraCompilerOptions(-mpopcnt)
-  endif()
-
-  if(EXTRA_CXX_FLAGS MATCHES "-m(sse2|avx)")
-    addExtraCompilerOptions(-mfpmath=sse)
   endif()
 
   if(ENABLE_PROFILING)
@@ -106,24 +69,21 @@ if(CMAKE_COMPILER_IS_INTEL)
   addExtraCompilerOptions(-opt-report=4)
   addExtraCompilerOptions(-ipo)
   addExtraCompilerOptions(-finline)
-  if(ENABLE_AVX)
-    addExtraCompilerOptions(-xAVX)
-    addExtraCompilerOptions(-axAVX)
-  endif()
   add_definitions(-DNOALIAS)
 endif()
 
 if(WITH_OPENMP)
-  addExtraCompilerOptions(-fopenmp)
-  addExtraLinkerOption(-lgomp)
-  add_definitions(-DWITH_OPENMP)
+  find_package(OpenMP)
+  if(OPENMP_FOUND)
+    addExtraCompilerOptions(-fopenmp)
+    #addExtraLinkerOption(-lgomp)
+    add_definitions(-DWITH_OPENMP)
+  endif()
 endif()
-
 
 if(BUILD_STATIC AND CMAKE_COMPILER_IS_GNUCXX)
   set(EXTRA_FLAGS "-fPIC ${EXTRA_CXX_FLAGS}")
 endif()
-
 
 set(EXTRA_FLAGS                     "${EXTRA_FLAGS}"                    CACHE INTERNAL "Extra flags")
 set(EXTRA_C_FLAGS                   "${EXTRA_C_FLAGS}"                  CACHE INTERNAL "Extra C flags")
@@ -144,3 +104,7 @@ set(CMAKE_EXE_LINKER_FLAGS         "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_EXE_LINKER_FLAGS_DEBUG   "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
 
+
+include(cmake/OptimizeForArchitecture.cmake)
+OptimizeForArchitecture()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Vc_ARCHITECTURE_FLAGS}")
