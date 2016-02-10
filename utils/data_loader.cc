@@ -250,7 +250,7 @@ cv::Mat colorizeDisparity(const cv::Mat& D)
 
   for(int r = 0; r < ret.rows; ++r)
     for(int c = 0; c < ret.cols; ++c) {
-      if(D.at<float>(r,c) <= min_val + 1.25f) {
+      if(D.at<float>(r,c) < 1e-3f) {
         ret.at<cv::Vec3b>(r,c) = cv::Vec3b(0,0,0);
       }
     }
@@ -262,13 +262,28 @@ DataLoaderThread::DataLoaderThread(UniquePointer<DataLoader> data_loader,
                                    BufferType& buffer)
   : _data_loader(std::move(data_loader)), _buffer(buffer), _thread([=] { this->start(); }) {}
 
-DataLoaderThread::~DataLoaderThread() { stop(); }
+DataLoaderThread::~DataLoaderThread()
+{
+  stop();
+}
 
 void DataLoaderThread::stop()
 {
-  _stop_requested = true;
-  if(_thread.joinable())
-    _thread.join();
+  if(_is_running) {
+    _stop_requested = true;
+
+    //
+    // we also need to empty the buffer, because the call to push() blocks
+    //
+    //
+    typename BufferType::value_type frame;
+    while( _buffer.pop(&frame, 10) )
+      ; // nothing here, just pop the frames
+
+    if(_thread.joinable()) {
+      _thread.join();
+    }
+  }
 }
 
 bool DataLoaderThread::isRunning() const { return _is_running; }

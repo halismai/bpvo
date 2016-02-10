@@ -136,38 +136,64 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
   //
   // initialize pose estimation for the next frame using the latest estimate
   //
-  Matrix44 T_est = _T_kf;
-  _pose_estimator.setParameters(_pose_est_params_low_res);
-  int i = static_cast<int>(_channels_pyr.size()) - 1;
-  for( ; i >= _params.maxTestLevel; --i) {
-    dprintf("level %d\n", i);
-    ret.optimizerStatistics[i] = _pose_estimator.run(_tdata_pyr[i].get(), _channels_pyr[i], T_est);
-  }
-
-  while(i >= 0) {
-    Fatal("debug\n");
-    _pose_estimator.setParameters(_pose_est_params);
-    ret.optimizerStatistics.front() =
-        _pose_estimator.run(_tdata_pyr.front().get(), _channels_pyr.front(), T_est);
-  }
-
+  Matrix44 T_est = estimatePose(_channels_pyr, _T_kf, ret.optimizerStatistics);
 
   ret.keyFramingReason = shouldKeyFrame(T_est, _pose_estimator.getWeights());
-  ret.isKeyFrame = (ret.keyFramingReason != KeyFramingReason::kNoKeyFraming);
+  ret.isKeyFrame = ((int)ret.keyFramingReason != (int)KeyFramingReason::kNoKeyFraming);
 
   if(ret.isKeyFrame) {
-    std::cout << ToString(ret.keyFramingReason) << std::endl;
-    Fatal("bye\n");
+    // if we do not have a keyframe candidate, this happens if keyframing is
+    // disabled (e.g. minTranslationMagToKeyFrame = 0.0f), or if the first frame
+    // motion was too large
+    if(_kf_candidate.empty()) {
+      setAsKeyFrame(_channels_pyr, ToOpenCV(D_ptr, _image_size));
+      ret.pose = T_est * _T_kf.inverse();
+      _T_kf.setIdentity();
+    } else {
+      //
+      // set keyframe candidate as the current keyframe, and re-estimate the
+      // pose with identity initialization
+      //
+      setAsKeyFrame(_kf_candidate);
+
+      Matrix44 T_init = Matrix44::Identity();
+      Matrix44 T_est = estimatePose(_channels_pyr, T_init, ret.optimizerStatistics);
+      ret.pose = T_est;
+      _T_kf = T_est;
+      _kf_candidate.clear();
+    }
   } else {
     // TODO test if there is enough good disparity estimates for the frame to be
     // assigned as a keyframe candidate
     _kf_candidate.channels_pyr.swap(_channels_pyr);
-    _kf_candidate.disparity = ToOpenCV(D_ptr, _image_size);
+    _kf_candidate.disparity = ToOpenCV(D_ptr, _image_size).clone();
     ret.pose = T_est * _T_kf.inverse(); // return the relative motion wrt to the added frame
     _T_kf = T_est; // replace the initialization with the new motion
   }
 
   return ret;
+}
+
+Matrix44 VisualOdometry::
+Impl::estimatePose(const std::vector<ChannelsT>& cn, const Matrix44& T_init,
+                   std::vector<OptimizerStatistics>& stats)
+{
+  stats.resize(cn.size());
+  Matrix44 T_est = T_init;
+
+  THROW_ERROR_IF( _params.maxTestLevel != 0, "maxTestLevel must be 0 for now" );
+
+  _pose_estimator.setParameters(_pose_est_params_low_res);
+  int i = static_cast<int>(cn.size()) - 1;
+  for( ; i >= _params.maxTestLevel;  --i) {
+    dprintf("level %d/%d\n", i, _params.maxTestLevel);
+    if(i == 0) { // set the original thresholds for the finest pyramid level
+      _pose_estimator.setParameters(_pose_est_params);
+    }
+    stats[i] = _pose_estimator.run(_tdata_pyr[i].get(), cn[i], T_est);
+  }
+
+  return T_est;
 }
 
 void VisualOdometry::Impl::setAsKeyFrame(const std::vector<ChannelsT>& cn,
@@ -209,11 +235,23 @@ VisualOdometry::Impl::shouldKeyFrame(const Matrix44& T, const std::vector<float>
   auto thresh = _params.goodPointThreshold;
   auto num_good = std::count_if(std::begin(weights), std::end(weights),
                                 [=](float w) { return w > thresh; });
-  if(num_good < _params.maxFractionOfGoodPointsToKeyFrame) {
+  float frac_good = num_good / (float) weights.size();
+  dprintf("fraction of good points %0.2f at threshold %f\n", frac_good, thresh);
+  if(frac_good < _params.maxFractionOfGoodPointsToKeyFrame) {
     return KeyFramingReason::kSmallFracOfGoodPoints;
   }
 
   return KeyFramingReason::kNoKeyFraming;
+}
+
+bool VisualOdometry::Impl::KeyFrameCandidate::empty() const
+{
+  return disparity.empty();
+}
+
+void VisualOdometry::Impl::KeyFrameCandidate::clear()
+{
+  disparity = cv::Mat();
 }
 
 } // bpvo

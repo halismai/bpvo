@@ -102,14 +102,14 @@ struct EigenAlignedContainer
  */
 enum LossFunctionType
 {
-  kHuber,
+  kHuber = 0x10,
   kTukey,
   kL2 // not robust (ordinary least squares)
 }; // LossFunctionType
 
 enum VerbosityType
 {
-  kIteration, //< print details of every iteration
+  kIteration = 0x20, //< print details of every iteration
   kFinal,     //< show a brief summary at the end
   kSilent,    //< say nothing
   kDebug      //< print debug info
@@ -255,7 +255,7 @@ struct AlgorithmParameters
  */
 enum PoseEstimationStatus
 {
-  kParameterTolReached, //< optimizer reached the desired parameter tolerance
+  kParameterTolReached = 0x30, //< optimizer reached the desired parameter tolerance
   kFunctionTolReached,  //< ditto function value
   kGradientTolReached,  //< ditto gradient value (J'*F)
   kMaxIterations,       //< Maximum number of iteration
@@ -268,7 +268,7 @@ enum PoseEstimationStatus
  */
 enum KeyFramingReason
 {
-  kLargeTranslation,      //< translation was large
+  kLargeTranslation = 0x40,      //< translation was large
   kLargeRotation,         //< rotation was large
   kSmallFracOfGoodPoints, //< fraction of good points is low
   kNoKeyFraming,          //< there was no keyframe

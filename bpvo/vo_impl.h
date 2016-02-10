@@ -92,6 +92,9 @@ class VisualOdometry::Impl
  protected:
   void setAsKeyFrame(const std::vector<ChannelsT>&, const cv::Mat&);
 
+  Matrix44 estimatePose(const std::vector<ChannelsT>&, const Matrix44& T_init,
+                        std::vector<OptimizerStatistics>& stats);
+
   /**
    * keyframing based on pose and valid points
    */
@@ -102,9 +105,24 @@ class VisualOdometry::Impl
   {
     std::vector<ChannelsT> channels_pyr;
     cv::Mat disparity;
+
+    /**
+     * \return true if the KeyFrameCandidate is is empty
+     */
+    bool empty() const;
+
+    /**
+     * clears the data (calling empty() after this will return true)
+     */
+    void clear();
   }; // KeyFrameCandidate
 
+  void setAsKeyFrame(const KeyFrameCandidate& kfc) {
+    this->setAsKeyFrame(kfc.channels_pyr, kfc.disparity);
+  }
+
   KeyFrameCandidate _kf_candidate;
+
 }; // VisualOdometry
 
 }; // bpvo

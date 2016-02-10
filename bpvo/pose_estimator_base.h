@@ -150,23 +150,23 @@ class PoseEstimatorBase
   static constexpr const char* _verbose_fmt_str_first_it =
       " %5d       %5d   %13.6g    %12.3g\n";
   static constexpr const char* _verbose_fmt_str =
-      " %5d       %5d   %13.6g    %12.3g    %12.6g\n";
+      " %5d       %5d   %13.6g    %12.3g    %12.6g    %12.6g\n";
 
   void printHeader(float f_val, float g_norm) const
   {
     if(_params.verbosity == VerbosityType::kDebug ||
        _params.verbosity == VerbosityType::kIteration) {
-      printf("\n                                        First-Order         Norm of \n"
-             " Iteration  Func-count    Residual       optimality            step\n");
+      printf("\n                                        First-Order         Norm of       Delta\n"
+             " Iteration  Func-count    Residual       optimality            step       error\n");
       fprintf(stdout, _verbose_fmt_str_first_it, 0, _num_fun_evals, f_val, g_norm);
     }
   }
 
-  void printIteration(int iteration, float f_val, float g_norm, float dp_norm) const
+  void printIteration(int iteration, float f_val, float g_norm, float dp_norm, float delta_error) const
   {
     if(_params.verbosity == VerbosityType::kDebug ||
        _params.verbosity == VerbosityType::kIteration) {
-      fprintf(stdout, _verbose_fmt_str, iteration, _num_fun_evals, f_val, g_norm, dp_norm);
+      fprintf(stdout, _verbose_fmt_str, iteration, _num_fun_evals, f_val, g_norm, dp_norm, delta_error);
     }
   }
 
@@ -182,7 +182,8 @@ class PoseEstimatorBase
     }
 
     if(f_norm < _params.functionTolerance ||
-       f_norm < _params.functionTolerance * (sqrt_eps + _f_norm_prev)) {
+       f_norm < _params.functionTolerance * (sqrt_eps + _f_norm_prev) ||
+       std::fabs(f_norm - _f_norm_prev) < _params.functionTolerance) {
       status = PoseEstimationStatus::kFunctionTolReached;
       return true;
     }
@@ -260,7 +261,7 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
 
     float dp_norm = data.dp.norm();
     g_norm = data.gradientNorm();
-    printIteration(ret.numIterations, f_norm, g_norm, dp_norm);
+    printIteration(ret.numIterations, f_norm, g_norm, dp_norm, std::abs(_f_norm_prev-f_norm));
 
     has_converged = testConvergence(dp_norm, dp_norm_prev, g_norm, f_norm, ret.status);
 

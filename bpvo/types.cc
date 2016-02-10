@@ -132,11 +132,11 @@ std::string ToString(PoseEstimationStatus s)
 std::string ToString(KeyFramingReason r)
 {
   switch(r) {
-    case kLargeTranslation: return "LargeTranslation";
-    case kLargeRotation: return "LargeRotation";
-    case kSmallFracOfGoodPoints: return "SmallFracOfGoodPoints";
-    case kNoKeyFraming: return "NoKeyFraming";
-    case kFirstFrame: return "FirstFrame";
+    case KeyFramingReason::kLargeTranslation: return "LargeTranslation";
+    case KeyFramingReason::kLargeRotation: return "LargeRotation";
+    case KeyFramingReason::kSmallFracOfGoodPoints: return "SmallFracOfGoodPoints";
+    case KeyFramingReason::kNoKeyFraming: return "NoKeyFraming";
+    case KeyFramingReason::kFirstFrame: return "FirstFrame";
   }
 
   return "Unknown";

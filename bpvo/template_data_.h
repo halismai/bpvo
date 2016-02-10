@@ -250,10 +250,6 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
     _points[i] = _warp.makePoint(x, y, inds[i].second);
   }
 
-  //char buf[128];
-  //snprintf(buf, 128, "points_%d.txt", _pyr_level);
-  //writePointsToFile(std::string(buf), _points);
-
   _warp.setNormalization(_points);
 
   //
