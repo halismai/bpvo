@@ -46,6 +46,27 @@ class StereoFrame : public ImageFrame
   cv::Mat _disparity;
 }; // StereoFrame
 
+class DisparityFrame : public ImageFrame
+{
+ public:
+  DisparityFrame();
+  explicit DisparityFrame(const cv::Mat& left, const cv::Mat& disparity);
+  virtual ~DisparityFrame();
+
+  const cv::Mat& image() const;
+  const cv::Mat& disparity() const;
+
+  void setImage(const cv::Mat&);
+  void setDisparity(const cv::Mat&);
+
+ private:
+  cv::Mat _image;
+  cv::Mat _disparity;
+
+ protected:
+  void convertDisparityToFloat();
+}; // DisparityFrame
+
 struct StereoCalibration
 {
   inline StereoCalibration(const Matrix33& K_ = Matrix33::Identity(),
@@ -151,6 +172,33 @@ class KittiDataLoader : public StereoDataLoader
   StereoCalibration _calib;
   void load_calibration(std::string filename);
 }; // KittiDataLoader
+
+
+class DisparityDataLoader : public DataLoader
+{
+ public:
+  typedef typename DataLoader::ImageFramePointer ImageFramePointer;
+
+ public:
+  DisparityDataLoader(const ConfigFile& cf);
+  DisparityDataLoader(std::string conf_fn);
+
+  virtual ~DisparityDataLoader();
+
+  virtual StereoCalibration calibration() const = 0;
+
+  ImageSize imageSize() const;
+  ImageFramePointer getFrame(int) const;
+
+  inline int firstFrameNumber() const { return 0; }
+
+ protected:
+  std::string _image_format;
+  std::string _disparity_format;
+
+  ImageSize _image_size;
+  void set_image_size();
+}; // DisparityDataLoader
 
 
 //

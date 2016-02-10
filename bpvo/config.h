@@ -22,7 +22,7 @@
 #define BPVO_VERSION_MAJOR "0"
 #define BPVO_VERSION_MINOR "5"
 #define BPVO_VERSION_PATCH "2-dist-RelWithDebInfo"
-#define BPVO_BUILD_DATE    "Tue Feb  9 20:39:55 EST 2016"
+#define BPVO_BUILD_DATE    "Tue Feb  9 22:12:52 EST 2016"
 #define BPVO_BUILD_STR \
     "BPVO version: " BPVO_VERSION_MAJOR "." BPVO_VERSION_MINOR "." BPVO_VERSION_PATCH \
     "\nBuilt on: " BPVO_BUILD_DATE

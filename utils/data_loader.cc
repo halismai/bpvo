@@ -26,7 +26,6 @@ StereoFrame::StereoFrame(const cv::Mat& left, const cv::Mat& right)
 StereoFrame::StereoFrame(const cv::Mat& left, const cv::Mat& right, const cv::Mat& disparity)
     : _left(left), _right(right), _disparity(disparity) {}
 
-
 const cv::Mat& StereoFrame::image() const { return _left; }
 const cv::Mat& StereoFrame::disparity() const { return _disparity;  }
 
@@ -34,6 +33,37 @@ void StereoFrame::setLeft(const cv::Mat& I) { _left = I; }
 void StereoFrame::setRight(const cv::Mat& I) { _right = I; }
 void StereoFrame::setDisparity(const cv::Mat& D) { _disparity = D; }
 
+
+DisparityFrame::DisparityFrame() {}
+
+DisparityFrame::DisparityFrame(const cv::Mat& image, const cv::Mat& disparity)
+  : _image(image), _disparity(disparity)
+{
+  convertDisparityToFloat();
+}
+
+DisparityFrame::~DisparityFrame() {}
+
+const cv::Mat& DisparityFrame::image() const { return _image; }
+const cv::Mat& DisparityFrame::disparity() const { return _disparity; }
+
+void DisparityFrame::setImage(const cv::Mat& image)
+{
+  _image = image;
+}
+
+void DisparityFrame::setDisparity(const cv::Mat& disparity)
+{
+  _disparity = disparity;
+  convertDisparityToFloat();
+}
+
+void DisparityFrame::convertDisparityToFloat()
+{
+  assert( _disparity.channels() == 1 );
+  if(_disparity.type() != cv::DataType<float>::type)
+    _disparity.convertTo(_disparity, CV_32FC1, 1.0/16.0, 0.0);
+}
 
 UniquePointer<DataLoader> DataLoader::FromConfig(std::string conf_fn)
 {
@@ -164,6 +194,42 @@ void StereoDataLoader::set_image_size()
   auto frame = this->getFrame(this->firstFrameNumber());
   this->_image_size = ImageSize(frame->image().rows, frame->image().cols);
 }
+
+DisparityDataLoader::DisparityDataLoader(const ConfigFile& cf)
+  : _image_format(fs::expand_tilde(cf.get<std::string>("LeftImageFormat", ""))),
+    _disparity_format(fs::expand_tilde(cf.get<std::string>("DisparityFormat", "")))
+{
+  if(!_image_format.empty())
+    set_image_size();
+}
+
+DisparityDataLoader::DisparityDataLoader(std::string fn)
+  : DisparityDataLoader(ConfigFile(fn)) {}
+
+DisparityDataLoader::~DisparityDataLoader() {}
+
+auto DisparityDataLoader::getFrame(int f_i) const -> ImageFramePointer
+{
+  auto fn = Format(_image_format.c_str(), f_i);
+  auto I1 = cv::imread(fn, cv::IMREAD_GRAYSCALE);
+  auto err_msg = Format("failed to read image from %s\n", fn.c_str());
+  THROW_ERROR_IF(I1.empty(), err_msg.c_str());
+
+  fn = Format(_disparity_format.c_str(), f_i);
+  err_msg = Format("failed to read image from %s\n", fn.c_str());
+  auto D = cv::imread(fn, cv::IMREAD_UNCHANGED);
+
+  return ImageFramePointer(new DisparityFrame(I1, D));
+}
+
+void DisparityDataLoader::set_image_size()
+{
+  auto frame = this->getFrame(this->firstFrameNumber());
+  this->_image_size = ImageSize(frame->image().rows, frame->image().cols);
+}
+
+ImageSize DisparityDataLoader::imageSize() const { return _image_size; }
+
 
 KittiDataLoader::KittiDataLoader(const ConfigFile& cf)
   : StereoDataLoader(cf)
