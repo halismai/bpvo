@@ -189,5 +189,11 @@ std::ostream& operator<<(std::ostream& os, const Result& r)
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const ImageSize& s)
+{
+  os << "[" << s.rows << "," << s.cols << "]";
+  return os;
+}
+
 }
 

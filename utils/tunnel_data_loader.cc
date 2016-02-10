@@ -35,8 +35,8 @@ TunnelDataLoader::TunnelDataLoader(const ConfigFile& cf)
   auto err_msg = Format("directory %s does not exist", root_dir.c_str());
   THROW_ERROR_IF(!fs::exists(root_dir), err_msg.c_str());
 
-  this->_image_format = Format("%s/image%s.pgm", root_dir.c_str(), "%06d.pgm");
-  this->_disparity_format = Format("%s/image%s-disparity.pgm", root_dir.c_str(), "%06d.pgm");
+  this->_image_format = Format("%s/image%s.pgm", root_dir.c_str(), "%06d");
+  this->_disparity_format = Format("%s/image%s-disparity.pgm", root_dir.c_str(), "%06d");
 
   auto calib_fn = cf.get<std::string>("CalibrationFile");
   err_msg = Format("calibration file %s does not exist", calib_fn.c_str());
@@ -76,15 +76,15 @@ void TunnelDataLoader::load_calibration(std::string filename)
          &dist_coeffs[0], &dist_coeffs[1], &dist_coeffs[2],
          &dist_coeffs[3], &dist_coeffs[4], &dist_coeffs[5]);
 
+  this->_image_size.rows = rows;
+  this->_image_size.cols = cols;
+
   _calib.K <<
       fx, 0.0, cx,
       0.0, fy, cy,
       0.0, 0.0, 1.0;
 
   std::getline(ifs, line); // CameraIntrinsicsPlumbBob second line
-  THROW_ERROR_IF(line.empty(), "malformatted line in calibration file");
-
-  std::getline(ifs, line); // Transform3D(1, 0, 0, 0,
   THROW_ERROR_IF(line.empty(), "malformatted line in calibration file");
 
   for(int i = 0; i < 4; ++i) {
@@ -94,8 +94,10 @@ void TunnelDataLoader::load_calibration(std::string filename)
 
   std::getline(ifs, line);
   THROW_ERROR_IF(line.empty(), "malformatted line in calibration file");
+  float dummy = 0.0f;
   removeWhiteSpace(line);
-  sscanf(line.c_str(), "Transform3D(1,0,0,0,%f", &_calib.baseline);
+  sscanf(line.c_str(), "Transform3D(%f,%f,%f,%f",
+         &dummy, &dummy, &dummy, &_calib.baseline);
 
   if(_calib.baseline < 0)
     _calib.baseline *= -1;
@@ -103,6 +105,10 @@ void TunnelDataLoader::load_calibration(std::string filename)
 
 StereoCalibration TunnelDataLoader::calibration() const { return _calib; }
 
-} // bpvo
+UniquePointer<DataLoader> TunnelDataLoader::Create(const ConfigFile& cf)
+{
+  return UniquePointer<DataLoader>(new TunnelDataLoader(cf));
+}
 
+} // bpvo
 

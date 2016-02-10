@@ -16,7 +16,6 @@
 
 using namespace bpvo;
 
-
 int main(int argc, char** argv)
 {
   fprintf(stdout, "%s\n", BPVO_BUILD_STR);
@@ -53,6 +52,10 @@ int main(int argc, char** argv)
 
   while(f_i < max_frames) {
     if(image_buffer.pop(&frame)) {
+      if(frame->image().empty()) {
+        Warn("could not get data\n");
+        break;
+      }
       Timer timer;
       auto result = vo.addFrame(frame->image().ptr<uint8_t>(),
                                 frame->disparity().ptr<float>());

@@ -1,5 +1,6 @@
 #include "utils/data_loader.h"
 #include "utils/stereo_algorithm.h"
+#include "utils/tunnel_data_loader.h"
 #include "bpvo/config_file.h"
 #include "bpvo/utils.h"
 
@@ -76,6 +77,9 @@ UniquePointer<DataLoader> DataLoader::FromConfig(std::string conf_fn)
   } else if(icompare("kitti", dataset)) {
     dprintf("KittiDataLoader\n");
     return KittiDataLoader::Create(cf);
+  } else if(icompare("tunnel", dataset)) {
+    dprintf("tunnel data\n");
+    return TunnelDataLoader::Create(cf);
   } else {
     char buf[1024];
     snprintf(buf, 1024, "Unknown dataset %s\n", dataset.c_str());
@@ -218,6 +222,7 @@ auto DisparityDataLoader::getFrame(int f_i) const -> ImageFramePointer
   fn = Format(_disparity_format.c_str(), f_i);
   err_msg = Format("failed to read image from %s\n", fn.c_str());
   auto D = cv::imread(fn, cv::IMREAD_UNCHANGED);
+  assert( D.type() == cv::DataType<uint16_t>::type );
 
   return ImageFramePointer(new DisparityFrame(I1, D));
 }

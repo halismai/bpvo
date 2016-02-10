@@ -95,7 +95,7 @@ class ValidPixelPredicate
 {
   typedef typename SaliencyMapT::value_type DataType;
   static constexpr DataType MinSaliency = 0.01;
-  static constexpr float MinDisparity = 0.30f;
+  static constexpr float MinDisparity = 1.0f;
 
  public:
   inline ValidPixelPredicate(const DisparityPyramidLevel& dmap,

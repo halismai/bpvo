@@ -363,6 +363,8 @@ struct ImageSize
   inline ImageSize(int r = 0, int c = 0) : rows(r), cols(c) {}
 
   inline int numel() const { return rows*cols; }
+
+  friend std::ostream& operator<<(std::ostream&, const ImageSize&);
 }; // ImageSize
 
 
