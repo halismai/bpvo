@@ -68,7 +68,7 @@ int main(int argc, char** argv)
       if(num_iters == params.maxIterations)
         Warn("maximum iterations reached\n");
 
-      fprintf(stdout, "Frame %05d time %0.2f ms [%0.2f Hz] %03d iters isKeyFrame:%d because:% 16s\r",
+      fprintf(stdout, "Frame %05d time %0.2f ms [%0.2f Hz] %03d iters isKeyFrame:%d because:%16s\r",
               f_i-1, tt, (f_i - 1) / total_time,  num_iters, result.isKeyFrame,
               ToString(result.keyFramingReason).c_str());
       fflush(stdout);
