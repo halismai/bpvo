@@ -47,6 +47,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
   addExtraCompilerOptions(-fdiagnostics-color=auto)
   addExtraCompilerOptions(-ftree-vectorize)
   addExtraCompilerOptions(-pthread)
+  addExtraCompilerOptions(-Wabi)
+  addExtraCompilerOptions(-fabi-version=0)
 
   if(ENABLE_OMIT_FRAME_POINTER)
     addExtraCompilerOptions(-fomit-frame-pointer)
@@ -104,7 +106,13 @@ set(CMAKE_EXE_LINKER_FLAGS         "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_EXE_LINKER_FLAGS_DEBUG   "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
 
-
 include(cmake/OptimizeForArchitecture.cmake)
 OptimizeForArchitecture()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Vc_ARCHITECTURE_FLAGS}")
+
+#list(APPEND "${CMAKE_CXX_FLAGS}" "${Vc_ARCHITECTURE_FLAGS}")
+#string(REPLACE ";" " " Vc_ARCHITECTURE_FLAGS_STR "${Vc_ARCHITECTURE_FLAGS}");
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Vc_ARCHITECTURE_FLAGS}")
+list(APPEND CMAKE_CXX_FLAGS ${Vc_ARCHITECTURE_FLAGS})
+string(REPLACE ";" "  " FLAGS_STR "${CMAKE_CXX_FLAGS}")
+message(STATUS "flags ${FLAGS_STR}")
+set(CMAKE_CXX_FLAGS "${FLAGS_STR}")
