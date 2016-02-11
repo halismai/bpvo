@@ -64,43 +64,63 @@ void TunnelDataLoader::load_calibration(std::string filename)
 
   std::string line;
   std::getline(ifs, line); // version
-  std::getline(ifs, line); // the camera calibration
+  if(line == "CRL Camera Config") {
+    std::getline(ifs, line);
+    removeWhiteSpace(line);
+    int rows = 0, cols = 0;
+    sscanf(line.c_str(), "Width,height:%d,%d", &cols, &rows);
+    this->_image_size.rows = rows;
+    this->_image_size.cols = cols;
+    std::getline(ifs, line); // fps
+    std::getline(ifs, line);
+    removeWhiteSpace(line);
+    float fx = 0.0, fy = 0.0, cx = 0.0, cy = 0.0;
+    sscanf(line.c_str(), "fx,fy,cx,cy:%f,%f,%f,%f", &fx, &fy, &cx, &cy);
+    _calib.K << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
+    std::getline(ifs, line);
+    removeWhiteSpace(line);
+    sscanf(line.c_str(), "xyzrpq:%f", &_calib.baseline);
+    if(_calib.baseline < 0.0f)
+      _calib.baseline *= -1.0f;
+  } else {
+    std::getline(ifs, line); // the camera calibration
 
-  int rows = 0, cols = 0;
-  float fx = 0.0, fy = 0.0f, cx = 0.0f, cy = 0.0f;
-  float dist_coeffs[6];
+    int rows = 0, cols = 0;
+    float fx = 0.0, fy = 0.0f, cx = 0.0f, cy = 0.0f;
+    float dist_coeffs[6];
 
-  removeWhiteSpace(line);
-  sscanf(line.c_str(), "CameraIntrinsicsPlumbBob{%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f}",
-         &rows, &cols, &fx, &fy, &cx, &cy,
-         &dist_coeffs[0], &dist_coeffs[1], &dist_coeffs[2],
-         &dist_coeffs[3], &dist_coeffs[4], &dist_coeffs[5]);
+    removeWhiteSpace(line);
+    sscanf(line.c_str(), "CameraIntrinsicsPlumbBob{%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f}",
+           &rows, &cols, &fx, &fy, &cx, &cy,
+           &dist_coeffs[0], &dist_coeffs[1], &dist_coeffs[2],
+           &dist_coeffs[3], &dist_coeffs[4], &dist_coeffs[5]);
 
-  this->_image_size.rows = rows;
-  this->_image_size.cols = cols;
+    this->_image_size.rows = rows;
+    this->_image_size.cols = cols;
 
-  _calib.K <<
-      fx, 0.0, cx,
-      0.0, fy, cy,
-      0.0, 0.0, 1.0;
+    _calib.K <<
+        fx, 0.0, cx,
+        0.0, fy, cy,
+        0.0, 0.0, 1.0;
 
-  std::getline(ifs, line); // CameraIntrinsicsPlumbBob second line
-  THROW_ERROR_IF(line.empty(), "malformatted line in calibration file");
+    std::getline(ifs, line); // CameraIntrinsicsPlumbBob second line
+    THROW_ERROR_IF(line.empty(), "malformatted line in calibration file");
 
-  for(int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i) {
+      std::getline(ifs, line);
+      THROW_ERROR_IF(line.empty(), "malformatted line in calibration file");
+    }
+
     std::getline(ifs, line);
     THROW_ERROR_IF(line.empty(), "malformatted line in calibration file");
+    float dummy = 0.0f;
+    removeWhiteSpace(line);
+    sscanf(line.c_str(), "Transform3D(%f,%f,%f,%f",
+           &dummy, &dummy, &dummy, &_calib.baseline);
+
+    if(_calib.baseline < 0)
+      _calib.baseline *= -1;
   }
-
-  std::getline(ifs, line);
-  THROW_ERROR_IF(line.empty(), "malformatted line in calibration file");
-  float dummy = 0.0f;
-  removeWhiteSpace(line);
-  sscanf(line.c_str(), "Transform3D(%f,%f,%f,%f",
-         &dummy, &dummy, &dummy, &_calib.baseline);
-
-  if(_calib.baseline < 0)
-    _calib.baseline *= -1;
 }
 
 StereoCalibration TunnelDataLoader::calibration() const { return _calib; }
