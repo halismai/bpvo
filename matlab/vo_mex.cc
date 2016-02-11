@@ -132,10 +132,32 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, mxArray const* prhs[])
   if(nrhs < 1)
     mexError("need command\n");
 
-  const std::string command(prhs[0]);
-  if(bpvo::iequals("new", command)) {
-  } else if(bpvo::iequals("delete", command)) {
-  } else if(bpvo::iequals("add_frame", command)) {
+  const std::string command(mex::getString(prhs[0]));
+  if(bpvo::icompare("new", command))
+  {
+    static const char* USAGE = "hdle = fn('new', K, b, image_size, params)";
+    mex::nargchk(5, 5, nrhs, USAGE);
+    const mex::Mat<double> K(prhs[1]);
+    const double b = mex::getNumber<double>(prhs[2]);
+    const mex::Mat<double> image_size(prhs[3]);
+    const mex::Struct params(prhs[4]);
+    const int rows = static_cast<int>( image_size[0] );
+    const int cols = static_cast<int>( image_size[1] );
+    plhs[0] = mex::PtrToMex<VisualOdometryWrapper>(new VisualOdometryWrapper(K, b, rows, cols, params));
+  }
+  else if(bpvo::icompare("delete", command))
+  {
+    static const char* USAGE = "fn('delete', hdle)";
+    mex::nargchk(2, 2, nrhs, USAGE);
+    mex::DeleteClass<VisualOdometryWrapper>(prhs[1]);
+  }
+  else if(bpvo::icompare("add_frame", command))
+  {
+    static const char* USAGE = "result = fn('add_frame', hdle, I, D)";
+    mex::nargchk(4, 4, nrhs, USAGE);
+    const mex::Mat<uint8_t> I(prhs[2]);
+    const mex::Mat<float> D(prhs[3]);
+    plhs[0] = mex::MexToPtr<VisualOdometryWrapper>(prhs[1])->addFrame(I, D).release();
   } else {
     mexError("unkown command %s\n", command.c_str());
   }
