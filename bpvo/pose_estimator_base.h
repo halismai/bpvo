@@ -117,7 +117,7 @@ class PoseEstimatorBase
     _params = p;
   }
 
-  inline const PoseEstimatorParameters& parameters() const { return _p; }
+  inline const PoseEstimatorParameters& parameters() const { return _params; }
 
   inline const WeightsVector& getWeights() const { return _weights; }
 

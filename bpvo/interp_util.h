@@ -49,7 +49,7 @@ class BilinearInterp
     resize(points.size());
 
     for(size_t i = 0; i < points.size(); ++i) {
-      auto p = warp(points[i]);
+      const auto p = warp(points[i]);
       float xf = p.x(), yf = p.y();
       int xi = static_cast<int>(xf), yi = static_cast<int>(yf);
       xf -= xi;
