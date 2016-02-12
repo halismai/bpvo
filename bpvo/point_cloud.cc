@@ -142,6 +142,7 @@ bool ToPlyFile(std::string filename, const PointWithInfoVector& points, std::str
       ofs.write((const char*)p.rgba().data(), 4*sizeof(uint8_t));
     }
     */
+
     int nbytes = points.size() * (3*sizeof(float) + 4*sizeof(uint8_t));
     std::vector<char> data(nbytes);
     auto ptr = data.data();
@@ -163,3 +164,4 @@ bool ToPlyFile(std::string filename, const PointWithInfoVector& points, std::str
 }
 
 } // bpvo
+

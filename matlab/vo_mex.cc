@@ -158,7 +158,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, mxArray const* prhs[])
     const mex::Mat<uint8_t> I(prhs[2]);
     const mex::Mat<float> D(prhs[3]);
     plhs[0] = mex::MexToPtr<VisualOdometryWrapper>(prhs[1])->addFrame(I, D).release();
-  } else {
+  }
+  else
+  {
     mexError("unkown command %s\n", command.c_str());
   }
 }
