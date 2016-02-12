@@ -66,7 +66,8 @@ cv::Mat_<float> RawIntensity::computeSaliencyMap() const
     dst_ptr[0] = 0.0f;
 #pragma omp simd
     for(int x = 1; x < cols - 1; ++x) {
-      dst_ptr[x] = 0.5f*std::fabs(static_cast<float>(s[x+1]) - static_cast<float>(s[x-1])) +
+      dst_ptr[x] =
+          0.5f*std::fabs(static_cast<float>(s[x+1]) - static_cast<float>(s[x-1])) +
           0.5f*std::fabs(static_cast<float>(s1[x]) - static_cast<float>(s0[x]));
     }
 

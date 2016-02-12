@@ -225,6 +225,7 @@ class TemplateDataExtractor
 #endif // WITH_TBB
 
 
+/*
 static Eigen::Matrix<float,1,6> ComputeJacobian(const Point& pt, float Ix, float Iy)
 {
   auto x = pt[0], y = pt[1], z = pt[2],
@@ -239,7 +240,7 @@ static Eigen::Matrix<float,1,6> ComputeJacobian(const Point& pt, float Ix, float
          z_i  * Iy,
         -z2_i * (x*Ix + y*Iy)).finished();
 }
-
+*/
 
 }; // namespace
 
@@ -271,6 +272,9 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   //
   // compute the warp jacobians
   //
+  //
+  // WE are no longer doing this. This seems to cause numerical instability
+  //
   /*
   WarpJacobianVector Jw(_points.size());
   for(size_t i = 0; i < _points.size(); ++i) {
@@ -288,9 +292,9 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   //
   // compute the pixels and jacobians for all channels
   //
-  typedef Eigen::Matrix<float,1,2> ImageGradient;
+  /*typedef Eigen::Matrix<float,1,2> ImageGradient;
   float fx = 0.5f * _warp.K()(0,0),
-        fy = 0.5f * _warp.K()(1,1);
+        fy = 0.5f * _warp.K()(1,1);*/
 
   for(int c = 0; c < channels.size(); ++c) {
     auto c_ptr = channels.channelData(c);
@@ -303,7 +307,8 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
       float Ix = c_ptr[ii+1] - c_ptr[ii-1],
             Iy = c_ptr[ii+stride] - c_ptr[ii-stride];
       //J_ptr[i] = ImageGradient(fx*Ix, fy*Iy) * Jw[i];
-      J_ptr[i] = ComputeJacobian(_points[i], fx*Ix, fy*Iy);
+      //J_ptr[i] = ComputeJacobian(_points[i], fx*Ix, fy*Iy);
+      J_ptr[i] = _warp.jacobian(_points[i], 0.5f*Ix, 0.5f*Iy);
     }
   }
 #endif
