@@ -48,7 +48,7 @@ void computeWeights(LossFunctionType, const std::vector<float>& residuals,
 class AutoScaleEstimator
 {
  public:
-  AutoScaleEstimator(float tol = 1e-4);
+  AutoScaleEstimator(float tol = -1.0f);
 
   void reset();
   float getScale() const;

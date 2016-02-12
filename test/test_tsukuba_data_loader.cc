@@ -1,4 +1,5 @@
 #include "utils/data_loader.h"
+#include "utils/viz.h"
 #include "bpvo/utils.h"
 #include "bpvo/timer.h"
 #include <opencv2/highgui/highgui.hpp>

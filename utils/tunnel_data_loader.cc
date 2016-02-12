@@ -43,6 +43,9 @@ TunnelDataLoader::TunnelDataLoader(const ConfigFile& cf)
   THROW_ERROR_IF(!fs::exists(calib_fn), err_msg.c_str());
 
   load_calibration(calib_fn);
+
+  int first_frame_num = cf.get<int>("firstFrameNumber", 0);
+  this->setFirstFrameNumber(first_frame_num);
 }
 
 TunnelDataLoader::TunnelDataLoader(std::string conf_fn)

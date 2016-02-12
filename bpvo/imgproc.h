@@ -44,7 +44,7 @@ struct DisparityPyramidLevel
   }
 
   FORCE_INLINE int index(int r, int c) const {
-    return (r*_scale) * _stride + c*_scale;
+    return _scale * (r*_stride + c);
   }
 
   const float* _D_ptr;
@@ -94,7 +94,7 @@ template <class SaliencyMapT>
 class ValidPixelPredicate
 {
   typedef typename SaliencyMapT::value_type DataType;
-  static constexpr DataType MinSaliency = 0.01;
+  static constexpr DataType MinSaliency = 2.5f;
   static constexpr float MinDisparity = 1.0f;
 
  public:

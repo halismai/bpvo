@@ -141,6 +141,8 @@ float AutoScaleEstimator::estimateScale(const std::vector<float>& residuals,
     auto scale = z * median(_buffer);
     _delta_scale = std::fabs(scale - _scale);
     _scale = scale;
+  } else {
+    ;//printf("scale is stable %f\n", _delta_scale);
   }
 
   return _scale;

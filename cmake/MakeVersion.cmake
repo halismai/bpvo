@@ -6,7 +6,7 @@ function(MakeVersion LibName Major Minor Patch)
   #execute_process(COMMAND git id --id OUTPUT_VARIABLE git_id
   #  OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  execute_process(COMMAND git describe --tags --always git_id
+  execute_process(COMMAND git describe --tags --always OUTPUT_VARIABLE git_id
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
   if("${git_id}" STREQUAL "")

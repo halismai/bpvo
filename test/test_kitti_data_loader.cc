@@ -1,4 +1,5 @@
 #include "utils/data_loader.h"
+#include "utils/viz.h"
 #include <opencv2/highgui/highgui.hpp>
 
 using namespace bpvo;

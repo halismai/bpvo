@@ -225,6 +225,22 @@ class TemplateDataExtractor
 #endif // WITH_TBB
 
 
+static Eigen::Matrix<float,1,6> ComputeJacobian(const Point& pt, float Ix, float Iy)
+{
+  auto x = pt[0], y = pt[1], z = pt[2],
+       x2 = x*x, y2 = y*y, z2 = z*z, xy = x*y,
+       z_i = 1.0f / z, z2_i = 1.0f / z2;
+
+  return (Eigen::Matrix<float,1,6>() <<
+        -z2_i * (y2*Iy + z2*Iy + xy*Ix),
+         z2_i * (x2*Ix + z2*Ix + xy*Iy),
+         z_i  * (x*Iy - y*Ix),
+         z_i  * Ix,
+         z_i  * Iy,
+        -z2_i * (x*Ix + y*Iy)).finished();
+}
+
+
 }; // namespace
 
 template <class CN, class W> inline
@@ -250,15 +266,17 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
     _points[i] = _warp.makePoint(x, y, inds[i].second);
   }
 
-  _warp.setNormalization(_points);
+  //_warp.setNormalization(_points);
 
   //
   // compute the warp jacobians
   //
+  /*
   WarpJacobianVector Jw(_points.size());
   for(size_t i = 0; i < _points.size(); ++i) {
     Jw[i] = _warp.warpJacobianAtZero(_points[i]);
   }
+  */
 
   _pixels.resize(_points.size() * NumChannels);
   _jacobians.resize(_points.size() * NumChannels);
@@ -284,7 +302,8 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
       P_ptr[i] = c_ptr[ii];
       float Ix = c_ptr[ii+1] - c_ptr[ii-1],
             Iy = c_ptr[ii+stride] - c_ptr[ii-stride];
-      J_ptr[i] = ImageGradient(fx*Ix, fy*Iy) * Jw[i];
+      //J_ptr[i] = ImageGradient(fx*Ix, fy*Iy) * Jw[i];
+      J_ptr[i] = ComputeJacobian(_points[i], fx*Ix, fy*Iy);
     }
   }
 #endif

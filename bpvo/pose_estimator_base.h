@@ -29,6 +29,7 @@
 #include <cmath>
 #include <limits>
 #include <vector>
+#include <iostream>
 
 namespace bpvo {
 
@@ -257,7 +258,7 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
       break;
     }
 
-    data.T *= tdata->warp().paramsToPose(-data.dp); // update the pose
+    data.T = data.T * tdata->warp().paramsToPose(-data.dp); // update the pose
 
     float dp_norm = data.dp.norm();
     g_norm = data.gradientNorm();

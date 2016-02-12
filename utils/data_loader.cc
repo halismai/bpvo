@@ -8,63 +8,8 @@
 #include <fstream>
 
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/contrib/contrib.hpp>
 
 namespace bpvo {
-
-std::ostream& operator<<(std::ostream& os, const StereoCalibration& c)
-{
-  os << c.K << "\n";
-  os << "baseline: " << c.baseline;
-
-  return os;
-}
-
-StereoFrame::StereoFrame() {}
-StereoFrame::~StereoFrame() {}
-StereoFrame::StereoFrame(const cv::Mat& left, const cv::Mat& right)
-    : _left(left), _right(right) {}
-StereoFrame::StereoFrame(const cv::Mat& left, const cv::Mat& right, const cv::Mat& disparity)
-    : _left(left), _right(right), _disparity(disparity) {}
-
-const cv::Mat& StereoFrame::image() const { return _left; }
-const cv::Mat& StereoFrame::disparity() const { return _disparity;  }
-
-void StereoFrame::setLeft(const cv::Mat& I) { _left = I; }
-void StereoFrame::setRight(const cv::Mat& I) { _right = I; }
-void StereoFrame::setDisparity(const cv::Mat& D) { _disparity = D; }
-
-
-DisparityFrame::DisparityFrame() {}
-
-DisparityFrame::DisparityFrame(const cv::Mat& image, const cv::Mat& disparity)
-  : _image(image), _disparity(disparity)
-{
-  convertDisparityToFloat();
-}
-
-DisparityFrame::~DisparityFrame() {}
-
-const cv::Mat& DisparityFrame::image() const { return _image; }
-const cv::Mat& DisparityFrame::disparity() const { return _disparity; }
-
-void DisparityFrame::setImage(const cv::Mat& image)
-{
-  _image = image;
-}
-
-void DisparityFrame::setDisparity(const cv::Mat& disparity)
-{
-  _disparity = disparity;
-  convertDisparityToFloat();
-}
-
-void DisparityFrame::convertDisparityToFloat()
-{
-  assert( _disparity.channels() == 1 );
-  if(_disparity.type() != cv::DataType<float>::type)
-    _disparity.convertTo(_disparity, CV_32FC1, 1.0/16.0, 0.0);
-}
 
 UniquePointer<DataLoader> DataLoader::FromConfig(std::string conf_fn)
 {
@@ -309,25 +254,6 @@ UniquePointer<DataLoader> KittiDataLoader::Create(const ConfigFile& cf)
   return UniquePointer<DataLoader>(new KittiDataLoader(cf));
 }
 
-cv::Mat colorizeDisparity(const cv::Mat& D)
-{
-  cv::Mat ret(D);
-  double min_val = 0,  max_val = 0;
-  cv::minMaxLoc(ret, &min_val, &max_val);
-
-  ret = 255.0 * ((ret - min_val) / (max_val - min_val));
-  ret.convertTo(ret, CV_8U);
-  cv::applyColorMap(ret, ret, cv::COLORMAP_JET);
-
-  for(int r = 0; r < ret.rows; ++r)
-    for(int c = 0; c < ret.cols; ++c) {
-      if(D.at<float>(r,c) < 1e-3f) {
-        ret.at<cv::Vec3b>(r,c) = cv::Vec3b(0,0,0);
-      }
-    }
-
-  return ret;
-}
 
 DataLoaderThread::DataLoaderThread(UniquePointer<DataLoader> data_loader,
                                    BufferType& buffer)

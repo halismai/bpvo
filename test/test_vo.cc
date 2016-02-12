@@ -1,6 +1,7 @@
 #include "utils/data_loader.h"
 #include "utils/bounded_buffer.h"
 #include "utils/program_options.h"
+#include "utils/viz.h"
 
 #include "bpvo/vo.h"
 #include "bpvo/trajectory.h"

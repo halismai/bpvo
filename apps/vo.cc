@@ -1,6 +1,7 @@
 #include "utils/data_loader.h"
 #include "utils/bounded_buffer.h"
 #include "utils/program_options.h"
+#include "utils/viz.h"
 
 #include "bpvo/vo.h"
 #include "bpvo/debug.h"
@@ -46,7 +47,10 @@ int main(int argc, char** argv)
   SharedPointer<ImageFrame> frame;
 
   int f_i = data_loader->firstFrameNumber();
+  std::cout << data_loader->calibration() << std::endl;
   DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
+
+  max_frames = f_i + max_frames;
 
   double total_time = 0.0;
 
@@ -96,7 +100,6 @@ int main(int argc, char** argv)
     }
   }
 
-  printf("waiting for DataLoaderThread\n");
   data_loader_thread.stop();
   while(data_loader_thread.isRunning())
     Sleep(10);

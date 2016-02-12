@@ -1,4 +1,6 @@
 #include "utils/tunnel_data_loader.h"
+#include "utils/viz.h"
+
 #include <opencv2/highgui/highgui.hpp>
 
 #include <iostream>
@@ -17,10 +19,10 @@ int main()
   SharedPointer<ImageFrame> frame;
 
   int i = 0;
-  while( i < 1000 ) {
+  while( true ) {
     if(image_buffer.pop(&frame)) {
-      cv::imshow("image", frame->image());
-      cv::imshow("disparity", colorizeDisparity(frame->disparity()));
+      cv::imshow("image", overlayDisparity(frame.get(), 0.8));
+      printf("frame %d\n", i);
       int k = 0xff & cv::waitKey(5);
       if(k == ' ') k = 0xff & cv::waitKey(0);
       if(k == 'q' || k == 27)

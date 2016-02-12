@@ -3,82 +3,20 @@
 
 #include <bpvo/types.h>
 #include <utils/bounded_buffer.h>
+#include <utils/stereo_calibration.h>
+#include <utils/image_frame.h>
 
 #include <iosfwd>
 #include <string>
 #include <thread>
 #include <atomic>
+#include <limits>
 
 #include <opencv2/core/core.hpp>
 
 namespace bpvo {
 
 class ConfigFile;
-
-cv::Mat colorizeDisparity(const cv::Mat&);
-
-struct ImageFrame
-{
-  virtual const cv::Mat& image() const = 0;
-  virtual const cv::Mat& disparity() const = 0;
-
-  virtual ~ImageFrame() {}
-}; // ImageFrame
-
-class StereoFrame : public ImageFrame
-{
- public:
-  StereoFrame();
-  explicit StereoFrame(const cv::Mat& left, const cv::Mat& right);
-  explicit StereoFrame(const cv::Mat& left, const cv::Mat& right, const cv::Mat& dmap);
-  virtual ~StereoFrame();
-
-  const cv::Mat& image() const;
-  const cv::Mat& disparity() const;
-
-  void setLeft(const cv::Mat&);
-  void setRight(const cv::Mat&);
-  void setDisparity(const cv::Mat&);
-
- private:
-  cv::Mat _left;
-  cv::Mat _right;
-  cv::Mat _disparity;
-}; // StereoFrame
-
-class DisparityFrame : public ImageFrame
-{
- public:
-  DisparityFrame();
-  explicit DisparityFrame(const cv::Mat& left, const cv::Mat& disparity);
-  virtual ~DisparityFrame();
-
-  const cv::Mat& image() const;
-  const cv::Mat& disparity() const;
-
-  void setImage(const cv::Mat&);
-  void setDisparity(const cv::Mat&);
-
- private:
-  cv::Mat _image;
-  cv::Mat _disparity;
-
- protected:
-  void convertDisparityToFloat();
-}; // DisparityFrame
-
-struct StereoCalibration
-{
-  inline StereoCalibration(const Matrix33& K_ = Matrix33::Identity(),
-                           float baseline_ = 1.0f)
-      : K(K_), baseline(baseline_) {}
-
-  Matrix33 K;
-  float baseline;
-
-  friend std::ostream& operator<<(std::ostream&, const StereoCalibration&);
-}; // StereoCalibration
-
 
 struct DataLoader
 {
@@ -87,14 +25,17 @@ struct DataLoader
   virtual StereoCalibration calibration() const = 0;
   virtual ImageFramePointer getFrame(int f_i) const = 0;
   virtual ImageSize imageSize() const = 0;
-  virtual int firstFrameNumber() const { return 0; }
-  virtual void setFirstFrameNumber(int) {}
 
+  virtual inline int firstFrameNumber() const { return _first_frame_number; }
+  virtual inline void setFirstFrameNumber(int f_i) { _first_frame_number = f_i; }
 
   /**
    * \return a data loader from a config file
    */
   static UniquePointer<DataLoader> FromConfig(std::string);
+
+ protected:
+  int _first_frame_number = 0;
 }; // DataLoader
 
 
@@ -138,8 +79,6 @@ class StereoDataLoader : public DataLoader
 
   ImageSize imageSize() const;
   ImageFramePointer getFrame(int) const;
-
-  inline int firstFrameNumber() const { return 0; }
 
  private:
   UniquePointer<StereoAlgorithm> _stereo_alg;
@@ -189,8 +128,6 @@ class DisparityDataLoader : public DataLoader
 
   ImageSize imageSize() const;
   ImageFramePointer getFrame(int) const;
-
-  inline int firstFrameNumber() const { return 0; }
 
  protected:
   std::string _image_format;
