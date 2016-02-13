@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
 
   Trajectory trajectory;
-  SharedPointer<ImageFrame> frame;
+  typename DataLoaderThread::BufferType::value_type frame;
 
   double total_time = 0.0;
   int k = 0, f_i = 1;

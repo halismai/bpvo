@@ -10,7 +10,7 @@ int main()
   typename DataLoaderThread::BufferType image_buffer(16);
 
   DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
-  SharedPointer<ImageFrame> frame;
+  typename DataLoaderThread::BufferType::value_type frame;
 
   int i = 0;
   while( i < 1000 ) {

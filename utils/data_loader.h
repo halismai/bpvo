@@ -20,7 +20,7 @@ class ConfigFile;
 
 struct DataLoader
 {
-  typedef SharedPointer<ImageFrame> ImageFramePointer;
+  typedef UniquePointer<ImageFrame> ImageFramePointer;
 
   virtual StereoCalibration calibration() const = 0;
   virtual ImageFramePointer getFrame(int f_i) const = 0;

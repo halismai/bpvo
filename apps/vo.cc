@@ -44,7 +44,7 @@ int main(int argc, char** argv)
   auto vo = VisualOdometry(data_loader.get(), params);
 
   Trajectory trajectory;
-  SharedPointer<ImageFrame> frame;
+  typename DataLoaderThread::BufferType::value_type frame;
 
   int f_i = data_loader->firstFrameNumber();
   std::cout << data_loader->calibration() << std::endl;

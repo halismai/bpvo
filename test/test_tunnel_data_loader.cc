@@ -16,7 +16,7 @@ int main()
   std::cout << data_loader->imageSize() << std::endl;
 
   DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
-  SharedPointer<ImageFrame> frame;
+  typename DataLoaderThread::BufferType::value_type frame;
 
   int i = 0;
   while( true ) {

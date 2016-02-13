@@ -12,7 +12,7 @@ typename DataLoaderThread::BufferType gBuffer(32);
 
 void ProcessData()
 {
-  SharedPointer<ImageFrame> frame;
+  typename DataLoaderThread::BufferType::value_type frame;
 
   Timer timer;
   int k = 0;

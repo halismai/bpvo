@@ -100,7 +100,7 @@ auto TsukubaDataLoader::getFrame(int f_i) const -> ImageFramePointer
   THROW_ERROR_IF(D.empty(), "could not read image from");
   D.convertTo(D, CV_32FC1);
 
-  return SharedPointer<ImageFrame>(new StereoFrame(I1, I2, D));
+  return ImageFramePointer(new StereoFrame(I1, I2, D));
 }
 
 StereoDataLoader::StereoDataLoader(const ConfigFile& cf)

@@ -14,6 +14,10 @@
 
 namespace bpvo {
 
+//
+// from boost examples
+// http://www.boost.org/doc/libs/1_60_0/doc/html/circular_buffer/examples.html
+//
 template <class T>
 class BoundedBuffer
 {
@@ -21,7 +25,9 @@ class BoundedBuffer
   typedef boost::circular_buffer<T> Container_t;
   typedef typename Container_t::size_type  size_type;
   typedef typename Container_t::value_type value_type;
-  typedef typename boost::call_traits<value_type>::param_type param_type;
+  // call_traits is useless in this department
+  //typedef typename boost::call_traits<value_type>::param_type param_type;
+  typedef value_type&& param_type;
 
  public:
   /**
@@ -66,7 +72,7 @@ void BoundedBuffer<T>::push(param_type item)
 {
   std::unique_lock<std::mutex> lock(_mutex);
   _cond_not_full.wait(lock, [=] { return _unread < _container.capacity(); });
-  _container.push_front(item);
+  _container.push_front(std::move(item));
   ++_unread;
   lock.unlock();
   _cond_not_empty.notify_one();
@@ -78,7 +84,7 @@ bool BoundedBuffer<T>::pop(value_type* item, int wait_time_ms)
   std::unique_lock<std::mutex> lock(_mutex);
   if(_cond_not_empty.wait_for(lock, std::chrono::milliseconds(wait_time_ms),
                               [=] { return _unread > 0; } )) {
-    *item = _container[--_unread];
+    (*item).swap(_container[--_unread]);
     lock.unlock();
     _cond_not_full.notify_one();
     return true;
