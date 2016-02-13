@@ -63,8 +63,17 @@ class TemplateData_
   static constexpr int NumChannels = Channels::NumChannels;
 
  public:
-  inline TemplateData_(const Matrix33& K, const float& baseline, int pyr_level)
-      : _pyr_level(pyr_level), _warp(K, baseline) {}
+  inline TemplateData_(const Matrix33& K, const float& baseline, int pyr_level,
+                       int min_pixels_for_nms = 320*240,
+                       float min_saliency = 0.01f,
+                       float min_disparity = 1.0f,
+                       float max_disparity = 512.0f)
+      : _pyr_level(pyr_level)
+        , _warp(K, baseline)
+        , _min_pixels_for_nms(min_pixels_for_nms)
+        , _min_saliency(min_saliency)
+        , _min_disparity(min_disparity)
+        , _max_disparity(max_disparity) {}
 
   inline ~TemplateData_() {}
 
@@ -122,6 +131,12 @@ class TemplateData_
 
   Warp _warp;
 
+  int _min_pixels_for_nms;
+
+  float _min_saliency;
+  float _min_disparity;
+  float _max_disparity;
+
   inline void clear()
   {
     _jacobians.clear();
@@ -159,12 +174,15 @@ static void writePointsToFile(std::string filename, const Points& pts)
 
 template <class SaliencyMapT> std::vector<std::pair<int,float>>
 getValidPixelsLocations(const DisparityPyramidLevel& dmap, const SaliencyMapT& smap,
-                        int nms_radius, bool do_nonmax_supp)
+                        int nms_radius, bool do_nonmax_supp, float min_saliency,
+                        float min_disparity, float max_disparity)
 {
   std::vector<std::pair<int,float>> ret;
   ret.reserve(smap.rows * smap.cols * 0.25);
 
-  const ValidPixelPredicate<SaliencyMapT> is_pixel_valid(dmap, smap, do_nonmax_supp ? nms_radius : -1);
+  const ValidPixelPredicate<SaliencyMapT> is_pixel_valid(
+      dmap, smap, do_nonmax_supp ? nms_radius : -1, min_saliency, min_disparity, max_disparity);
+
   const int border = std::max(2, nms_radius);
   for(int y = border; y < smap.rows - border - 1; ++y)
     for(int x = border; x < smap.cols - border - 1; ++x) {
@@ -224,24 +242,6 @@ class TemplateDataExtractor
 #endif // TEMPLATE_DATA_SET_DATA_WITH_TBB
 #endif // WITH_TBB
 
-
-/*
-static Eigen::Matrix<float,1,6> ComputeJacobian(const Point& pt, float Ix, float Iy)
-{
-  auto x = pt[0], y = pt[1], z = pt[2],
-       x2 = x*x, y2 = y*y, z2 = z*z, xy = x*y,
-       z_i = 1.0f / z, z2_i = 1.0f / z2;
-
-  return (Eigen::Matrix<float,1,6>() <<
-        -z2_i * (y2*Iy + z2*Iy + xy*Ix),
-         z2_i * (x2*Ix + z2*Ix + xy*Iy),
-         z_i  * (x*Iy - y*Ix),
-         z_i  * Ix,
-         z_i  * Iy,
-        -z2_i * (x*Ix + y*Iy)).finished();
-}
-*/
-
 }; // namespace
 
 template <class CN, class W> inline
@@ -250,10 +250,11 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   assert( D.type() == cv::DataType<float>::type );
 
   const auto smap = channels.computeSaliencyMap();
-  auto do_nonmax_supp = smap.rows*smap.cols >= AlgorithmParameters::MIN_NUM_FOR_PIXEL_PSELECTION;
+  auto do_nonmax_supp = smap.rows*smap.cols >= _min_pixels_for_nms;
   int nms_radius = 1;
   auto inds = getValidPixelsLocations(DisparityPyramidLevel(D, _pyr_level),
-                                      smap, nms_radius, do_nonmax_supp);
+                                      smap, nms_radius, do_nonmax_supp,
+                                      _min_saliency, _min_disparity, _max_disparity);
 
   _points.resize(inds.size());
   auto stride = smap.cols;
@@ -267,7 +268,7 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
     _points[i] = _warp.makePoint(x, y, inds[i].second);
   }
 
-  //_warp.setNormalization(_points);
+  _warp.setNormalization(_points);
 
   //
   // compute the warp jacobians

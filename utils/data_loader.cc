@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace bpvo {
 
@@ -106,6 +107,7 @@ StereoDataLoader::StereoDataLoader(const ConfigFile& cf)
   : _stereo_alg(make_unique<StereoAlgorithm>(cf))
   , _left_fmt(fs::expand_tilde(cf.get<std::string>("LeftImageFormat", "")))
   , _right_fmt(fs::expand_tilde(cf.get<std::string>("RightImageFormat", "")))
+  , _scale_by(cf.get<int>("ScaleBy", 1))
 {
   if(!_left_fmt.empty())
     set_image_size();
@@ -129,6 +131,12 @@ auto StereoDataLoader::getFrame(int f_i) const -> ImageFramePointer
 
   err_msg = Format("Failed to read image from '%s'", fn.c_str());
   THROW_ERROR_IF(I2.empty(), err_msg.c_str());
+
+  if(_scale_by > 1) {
+    float s = 1.0f / _scale_by;
+    cv::resize(I1, I1, cv::Size(), s, s);
+    cv::resize(I2, I2, cv::Size(), s, s);
+  }
 
   cv::Mat D;
   _stereo_alg->run(I1, I2, D);
@@ -167,7 +175,9 @@ auto DisparityDataLoader::getFrame(int f_i) const -> ImageFramePointer
   fn = Format(_disparity_format.c_str(), f_i);
   err_msg = Format("failed to read image from %s\n", fn.c_str());
   auto D = cv::imread(fn, cv::IMREAD_UNCHANGED);
-  assert( D.type() == cv::DataType<uint16_t>::type );
+  assert( D.type() == cv::DataType<uint16_t>::type && D.channels() == 1 );
+
+  D.convertTo(D, CV_32FC1, 1.0f/16.0, 0.0);
 
   return ImageFramePointer(new DisparityFrame(I1, D));
 }
@@ -247,6 +257,12 @@ void KittiDataLoader::load_calibration(std::string filename)
 
   _calib.K = P1.block<3,3>(0,0);
   _calib.baseline =  -P2(0,3) / P2(0,0);
+
+  if(_scale_by > 1) {
+    float s = 1.0f / _scale_by;
+    _calib.K *= s;
+    _calib.K(2,2) = 1.0f;
+  }
 }
 
 UniquePointer<DataLoader> KittiDataLoader::Create(const ConfigFile& cf)

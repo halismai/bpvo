@@ -99,18 +99,27 @@ class ValidPixelPredicate
 
  public:
   inline ValidPixelPredicate(const DisparityPyramidLevel& dmap,
-                             const SaliencyMapT& smap, int nms_radius)
-      : _dmap(dmap), _smap(smap),
-      _is_local_max(smap.template ptr<DataType>(), smap.cols, nms_radius) {}
+                             const SaliencyMapT& smap, int nms_radius,
+                             float min_saliency, float min_disparity, float max_disparity)
+      : _dmap(dmap)
+        , _smap(smap)
+        , _min_saliency(min_saliency)
+        , _min_disparity(min_disparity)
+        , _max_disparity(max_disparity)
+        , _is_local_max(smap.template ptr<DataType>(), smap.cols, nms_radius) {}
 
   FORCE_INLINE bool operator()(int r, int c) const
   {
-    return _dmap(r,c) > MinDisparity && _smap(r,c) > MinSaliency && _is_local_max(r,c);
+    return _dmap(r,c) > _min_disparity && _dmap(r,c) < _max_disparity
+        && _smap(r,c) > _min_saliency && _is_local_max(r,c);
   }
 
  protected:
   const DisparityPyramidLevel& _dmap;
   const SaliencyMapT& _smap;
+  float _min_saliency;
+  float _min_disparity;
+  float _max_disparity;
   IsLocalMax<DataType> _is_local_max;
 }; // ValidPixelPredicate
 

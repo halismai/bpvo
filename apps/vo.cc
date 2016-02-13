@@ -34,7 +34,7 @@ int main(int argc, char** argv)
   auto do_show = !options.hasOption("dontshow");
 
   auto data_loader = DataLoader::FromConfig(conf_fn);
-  typename DataLoaderThread::BufferType image_buffer(16);
+  typename DataLoaderThread::BufferType image_buffer(1);
 
   AlgorithmParameters params(conf_fn);
   std::cout << "------- AlgorithmParameters -------" << std::endl;
@@ -78,9 +78,10 @@ int main(int argc, char** argv)
       fflush(stdout);
 
       if(do_show) {
-        cv::imshow("image", frame->image());
-        cv::imshow("disparity", colorizeDisparity(frame->disparity()));
-        int k = 0xff & cv::waitKey(5);
+        //cv::imshow("image", frame->image());
+        //cv::imshow("disparity", colorizeDisparity(frame->disparity()));
+        cv::imshow("image", overlayDisparity(frame.get()));
+        int k = 0xff & cv::waitKey(2);
         if(k == 'q' || k == 27)
           break;
       }

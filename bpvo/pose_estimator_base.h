@@ -211,6 +211,23 @@ class PoseEstimatorBase
             s.numIterations, s.finalError, s.firstOrderOptimality,
             ToString(s.status).c_str());
   }
+
+  inline void replicateValidFlags()
+  {
+    if(_residuals.size() != _valid.size()) {
+      assert( _residuals.size() == 8 * _valid.size() );
+
+      int m = _residuals.size() / _valid.size();
+      decltype(_valid) tmp(_residuals.size());
+      auto* ptr = tmp.data();
+
+      for(int i = 0; i < m; ++i, ptr += _valid.size()) {
+        memcpy(ptr, _valid.data(), _valid.size() * sizeof(uint8_t));
+      }
+
+      _valid.swap(tmp);
+    }
+  }
 }; // PoseEstimatorBase
 
 

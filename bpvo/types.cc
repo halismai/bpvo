@@ -42,7 +42,12 @@ AlgorithmParameters::AlgorithmParameters()
     , minRotationMagToKeyFrame(5.0)
     , maxFractionOfGoodPointsToKeyFrame(0.6)
     , goodPointThreshold(0.85)
-    , maxTestLevel(0) {}
+    , minNumPixelsForNonMaximaSuppression(320*240)
+    , minSaliency(0.1)
+    , minDisparity(1.0)
+    , maxDisparity(512.0f)
+    , maxTestLevel(0)
+    , withNormalization(true) {}
 
 
 AlgorithmParameters::AlgorithmParameters(std::string filename)
@@ -63,7 +68,12 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   minRotationMagToKeyFrame = cf.get<float>("minRotationMagToKeyFrame", 2.5);
   maxFractionOfGoodPointsToKeyFrame = cf.get<float>("maxFractionOfGoodPointsToKeyFrame", 0.6f);
   goodPointThreshold = cf.get<float>("goodPointThreshold", 0.75);
+  minNumPixelsForNonMaximaSuppression = cf.get<int>("minNumPixelsForNonMaximaSuppression", 320*240);
+  minSaliency = cf.get<float>("minSaliency", 0.1f);
+  minDisparity = cf.get<float>("minDisparity", 1.0f);
+  maxDisparity = cf.get<float>("maxDisparity", 512.0f);
   maxTestLevel = cf.get<int>("maxTestLevel", 0);
+  withNormalization = cf.get<int>("withNormalization", true);
 }
 
 
@@ -158,6 +168,11 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   os << "minRotationMagToKeyFrame = " << p.minRotationMagToKeyFrame << "\n";
   os << "maxFractionOfGoodPointsToKeyFrame = " << p.maxFractionOfGoodPointsToKeyFrame << "\n";
   os << "goodPointThreshold = " << p.goodPointThreshold << "\n";
+  os << "minNumPixelsForNonMaximaSuppression = " << p.minNumPixelsForNonMaximaSuppression << "\n";
+  os << "minSaliency = " << p.minSaliency << "\n";
+  os << "minDisparity = " << p.minDisparity << "\n";
+  os << "maxDisparity = " << p.maxDisparity << "\n";
+  os << "withNormalization = " << p.withNormalization << "\n";
   os << "maxTestLevel = " << p.maxTestLevel;
 
   return os;

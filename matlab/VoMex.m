@@ -7,7 +7,7 @@ classdef VoMex < handle
   methods
     function this = VoMex(K, b, image_size, params)
       if nargin < 3, params = VoMex.DefaultParameters; end
-      this.hdle = vo_mex('new', K, b, image_size, params)
+      this.hdle_ = vo_mex('new', K, b, image_size, params);
     end
 
     function delete(this)

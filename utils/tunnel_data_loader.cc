@@ -31,14 +31,14 @@ namespace bpvo {
 TunnelDataLoader::TunnelDataLoader(const ConfigFile& cf)
     : DisparityDataLoader(cf)
 {
-  auto root_dir = cf.get<std::string>("DataSetRootDirectory");
+  auto root_dir = fs::expand_tilde(cf.get<std::string>("DataSetRootDirectory"));
   auto err_msg = Format("directory %s does not exist", root_dir.c_str());
   THROW_ERROR_IF(!fs::exists(root_dir), err_msg.c_str());
 
   this->_image_format = Format("%s/image%s.pgm", root_dir.c_str(), "%06d");
   this->_disparity_format = Format("%s/image%s-disparity.pgm", root_dir.c_str(), "%06d");
 
-  auto calib_fn = cf.get<std::string>("CalibrationFile");
+  auto calib_fn = fs::expand_tilde(cf.get<std::string>("CalibrationFile"));
   err_msg = Format("calibration file %s does not exist", calib_fn.c_str());
   THROW_ERROR_IF(!fs::exists(calib_fn), err_msg.c_str());
 

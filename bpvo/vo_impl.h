@@ -45,6 +45,7 @@ class VisualOdometry::Impl
 
  public:
   typedef RawIntensity ChannelsT;
+  //typedef BitPlanes ChannelsT;
   typedef RigidBodyWarp WarpT;
   typedef TemplateData_<ChannelsT, WarpT> TData;
   typedef PoseEstimatorGN<TData> PoseEstimatorT_;
@@ -100,7 +101,6 @@ class VisualOdometry::Impl
    */
   KeyFramingReason shouldKeyFrame(const Matrix44&, const std::vector<float>& weights);
 
-
   struct KeyFrameCandidate
   {
     std::vector<ChannelsT> channels_pyr;
@@ -122,6 +122,8 @@ class VisualOdometry::Impl
   }
 
   KeyFrameCandidate _kf_candidate;
+
+  UniquePointer<TData> makeTemplateData(const Matrix33& K, float b, int pyr_level) const;
 
 }; // VisualOdometry
 

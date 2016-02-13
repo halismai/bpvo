@@ -71,6 +71,7 @@ class PoseEstimatorGN : public PoseEstimatorBase< PoseEstimatorGN<TDataT> >
   inline float linearize(TemplateData* tdata, const Channels& channels, PoseEstimatorData& data)
   {
     tdata->computeResiduals(channels, data.T, Base::residuals(), Base::valid());
+    this->replicateValidFlags();
     auto sigma = this->_scale_estimator.estimateScale(Base::residuals(), Base::valid());
     computeWeights(this->_params.lossFunction, Base::residuals(), Base::valid(), sigma, Base::weights());
 

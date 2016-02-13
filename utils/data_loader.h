@@ -89,6 +89,8 @@ class StereoDataLoader : public DataLoader
   ImageSize _image_size;
 
   void set_image_size();
+
+  int _scale_by; //< scale down the image (2 means half resolution)
 }; // StereoDataLoader
 
 
@@ -110,6 +112,7 @@ class KittiDataLoader : public StereoDataLoader
  private:
   StereoCalibration _calib;
   void load_calibration(std::string filename);
+
 }; // KittiDataLoader
 
 

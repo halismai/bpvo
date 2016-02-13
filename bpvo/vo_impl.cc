@@ -20,6 +20,7 @@
  */
 
 #include "bpvo/vo_impl.h"
+#include "bpvo/utils.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -62,6 +63,12 @@ static inline int getNumberOfPyramidLevels(const ImageSize& s, int min_allowed_r
   return getNumberOfPyramidLevels(std::min(s.rows, s.cols), min_allowed_res);
 }
 
+auto VisualOdometry::Impl::
+makeTemplateData(const Matrix33& K, float b, int pyr_level) const -> UniquePointer<TData>
+{
+  return make_unique<TData>(K, b, pyr_level, _params.minNumPixelsForNonMaximaSuppression,
+                            _params.minSaliency, _params.minDisparity, _params.maxDisparity);
+}
 
 VisualOdometry::Impl::Impl(const Matrix33& K, const float& b, ImageSize image_size,
                            AlgorithmParameters params)
@@ -85,11 +92,11 @@ VisualOdometry::Impl::Impl(const Matrix33& K, const float& b, ImageSize image_si
 
   Matrix33 K_pyr(K);
   float b_pyr = b;
-  _tdata_pyr.push_back(make_unique<TData>(K_pyr, b_pyr, 0));
+  _tdata_pyr.push_back(makeTemplateData(K_pyr, b_pyr, 0));
   for(int i = 1; i < _params.numPyramidLevels; ++i) {
     K_pyr *= 0.5; K_pyr(2,2) = 1.0f;
     b_pyr *= 2.0;
-    _tdata_pyr.push_back(make_unique<TData>(K_pyr, b_pyr, i));
+    _tdata_pyr.push_back(makeTemplateData(K_pyr, b_pyr, i));
   }
 
   for(int i= 0; i < _params.numPyramidLevels; ++i)
@@ -103,6 +110,8 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
 {
   assert( !_channels_pyr.empty() && !_tdata_pyr.empty() );
   assert( _channels_pyr.size() == _tdata_pyr.size() );
+
+  THROW_ERROR_IF( I_ptr == NULL || D_ptr == NULL, "null pointers" );
 
   cv::Mat I;
   ToOpenCV(I_ptr, _image_size).copyTo(I);

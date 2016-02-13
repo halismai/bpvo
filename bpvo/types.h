@@ -224,6 +224,30 @@ struct AlgorithmParameters
 
 
   //
+  // pixel selection
+  //
+
+  /**
+   * Minimum number of pixels to do non-maxima suppression
+   */
+  int minNumPixelsForNonMaximaSuppression;
+
+  /**
+   * Minimum saliency value for a pixel to be used in the optimization
+   */
+  float minSaliency;
+
+  /**
+   * minimum valid disparity to use
+   */
+  float minDisparity;
+
+  /**
+   * maximum disparity to use
+   */
+  float maxDisparity;
+
+  //
   // other
   //
 
@@ -232,6 +256,12 @@ struct AlgorithmParameters
    */
   int maxTestLevel;
 
+
+  /**
+   * normalize the values going into the linear system. Produces a solution
+   * faster
+   */
+  bool withNormalization;
 
   /**
    * Sets default parameters

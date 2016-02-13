@@ -64,7 +64,9 @@ cv::Mat_<float> RawIntensity::computeSaliencyMap() const
          s = _I.ptr<ChannelDataType>(y);
 
     dst_ptr[0] = 0.0f;
+#if defined(WITH_OPENMP)
 #pragma omp simd
+#endif
     for(int x = 1; x < cols - 1; ++x) {
       dst_ptr[x] =
           0.5f*std::fabs(static_cast<float>(s[x+1]) - static_cast<float>(s[x-1])) +
@@ -91,7 +93,9 @@ void extractChannel(const cv::Mat& C, cv::Mat& dst, int b, float sigma)
   auto dst_ptr = dst.ptr<DstType>();
   auto n = C.rows * C.cols;
 
+#if defined(WITH_OPENMP)
 #pragma omp simd
+#endif
   for(int i = 0; i < n; ++i) {
     dst_ptr[i] = static_cast<DstType>( (src_ptr[i] & (1<<b)) >> b );
   }
@@ -105,6 +109,7 @@ void BitPlanes::compute(const cv::Mat& I)
   assert( I.type() == cv::DataType<uint8_t>::type );
 
   auto C = census(I, _sigma_ct);
+
 #if DO_BITPLANES_WITH_TBB
   tbb::parallel_for(tbb::blocked_range<int>(0, NumChannels),
                     [=](const tbb::blocked_range<int>& r)
@@ -115,6 +120,9 @@ void BitPlanes::compute(const cv::Mat& I)
                       }
                     });
 #else
+#if defined(WITH_OPENMP)
+#pragma omp parallel for
+#endif
   for(size_t i = 0; i < NumChannels; ++i) {
     extractChannel<float>(C, _channels[i], i, _sigma_bp);
   }

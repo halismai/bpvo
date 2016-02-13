@@ -129,6 +129,7 @@ float AutoScaleEstimator::estimateScale(const std::vector<float>& residuals,
                                        const std::vector<uint8_t>& valid)
 {
   assert( residuals.size() == valid.size() );
+
   if(_delta_scale > _tol) {
     _buffer.clear();
 
@@ -149,3 +150,4 @@ float AutoScaleEstimator::estimateScale(const std::vector<float>& residuals,
 }
 
 }; // bpvo
+

@@ -28,11 +28,7 @@
 namespace bpvo {
 
 RigidBodyWarp::RigidBodyWarp(const Matrix33& K, float b)
-    : _K(K), _b(b), _T(Matrix44::Identity()), _T_inv(Matrix44::Identity())
-{
-  std::cout << _K << std::endl;
-  std::cout << _b << std::endl;
-}
+    : _K(K), _b(b), _T(Matrix44::Identity()), _T_inv(Matrix44::Identity()) {}
 
 auto RigidBodyWarp::makePoint(float x, float y, float d) const -> Point
 {
