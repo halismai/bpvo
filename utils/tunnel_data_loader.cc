@@ -94,7 +94,7 @@ void TunnelDataLoader::load_calibration(std::string filename)
 
     removeWhiteSpace(line);
     sscanf(line.c_str(), "CameraIntrinsicsPlumbBob{%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f}",
-           &rows, &cols, &fx, &fy, &cx, &cy,
+           &cols, &rows, &fx, &fy, &cx, &cy,
            &dist_coeffs[0], &dist_coeffs[1], &dist_coeffs[2],
            &dist_coeffs[3], &dist_coeffs[4], &dist_coeffs[5]);
 

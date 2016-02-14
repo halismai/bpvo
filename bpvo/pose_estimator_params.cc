@@ -39,6 +39,8 @@ void PoseEstimatorParameters::relaxTolerance(int max_it, float scale_by)
   functionTolerance *= scale_by;
   parameterTolerance *= scale_by;
   gradientTolerance *= scale_by;
+
+  lossFunction = LossFunctionType::kHuber;
 }
 
 std::ostream& operator<<(std::ostream& os, const PoseEstimatorParameters& p)

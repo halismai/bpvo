@@ -126,11 +126,9 @@ static FORCE_INLINE __m256 sub_ps(__m256 a, __m256 b)
   return _mm256_sub_ps(a, b);
 }
 
-static FORCE_INLINE __m256 cmplt_ps(__m256 /*a*/, __m256 /*b*/)
+static FORCE_INLINE __m256 cmplt_ps(__m256 a, __m256 b)
 {
-  //return _mm256_cmplt_ps(a, b);
-  THROW_ERROR("not implemented\n");
-  return set1_ps(0.0f);
+  return _mm256_cmp_ps(a, b, _CMP_LT_OQ);
 }
 
 static FORCE_INLINE __m256 mul_ps(__m256 a, __m256 b)
@@ -268,37 +266,62 @@ size_t tukey_simd(const float* r_ptr, const uint8_t* /* v_ptr */, float* w_ptr,
 {
   size_t i = 0;
 
-#if !defined(__AVX__) // AVX for tukey is not done yet
   constexpr int S = 2 * SIMD_VECTOR_UNIT_SIZE;
   auto n = N & ~(S-1);
   const auto s_inv = set1_ps(sigma_inv), ones = set1_ps(1.0f),
         t = set1_ps(tukey_t), t_i = set1_ps(1.0 / tukey_t);
 
-  for(i = 0; i < n; i += S) {
-    {
-      auto x = mul_ps(load_ps(r_ptr + i + 0*SIMD_VECTOR_UNIT_SIZE), s_inv);
-      auto r = mul_ps(x, t_i);
-      r = sub_ps(ones, mul_ps(r,r));
-      r = mul_ps(r, r);
-      auto m = cmplt_ps(abs_ps(x), t);
-      store_ps(w_ptr + i + 0*SIMD_VECTOR_UNIT_SIZE, and_ps(m, r));
-    }
+  bool is_aligned = false;
+#if defined(__AVX__)
+  is_aligned = IsAligned<32>(r_ptr) && IsAligned<32>(w_ptr);
+#else
+  is_aligned = IsAligned<16>(r_ptr) && IsAligned<16>(w_ptr);
+#endif
 
-    {
-      auto x = mul_ps(load_ps(r_ptr + i + 1*SIMD_VECTOR_UNIT_SIZE), s_inv);
-      auto r = mul_ps(x, t_i);
-      r = sub_ps(ones, mul_ps(r,r));
-      r = mul_ps(r, r);
-      auto m = cmplt_ps(abs_ps(x), t);
-      store_ps(w_ptr + i + 1*SIMD_VECTOR_UNIT_SIZE, and_ps(m, r));
+  if(is_aligned) {
+    for(i = 0; i < n; i += S) {
+      {
+        auto x = mul_ps(load_ps(r_ptr + i + 0*SIMD_VECTOR_UNIT_SIZE), s_inv);
+        auto r = mul_ps(x, t_i);
+        r = sub_ps(ones, mul_ps(r,r));
+        r = mul_ps(r, r);
+        auto m = cmplt_ps(abs_ps(x), t);
+        store_ps(w_ptr + i + 0*SIMD_VECTOR_UNIT_SIZE, and_ps(m, r));
+      }
+
+      {
+        auto x = mul_ps(load_ps(r_ptr + i + 1*SIMD_VECTOR_UNIT_SIZE), s_inv);
+        auto r = mul_ps(x, t_i);
+        r = sub_ps(ones, mul_ps(r,r));
+        r = mul_ps(r, r);
+        auto m = cmplt_ps(abs_ps(x), t);
+        store_ps(w_ptr + i + 1*SIMD_VECTOR_UNIT_SIZE, and_ps(m, r));
+      }
+    }
+  } else {
+    for(i = 0; i < n; i += S) {
+      {
+        auto x = mul_ps(loadu_ps(r_ptr + i + 0*SIMD_VECTOR_UNIT_SIZE), s_inv);
+        auto r = mul_ps(x, t_i);
+        r = sub_ps(ones, mul_ps(r,r));
+        r = mul_ps(r, r);
+        auto m = cmplt_ps(abs_ps(x), t);
+        storeu_ps(w_ptr + i + 0*SIMD_VECTOR_UNIT_SIZE, and_ps(m, r));
+      }
+
+      {
+        auto x = mul_ps(loadu_ps(r_ptr + i + 1*SIMD_VECTOR_UNIT_SIZE), s_inv);
+        auto r = mul_ps(x, t_i);
+        r = sub_ps(ones, mul_ps(r,r));
+        r = mul_ps(r, r);
+        auto m = cmplt_ps(abs_ps(x), t);
+        storeu_ps(w_ptr + i + 1*SIMD_VECTOR_UNIT_SIZE, and_ps(m, r));
+      }
     }
   }
-#else
-  UNUSED(r_ptr);
-  UNUSED(w_ptr);
-  UNUSED(N);
-  UNUSED(sigma_inv);
-  UNUSED(tukey_t);
+
+#if defined(__AVX__)
+  _mm256_zeroupper();
 #endif
 
   return i;
@@ -380,7 +403,7 @@ float AutoScaleEstimator::estimateScale(const std::vector<float>& residuals,
     auto z = 1.4826 * (1.0 + 5.0/(_buffer.size()-6));
 
 #if DO_APPROX_MEDIAN
-    auto m = approximate_median(_buffer, 0.0f, 255.0f, 0.5f);
+    auto m = approximate_median(_buffer, 0.0f, 255.0f, 0.25f);
 #else
     auto m = median(_buffer);
 #endif

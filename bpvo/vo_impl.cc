@@ -24,6 +24,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -130,6 +131,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     // the first frame added to vo
     //
     cv::Mat D = ToOpenCV(D_ptr, _image_size);
+
     this->setAsKeyFrame(_channels_pyr, D);
     ret.pose = _T_kf;
     ret.covariance.setIdentity();

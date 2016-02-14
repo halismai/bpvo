@@ -36,6 +36,7 @@ ApproximateMedian::ApproximateMedian(float min_val, float max_val, float res)
   _counts.resize(n, 0);
 }
 
+/*
 static inline float clamp(float v, float min_val, float max_val)
 {
   if(v < min_val) v = min_val;
@@ -44,7 +45,6 @@ static inline float clamp(float v, float min_val, float max_val)
   return v;
 }
 
-/*
 void ApproximateMedian::push_back(float v)
 {
   v = clamp(v, _min_val, _max_val);

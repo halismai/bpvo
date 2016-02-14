@@ -72,16 +72,15 @@ int main(int argc, char** argv)
       if(num_iters == params.maxIterations)
         Warn("maximum iterations reached\n");
 
-      fprintf(stdout, "Frame %05d time %0.2f ms [%0.2f Hz] %03d iters isKeyFrame:%d because:%16s\r",
+      fprintf(stdout, "Frame %05d time %0.2f ms [%0.2f Hz] %03d iters isKeyFrame:%1d because:%16s num_points %06d\r",
               f_i-1, tt, (f_i - 1) / total_time,  num_iters, result.isKeyFrame,
-              ToString(result.keyFramingReason).c_str());
+              ToString(result.keyFramingReason).c_str(), vo.numPointsAtLevel(0));
       fflush(stdout);
 
       if(do_show) {
-        //cv::imshow("image", frame->image());
-        //cv::imshow("disparity", colorizeDisparity(frame->disparity()));
-        cv::imshow("image", overlayDisparity(frame.get()));
+        cv::imshow("image", overlayDisparity(frame.get(), 0.75f));
         int k = 0xff & cv::waitKey(2);
+        if(k == ' ') k = cv::waitKey(0);
         if(k == 'q' || k == 27)
           break;
       }
