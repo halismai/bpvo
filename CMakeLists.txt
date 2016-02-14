@@ -42,6 +42,8 @@ option(ENABLE_OMIT_FRAME_POINTER "omit frame pointer" OFF)
 
 option(BUILD_TEST "build the testing stuff" OFF)
 
+option(WITH_BITPLANES "use bitplanes cost" OFF)
+
 # auto decide release configuration if not set
 if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE Release)
@@ -101,6 +103,10 @@ find_package(Boost 1.59.0 REQUIRED COMPONENTS program_options)
 add_definitions(-DWITH_BOOST)
 include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND MY_LIBRARIES ${Boost_LIBRARIES})
+
+if(WITH_BITPLANES)
+  add_definitions(-DWITH_BITPLANES)
+endif()
 
 # optional stuff
 find_package(TBB)

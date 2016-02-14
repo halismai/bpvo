@@ -370,6 +370,10 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matri
   interp.init(_warp, _points, channels[0].rows, channels[0].cols);
 
   residuals.resize(_pixels.size());
+
+#if defined(WITH_BITPLANES) && defined(WITH_OPENMP)
+#pragma omp parallel for
+#endif
   for(int c = 0; c < channels.size(); ++c) {
     int off = c*numPoints();
     auto* I0_ptr = _pixels.data() + off;

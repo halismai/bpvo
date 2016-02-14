@@ -63,6 +63,29 @@ class BilinearInterp
     }
   }
 
+  template <class Warp, class PointVector> inline
+  void init2(const Warp& warp, const PointVector& points, int rows, int cols)
+  {
+    _stride = cols;
+    const auto xw = warp.warpPoints(points);
+    const auto N = xw.size();
+    resize(N);
+
+    for(size_t i = 0; i < N; ++i) {
+      int xi = static_cast<int>(xw[i].x()),
+          yi = static_cast<int>(xw[i].y());
+      float xf = xw[i].x() - (float) xi;
+      float yf = xw[i].y() - (float) yi;
+
+      _valid[i] = xi>=0 && xi<cols-1 && yi>=0 && yi<rows-1;
+      _inds[i] = yi*cols + xi;
+      _interp_coeffs[i] = Vector4((1.0-yf)*(1.0-xf),
+                                  (1.0-yf)*xf,
+                                  yf*(1.0-xf),
+                                  yf*xf);
+    }
+  }
+
   /**
    * \return interpolated value at point 'i'
    */

@@ -50,11 +50,20 @@ void RigidBodyWarp::setPose(const Matrix44& T)
   _P = _K * T.block<3,4>(0,0);
 }
 
-auto RigidBodyWarp::operator()(const Point& X) const -> ImagePoint
+auto RigidBodyWarp::warpPoints(const PointVector& points) const -> ImagePointVector
 {
-  Eigen::Vector3f x = _P * X;
-  float z_i = 1.0f / x.z();
-  return ImagePoint(z_i * x[0], z_i * x[1]);
+  typedef Eigen::Matrix<float,4,Eigen::Dynamic> MatrixType;
+  typedef Eigen::Map<const MatrixType, Eigen::Aligned> MapType;
+
+  auto N = points.size();
+  Eigen::Matrix<float,3,Eigen::Dynamic> Xw = _P * MapType(points[0].data(), 4, N);
+
+  ImagePointVector ret(N);
+  for(size_t i = 0; i < N; ++i) {
+    ret[i] = Xw.col(i).head<2>() * (1.0f / Xw(2,i));
+  }
+
+  return ret;
 }
 
 Matrix44 RigidBodyWarp::scalePose(const Matrix44& T) const

@@ -62,6 +62,8 @@ class RigidBodyWarp
   typedef typename Traits::JacobianVector     JacobianVector;
   typedef typename Traits::WarpJacobianVector WarpJacobianVector;
 
+  typedef typename EigenAlignedContainer<ImagePoint>::type ImagePointVector;
+
  public:
   RigidBodyWarp(const Matrix33& K, float b);
 
@@ -79,7 +81,12 @@ class RigidBodyWarp
 
   void setPose(const Matrix44& T);
 
-  ImagePoint operator()(const Point& X) const;
+  inline ImagePoint operator()(const Point& X) const
+  {
+    Eigen::Vector3f x = _P * X;
+    float z_i = 1.0f / x.z();
+    return ImagePoint(z_i * x[0], z_i * x[1]);
+  }
 
   Matrix44 scalePose(const Matrix44& T) const;
 
@@ -88,6 +95,8 @@ class RigidBodyWarp
   {
     return scalePose(math::TwistToMatrix(p));
   }
+
+  ImagePointVector warpPoints(const PointVector&) const;
 
  protected:
   Matrix33 _K;

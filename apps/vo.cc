@@ -46,14 +46,12 @@ int main(int argc, char** argv)
   Trajectory trajectory;
   typename DataLoaderThread::BufferType::value_type frame;
 
-  int f_i = data_loader->firstFrameNumber();
   std::cout << data_loader->calibration() << std::endl;
   DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
 
-  max_frames = f_i + max_frames;
-
   double total_time = 0.0;
 
+  int f_i = 0;
   while(f_i < max_frames) {
     if(image_buffer.pop(&frame)) {
       if(frame->image().empty()) {
@@ -72,7 +70,7 @@ int main(int argc, char** argv)
       if(num_iters == params.maxIterations)
         Warn("maximum iterations reached\n");
 
-      fprintf(stdout, "Frame %05d time %0.2f ms [%0.2f Hz] %03d iters isKeyFrame:%1d because:%16s num_points %06d\r",
+      fprintf(stdout, "Frame %05d time %03.2f ms [%03.2f Hz] %03d iters isKeyFrame:%1d because:%16s num_points %06d\r",
               f_i-1, tt, (f_i - 1) / total_time,  num_iters, result.isKeyFrame,
               ToString(result.keyFramingReason).c_str(), vo.numPointsAtLevel(0));
       fflush(stdout);

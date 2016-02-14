@@ -44,8 +44,11 @@ class VisualOdometry::Impl
   friend class VisualOdometry;
 
  public:
+#if defined(WITH_BITPLANES)
+  typedef BitPlanes ChannelsT;
+#else
   typedef RawIntensity ChannelsT;
-  //typedef BitPlanes ChannelsT;
+#endif
   typedef RigidBodyWarp WarpT;
   typedef TemplateData_<ChannelsT, WarpT> TData;
   typedef PoseEstimatorGN<TData> PoseEstimatorT_;

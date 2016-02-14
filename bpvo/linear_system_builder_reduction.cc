@@ -89,36 +89,37 @@ void LinearSystemBuilderReduction::rankUpdatePoint(int i, float* data, Gradient&
                                                    float& res_norm)
 
 {
-  if(_valid[i]) {
+  float w = _W[i] * static_cast<float>(_valid[i]);
+
 #if defined(WITH_SIMD)
-    __m128 wwww = _mm_set1_ps(_W[i]);
-    __m128 v1234 = _mm_loadu_ps(_J[i].data());
-    __m128 v56xx = _mm_loadu_ps(_J[i].data() + 4);
+  __m128 wwww = _mm_set1_ps(w);
+  __m128 v1234 = _mm_loadu_ps(_J[i].data());
+  __m128 v56xx = _mm_loadu_ps(_J[i].data() + 4);
 
-    __m128 v1212 = _mm_movelh_ps(v1234, v1234);
-    __m128 v3434 = _mm_movehl_ps(v1234, v1234);
-    __m128 v5656 = _mm_movelh_ps(v56xx, v56xx);
+  __m128 v1212 = _mm_movelh_ps(v1234, v1234);
+  __m128 v3434 = _mm_movehl_ps(v1234, v1234);
+  __m128 v5656 = _mm_movelh_ps(v56xx, v56xx);
 
-    __m128 v1122 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v1212, v1212));
+  __m128 v1122 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v1212, v1212));
 
-    _mm_store_ps(data + 0, _mm_add_ps(_mm_load_ps(data + 0), _mm_mul_ps(v1122, v1212)));
-    _mm_store_ps(data + 4, _mm_add_ps(_mm_load_ps(data + 4), _mm_mul_ps(v1122, v3434)));
-    _mm_store_ps(data + 8, _mm_add_ps(_mm_load_ps(data + 8), _mm_mul_ps(v1122, v5656)));
+  _mm_store_ps(data + 0, _mm_add_ps(_mm_load_ps(data + 0), _mm_mul_ps(v1122, v1212)));
+  _mm_store_ps(data + 4, _mm_add_ps(_mm_load_ps(data + 4), _mm_mul_ps(v1122, v3434)));
+  _mm_store_ps(data + 8, _mm_add_ps(_mm_load_ps(data + 8), _mm_mul_ps(v1122, v5656)));
 
-    __m128 v3344 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v3434, v3434));
+  __m128 v3344 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v3434, v3434));
 
-    _mm_store_ps(data + 12, _mm_add_ps(_mm_load_ps(data + 12), _mm_mul_ps(v3344, v3434)));
-    _mm_store_ps(data + 16, _mm_add_ps(_mm_load_ps(data + 16), _mm_mul_ps(v3344, v5656)));
+  _mm_store_ps(data + 12, _mm_add_ps(_mm_load_ps(data + 12), _mm_mul_ps(v3344, v3434)));
+  _mm_store_ps(data + 16, _mm_add_ps(_mm_load_ps(data + 16), _mm_mul_ps(v3344, v5656)));
 
-    __m128 v5566 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v5656, v5656));
-    _mm_store_ps(data + 20, _mm_add_ps(_mm_load_ps(data + 20), _mm_mul_ps(v5566, v5656)));
+  __m128 v5566 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v5656, v5656));
+  _mm_store_ps(data + 20, _mm_add_ps(_mm_load_ps(data + 20), _mm_mul_ps(v5566, v5656)));
 #else
-    typedef Eigen::Map<Hessian, Eigen::Aligned> HessianMap;
-    HessianMap(data).noalias() += _W[i] * _J[i].transpose() * _J[i];
+  typedef Eigen::Map<Hessian, Eigen::Aligned> HessianMap;
+  HessianMap(data).noalias() += _W[i] * _J[i].transpose() * _J[i];
 #endif
-    G.noalias() += _W[i] * _R[i] * _J[i].transpose();
-    res_norm += _W[i] * _R[i] * _R[i];
-  }
+
+  G.noalias() += w * _R[i] * _J[i].transpose();
+  res_norm += w * _R[i] * _R[i];
 }
 
 auto LinearSystemBuilderReduction::toEigen(const float* data) -> Hessian
@@ -147,7 +148,7 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
   if(H && G) {
     LinearSystemBuilderReduction reduction(J, R, W, V);
 
-#if defined(WITH_TBB)
+#if defined(WITH_BITPLANES) && defined(WITH_TBB)
     tbb::parallel_reduce(tbb::blocked_range<int>(0, (int) R.size()), reduction);
     *H = reduction.hessian();
     *G = reduction.gradient();
@@ -158,6 +159,7 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
     float ret = 0.0f;
 
     float* h_data = nullptr;
+
 #if defined(WITH_SIMD)
     alignas(16) float data[24];
     std::fill_n(data, 24, 0.0f);
@@ -179,9 +181,16 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
   } else {
     // for sum of squares, it is faster to not parallarize
     float ret = 0.0f;
+
+    const float* r_ptr = R.data();
+    const float* w_ptr = W.data();
+    const uint8_t* v_ptr = V.data();
+
+#if defined(WITH_OPENMP)
+#pragma omp simd
+#endif
     for(size_t i = 0; i < R.size(); ++i) {
-      if(V[i])
-        ret += W[i] * R[i] * R[i];
+        ret += static_cast<float>(v_ptr[i]) * w_ptr[i] * r_ptr[i] * r_ptr[i];
     }
 
     return ret;
