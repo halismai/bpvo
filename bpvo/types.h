@@ -117,11 +117,6 @@ enum VerbosityType
 
 struct AlgorithmParameters
 {
-  /**
-   * minimum number of pixels to select (instead of dense)
-   */
-  static const int MIN_NUM_FOR_PIXEL_PSELECTION = 320*240;
-
   //
   // general algorithm configurations
   //
@@ -231,6 +226,11 @@ struct AlgorithmParameters
    * Minimum number of pixels to do non-maxima suppression
    */
   int minNumPixelsForNonMaximaSuppression;
+
+  /**
+   * Minimum number of pixels to estimate pose
+   */
+  int minNumPixelsToWork;
 
   /**
    * Minimum saliency value for a pixel to be used in the optimization

@@ -199,10 +199,17 @@ Impl::estimatePose(const std::vector<ChannelsT>& cn, const Matrix44& T_init,
   for( ; i >= _params.maxTestLevel;  --i) {
     dprintf("level %d/%d [num points %d]\n", i, _params.maxTestLevel,
             _tdata_pyr[i]->numPoints());
+
     if(i == 0) { // set the original thresholds for the finest pyramid level
       _pose_estimator.setParameters(_pose_est_params);
     }
-    stats[i] = _pose_estimator.run(_tdata_pyr[i].get(), cn[i], T_est);
+
+    if(_tdata_pyr[i]->numPoints() > _params.minNumPixelsToWork) {
+      stats[i] = _pose_estimator.run(_tdata_pyr[i].get(), cn[i], T_est);
+    } else {
+      Warn("not enough points at pyramid level %d need %d\n",
+           _tdata_pyr[i]->numPoints(), _params.minNumPixelsToWork);;
+    }
   }
 
   return T_est;

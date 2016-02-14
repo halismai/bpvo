@@ -61,7 +61,7 @@ class LinearSystemBuilderReduction
                    const ResidualsVector& W, const ValidVector& V,
                    Hessian* H = nullptr, Gradient* G = nullptr);
 
-  inline void rankUpdatePoint(int i, float* H_data, Gradient& G, float& res_norm);
+  FORCE_INLINE void rankUpdatePoint(int i, float* H_data, Gradient& G, float& res_norm);
 
  protected:
   const JacobianVector& _J;
@@ -133,9 +133,8 @@ void LinearSystemBuilderReduction::setZero()
   _res_sq_norm = 0.0f;
 }
 
-void LinearSystemBuilderReduction::rankUpdatePoint(int i, float* data, Gradient& G,
-                                                   float& res_norm)
-
+FORCE_INLINE void LinearSystemBuilderReduction::
+rankUpdatePoint(int i, float* data, Gradient& G, float& res_norm)
 {
   float w = _W[i] * static_cast<float>(_valid[i]);
 

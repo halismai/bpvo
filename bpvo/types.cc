@@ -43,6 +43,7 @@ AlgorithmParameters::AlgorithmParameters()
     , maxFractionOfGoodPointsToKeyFrame(0.6)
     , goodPointThreshold(0.85)
     , minNumPixelsForNonMaximaSuppression(320*240)
+    , minNumPixelsToWork(700)
     , minSaliency(0.1)
     , minDisparity(1.0)
     , maxDisparity(512.0f)
@@ -69,6 +70,7 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   maxFractionOfGoodPointsToKeyFrame = cf.get<float>("maxFractionOfGoodPointsToKeyFrame", 0.6f);
   goodPointThreshold = cf.get<float>("goodPointThreshold", 0.75);
   minNumPixelsForNonMaximaSuppression = cf.get<int>("minNumPixelsForNonMaximaSuppression", 320*240);
+  minNumPixelsToWork = cf.get<int>("minNumPixelsToWork", 700);
   minSaliency = cf.get<float>("minSaliency", 0.1f);
   minDisparity = cf.get<float>("minDisparity", 1.0f);
   maxDisparity = cf.get<float>("maxDisparity", 512.0f);
@@ -169,6 +171,7 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   os << "maxFractionOfGoodPointsToKeyFrame = " << p.maxFractionOfGoodPointsToKeyFrame << "\n";
   os << "goodPointThreshold = " << p.goodPointThreshold << "\n";
   os << "minNumPixelsForNonMaximaSuppression = " << p.minNumPixelsForNonMaximaSuppression << "\n";
+  os << "minNumPixelsToWork = " << p.minNumPixelsToWork << "\n";
   os << "minSaliency = " << p.minSaliency << "\n";
   os << "minDisparity = " << p.minDisparity << "\n";
   os << "maxDisparity = " << p.maxDisparity << "\n";

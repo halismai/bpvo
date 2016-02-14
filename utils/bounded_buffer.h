@@ -49,7 +49,7 @@ class BoundedBuffer
    *
    * \return true if we popped something, false otherwise (timer has gone off)
    */
-  bool pop(value_type* item, int wait_time_ms = 10);
+  bool pop(value_type* item, int wait_time_ms = 1);
 
  private:
   BoundedBuffer(const BoundedBuffer&) = delete;
