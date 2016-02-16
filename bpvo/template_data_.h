@@ -352,8 +352,11 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matri
   _warp.setPose(pose);
 
   BilinearInterp<float> interp;
+#if 1
   interp.init(_warp, _points, channels[0].rows, channels[0].cols);
-  //interp.init(_warp, _points, channels[0].rows, channels[0].cols);
+#else
+  interp.initFast(_warp, _points, channels[0].rows, channels[0].cols);
+#endif
 
   valid.resize(_pixels.size());
   residuals.resize(_pixels.size());
@@ -366,6 +369,10 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matri
     auto* I0_ptr = _pixels.data() + off;
     auto* I1_ptr = channels.channelData(c);
     auto* r_ptr = residuals.data() + off;
+
+#if 0 && !defined(WITH_BITPLANES) && defined(WITH_OPENMP)
+#pragma omp parallel for if(numPoints() > 5000)
+#endif
     for(int i = 0; i < numPoints(); ++i) {
       r_ptr[i] = interp(I1_ptr, i) - I0_ptr[i];
     }

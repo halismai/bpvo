@@ -32,6 +32,7 @@ int main(int argc, char** argv)
       ("config,c", "../conf/tsukuba.cfg", "config file")
       ("output,o", "output.txt", "trajectory output file")
       ("numframes,n", int(100), "number of frames to process")
+      ("buffersize,b", int(16), "buffer size to load images")
       ("dontshow,x", "do not show images")
       .parse(argc, argv);
 
@@ -40,7 +41,9 @@ int main(int argc, char** argv)
   auto do_show = !options.hasOption("dontshow");
 
   auto data_loader = DataLoader::FromConfig(conf_fn);
-  typename DataLoaderThread::BufferType image_buffer(1);
+
+  int buffer_size = options.get<int>("buffersize");
+  typename DataLoaderThread::BufferType image_buffer(buffer_size);
 
   AlgorithmParameters params(conf_fn);
   std::cout << "------- AlgorithmParameters -------" << std::endl;

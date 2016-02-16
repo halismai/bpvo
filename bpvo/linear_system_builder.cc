@@ -195,7 +195,7 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
   if(H && G) {
     LinearSystemBuilderReduction reduction(J, R, W, V);
 
-#if defined(WITH_BITPLANES) && defined(WITH_TBB)
+#if 1 || (defined(WITH_BITPLANES) && defined(WITH_TBB))
     tbb::parallel_reduce(tbb::blocked_range<int>(0, (int) R.size()), reduction);
     *H = reduction.hessian();
     *G = reduction.gradient();

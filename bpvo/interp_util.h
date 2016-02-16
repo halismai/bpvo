@@ -49,6 +49,9 @@ class BilinearInterp
     _stride = cols;
     resize(points.size());
 
+#if 0 && defined(WITH_OPENMP)
+#pragma omp parallel for if(points.size()>10*1000)
+#endif
     for(size_t i = 0; i < points.size(); ++i) {
       const auto p = warp(points[i]);
       float xf = p.x(), yf = p.y();

@@ -48,7 +48,7 @@ struct PoseEstimatorParameters
 
   /**
    */
-  void relaxTolerance(int max_it = 42, float scale_by = 10.0f);
+  void relaxTolerance(int max_it = 20, float scale_by = 10.0f);
 
   /**
    */
