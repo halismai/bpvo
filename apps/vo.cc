@@ -15,9 +15,11 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
+/*
 #if defined(WITH_PROFILER)
 #include <gperftools/profiler.h>
 #endif
+*/
 
 using namespace bpvo;
 
@@ -53,10 +55,12 @@ int main(int argc, char** argv)
   std::cout << data_loader->calibration() << std::endl;
   DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
 
+  /* segfaults on 64-bit!
 #if defined(WITH_PROFILER)
   ProfilerStop();
   ProfilerStart("/tmp/prof");
 #endif
+*/
 
   double total_time = 0.0;
   int f_i = 0;
@@ -93,10 +97,12 @@ int main(int argc, char** argv)
     }
   }
 
+  /*
 #if defined(WITH_PROFILER)
   ProfilerFlush();
   ProfilerStop();
 #endif
+*/
 
   fprintf(stdout, "\n");
   Info("Processed %d frames @ %0.2f Hz\n", f_i, f_i / total_time);

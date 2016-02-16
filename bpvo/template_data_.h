@@ -28,6 +28,7 @@
 #include <bpvo/imgproc.h>
 #include <bpvo/math_utils.h>
 #include <bpvo/interp_util.h>
+#include <bpvo/pixel_selector.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -71,9 +72,7 @@ class TemplateData_
       : _pyr_level(pyr_level)
         , _warp(K, baseline)
         , _min_pixels_for_nms(min_pixels_for_nms)
-        , _min_saliency(min_saliency)
-        , _min_disparity(min_disparity)
-        , _max_disparity(max_disparity) {}
+        , _pixel_selector(1, min_saliency, {min_disparity, max_disparity}) {}
 
   inline ~TemplateData_() {}
 
@@ -133,6 +132,7 @@ class TemplateData_
 
   int _min_pixels_for_nms;
 
+  PixelSelector _pixel_selector;
   float _min_saliency;
   float _min_disparity;
   float _max_disparity;
@@ -250,13 +250,17 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   assert( D.type() == cv::DataType<float>::type );
 
   const auto smap = channels.computeSaliencyMap();
-  auto do_nonmax_supp = smap.rows*smap.cols >= _min_pixels_for_nms;
-  int nms_radius = 1;
-  auto inds = getValidPixelsLocations(DisparityPyramidLevel(D, _pyr_level),
-                                      smap, nms_radius, do_nonmax_supp,
-                                      _min_saliency, _min_disparity, _max_disparity);
+  if(smap.rows * smap.cols < _min_pixels_for_nms) {
+    _pixel_selector.setNonMaximaSuppRadius(-1); // disable NMS
+  }
 
-  _points.resize(inds.size());
+  _pixel_selector.run(DisparityPyramidLevel(D, _pyr_level),
+                      {smap.rows, smap.cols}, reinterpret_cast<const float*>(smap.data));
+
+  const auto& inds = _pixel_selector.validIndices();
+  const auto& dvals = _pixel_selector.validDisparities();
+
+ _points.resize(inds.size());
   auto stride = smap.cols;
 
   //
@@ -264,24 +268,11 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   //
   for(size_t i = 0; i < inds.size(); ++i) {
     int x = 0, y = 0;
-    ind2sub(stride, inds[i].first, y, x);
-    _points[i] = _warp.makePoint(x, y, inds[i].second);
+    ind2sub(stride, inds[i], y, x);
+    _points[i] = _warp.makePoint(x, y, dvals[i]);
   }
 
   _warp.setNormalization(_points);
-
-  //
-  // compute the warp jacobians
-  //
-  //
-  // WE are no longer doing this. This seems to cause numerical instability
-  //
-  /*
-  WarpJacobianVector Jw(_points.size());
-  for(size_t i = 0; i < _points.size(); ++i) {
-    Jw[i] = _warp.warpJacobianAtZero(_points[i]);
-  }
-  */
 
   _pixels.resize(_points.size() * NumChannels);
   _jacobians.resize(_points.size() * NumChannels);
@@ -293,23 +284,17 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   //
   // compute the pixels and jacobians for all channels
   //
-  /*typedef Eigen::Matrix<float,1,2> ImageGradient;
-  float fx = 0.5f * _warp.K()(0,0),
-        fy = 0.5f * _warp.K()(1,1);*/
-
   for(int c = 0; c < channels.size(); ++c) {
     auto c_ptr = channels.channelData(c);
     auto J_ptr = _jacobians.data() + c*inds.size();
     auto P_ptr = _pixels.data() + c*inds.size();
 
     for(size_t i = 0; i < inds.size(); ++i) {
-      auto ii = inds[i].first;
+      auto ii = inds[i];
       P_ptr[i] = c_ptr[ii];
-      float Ix = c_ptr[ii+1] - c_ptr[ii-1],
-            Iy = c_ptr[ii+stride] - c_ptr[ii-stride];
-      //J_ptr[i] = ImageGradient(fx*Ix, fy*Iy) * Jw[i];
-      //J_ptr[i] = ComputeJacobian(_points[i], fx*Ix, fy*Iy);
-      J_ptr[i] = _warp.jacobian(_points[i], 0.5f*Ix, 0.5f*Iy);
+      float Ix = 0.5f * (c_ptr[ii+1] - c_ptr[ii-1]),
+            Iy = 0.5f * (c_ptr[ii+stride] - c_ptr[ii-stride]);
+      J_ptr[i] = _warp.jacobian(_points[i], Ix, Iy);
     }
   }
 #endif
@@ -369,6 +354,7 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matri
   BilinearInterp<float> interp;
   interp.init(_warp, _points, channels[0].rows, channels[0].cols);
 
+  valid.resize(_pixels.size());
   residuals.resize(_pixels.size());
 
 #if defined(WITH_BITPLANES) && defined(WITH_OPENMP)

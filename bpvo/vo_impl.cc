@@ -111,8 +111,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
 {
   assert( !_channels_pyr.empty() && !_tdata_pyr.empty() );
   assert( _channels_pyr.size() == _tdata_pyr.size() );
-
-  THROW_ERROR_IF( I_ptr == NULL || D_ptr == NULL, "null pointers" );
+  assert( I_ptr != NULL && D_ptr != NULL );
 
   cv::Mat I;
   ToOpenCV(I_ptr, _image_size).copyTo(I);

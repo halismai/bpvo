@@ -102,6 +102,20 @@ auto RigidBodyWarp::jacobian(const Point& p, float Ix, float Iy) const -> Jacobi
   return J;
 }
 
+void RigidBodyWarp::jacobian(const Point& p, float Ix, float Iy, float* J) const
+{
+  float X = p[0], Y = p[1], Z = p[2];
+  float fx = _K(0,0), fy = _K(1,1);
+  float s = _T(0,0), c1 = _T_inv(0,3), c2 = _T_inv(1,3), c3 = _T_inv(2,3);
+
+  J[0] = -1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(Y-c2)-(Iy*fy*(Z-c3))/Z;
+  J[1] = 1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(X-c1)+(Ix*fx*(Z-c3))/Z;
+  J[2] = (Iy*fy*(X-c1))/Z-(Ix*fx*(Y-c2))/Z;
+  J[3] = (Ix*fx)/(Z*s);
+  J[4] = (Iy*fy)/(Z*s);
+  J[5] = -(1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy))/s;
+}
+
 void RigidBodyWarp::setNormalization(const Matrix44& T)
 {
   _T = T;

@@ -76,6 +76,8 @@ class RigidBodyWarp
 
   Jacobian jacobian(const Point&, float Ix, float Iy) const;
 
+  void jacobian(const Point&, float Ix, float Iy, float* J) const;
+
   inline const Matrix33& K() const { return _K; }
   inline const Matrix34& P() const { return _P; }
 

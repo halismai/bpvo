@@ -80,8 +80,9 @@ void computeWeights(const std::vector<float>& residuals, const std::vector<uint8
   }
 }
 
-void computeWeights(LossFunctionType loss_func, const std::vector<float>& residuals,
-                    float sigma, std::vector<float>& weights)
+void MEstimator::
+ComputeWeights(LossFunctionType loss_func, const std::vector<float>& residuals,
+               float sigma, std::vector<float>& weights)
 {
   weights.resize(residuals.size());
 
@@ -348,8 +349,9 @@ void computeWeightsTukeySimd(const std::vector<float>& residuals, const std::vec
 
 #endif // WITH_SIMD
 
-void computeWeights(LossFunctionType loss_func, const std::vector<float>& residuals,
-                    const std::vector<uint8_t>& valid, float sigma, std::vector<float>& weights)
+void MEstimator::
+ComputeWeights(LossFunctionType loss_func, const std::vector<float>& residuals,
+               const std::vector<uint8_t>& valid, float sigma, std::vector<float>& weights)
 {
   assert( residuals.size() == valid.size() );
   weights.resize(valid.size());
@@ -403,7 +405,7 @@ float AutoScaleEstimator::estimateScale(const std::vector<float>& residuals,
     auto z = 1.4826 * (1.0 + 5.0/(_buffer.size()-6));
 
 #if DO_APPROX_MEDIAN
-    auto m = approximate_median(_buffer, 0.0f, 255.0f, 0.25f);
+    auto m = approximate_median(_buffer, 0.0f, 255.0f, 0.5f);
 #else
     auto m = median(_buffer);
 #endif

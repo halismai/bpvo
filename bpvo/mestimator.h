@@ -27,18 +27,22 @@
 
 namespace bpvo {
 
-/**
- */
-void computeWeights(LossFunctionType, const std::vector<float>& residuals, float sigma,
-                    std::vector<float>& weights);
+class MEstimator
+{
+ public:
+  /**
+  */
+  static void ComputeWeights(LossFunctionType, const std::vector<float>& residuals,
+                             float sigma, std::vector<float>& weights);
 
-/**
- * computes the weights for valid points only, invalid points are assigned
- * zero weight
- */
-void computeWeights(LossFunctionType, const std::vector<float>& residuals,
-                    const std::vector<uint8_t>& valid, float sigma,
-                    std::vector<float>& weights);
+  /**
+   * computes the weights for valid points only, invalid points are assigned
+   * zero weight
+   */
+  static void ComputeWeights(LossFunctionType, const std::vector<float>& residuals,
+                             const std::vector<uint8_t>& valid, float sigma,
+                             std::vector<float>& weights);
+}; // MEstimator
 
 /**
  * Estimates the scale of the data using robust standard deviation. We also keep
@@ -54,7 +58,7 @@ class AutoScaleEstimator
   float getScale() const;
 
   /**
-   */
+  */
   float estimateScale(const std::vector<float>& residuals,
                       const std::vector<uint8_t>& valid);
 

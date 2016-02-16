@@ -73,7 +73,8 @@ class PoseEstimatorGN : public PoseEstimatorBase< PoseEstimatorGN<TDataT> >
     tdata->computeResiduals(channels, data.T, Base::residuals(), Base::valid());
     this->replicateValidFlags();
     auto sigma = this->_scale_estimator.estimateScale(Base::residuals(), Base::valid());
-    computeWeights(this->_params.lossFunction, Base::residuals(), Base::valid(), sigma, Base::weights());
+    MEstimator::ComputeWeights(this->_params.lossFunction, Base::residuals(),
+                               Base::valid(), sigma, Base::weights());
 
     this->_num_fun_evals += 1;
     return LinearSystemBuilder::Run(

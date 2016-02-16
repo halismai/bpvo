@@ -50,6 +50,11 @@ void RawIntensity::compute(const cv::Mat& I)
 
 cv::Mat_<float> RawIntensity::computeSaliencyMap() const
 {
+  cv::Mat_<float> ret(_I.size());
+  gradientAbsoluteMagnitude(_I, ret);
+  return ret;
+
+#if 0
   int rows = _I.rows,
       cols = _I.cols;
 
@@ -80,6 +85,7 @@ cv::Mat_<float> RawIntensity::computeSaliencyMap() const
   memset(dst_ptr, 0, sizeof(float)*cols);
 
   return ret;
+#endif
 }
 
 template <typename DstType> static inline

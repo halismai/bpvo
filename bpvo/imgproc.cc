@@ -124,3 +124,4 @@ void gradientAbsoluteMagnitudeAcc(const cv::Mat_<float>& src, float* dst)
 }
 
 }; // bpvo
+
