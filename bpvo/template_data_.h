@@ -353,6 +353,7 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matri
 
   BilinearInterp<float> interp;
   interp.init(_warp, _points, channels[0].rows, channels[0].cols);
+  //interp.init(_warp, _points, channels[0].rows, channels[0].cols);
 
   valid.resize(_pixels.size());
   residuals.resize(_pixels.size());

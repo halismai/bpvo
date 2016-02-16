@@ -83,6 +83,8 @@ class RigidBodyWarp
 
   void setPose(const Matrix44& T);
 
+  inline const Matrix34& pose() const { return _P; }
+
   inline ImagePoint operator()(const Point& X) const
   {
     Eigen::Vector3f x = _P * X;

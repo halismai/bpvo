@@ -9,14 +9,14 @@ struct ImageSize;
 
 /**
  * \param the image size
- * \param P 3x4 projection matrix
- * \param xyz pointer to N 3D points in homogenous coordinates
+ * \param T 4x4 projection matrix (must be ColMajor)           [4x4]
+ * \param xyz pointer to N 3D points in homogenous coordinates [4xN]
  * \param N number of points
- * \param inds output indicies
- * \param valid true if the i-th point projects onto the image
- * \param coeffs interpolation coeffc
+ * \param inds output indicies                                 [1xN]
+ * \param valid true if the i-th point projects onto the image [1xN]
+ * \param coeffs interpolation coeffc                          [4xN]
  */
-void imwarp_precomp(const ImageSize&, const float* P, const float* xyzw,
+void imwarp_precomp(const ImageSize&, const float* T, const float* xyzw,
                     int N, int* inds, uint8_t* valid, float* coeffs);
 
 }; // bpvo

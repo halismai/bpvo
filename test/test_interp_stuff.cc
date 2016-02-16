@@ -18,7 +18,7 @@ static inline void printm128(const char* prefix, const __m128i& x)
 {
   alignas(16) int buf[4];
   _mm_store_si128((__m128i*) buf, x);
-  printf("%s: [%d %d %d %d]\n", prefix, buf[0], buf[1], buf[2], buf[3]);
+  printf("%s: [%0x %0x %0x %0x]\n", prefix, buf[0], buf[1], buf[2], buf[3]);
 }
 
 static inline
@@ -162,6 +162,14 @@ int main()
     std::cout << "c1: " << Eigen::Vector4f::Map(coeffs+4).transpose() << std::endl;
   }
 
+
+  {
+    alignas(16) int32_t a[4] = {-1, 0, 20, -1};
+    auto mask = _mm_cmpgt_epi32(_mm_load_si128((const __m128i*) a), _mm_set1_epi32(-1));
+    printm128("mask: ", mask);
+    printm128("low: ", _mm_unpacklo_epi16(mask, _mm_setzero_si128()));
+    printm128("high: ", _mm_unpackhi_epi16(mask, mask));
+  }
   return 0;
 }
 #else

@@ -23,6 +23,7 @@
 #define INTERP_UTIL_H
 
 #include <bpvo/types.h>
+#include <bpvo/imwarp.h>
 
 namespace bpvo {
 
@@ -84,6 +85,20 @@ class BilinearInterp
                                   yf*(1.0-xf),
                                   yf*xf);
     }
+  }
+
+  template <class Warp, class PointVector> inline
+  void initFast(const Warp& warp, const PointVector& points, int rows, int cols)
+  {
+    Matrix44 pose(Matrix44::Identity());
+    pose.block<3,4>(0,0) = warp.pose();
+
+    static_assert((Matrix44::Options & Eigen::ColMajor) == Eigen::ColMajor,
+                  "matrix must be in ColMajor");
+
+    resize(points.size());
+    imwarp_precomp(ImageSize(rows, cols), pose.data(), points[0].data(),
+                   points.size(), _inds.data(), _valid.data(), _interp_coeffs[0].data());
   }
 
   /**

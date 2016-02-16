@@ -10,6 +10,7 @@
 
 namespace bpvo {
 
+#if !defined(__SSE4_1__)
 struct SseRoundingMode
 {
  public:
@@ -33,6 +34,7 @@ struct SseRoundingMode
 
   int _round_mode, _flush_mode;
 }; // SseRoundingMode
+#endif
 
 static inline
 __m128 tform_point(__m128 p, const __m128& p0, const __m128& p1,
@@ -41,6 +43,7 @@ __m128 tform_point(__m128 p, const __m128& p0, const __m128& p1,
   auto xxxx = _mm_shuffle_ps(p, p, _MM_SHUFFLE(0,0,0,0));
   auto yyyy = _mm_shuffle_ps(p, p, _MM_SHUFFLE(1,1,1,1));
   auto zzzz = _mm_shuffle_ps(p, p, _MM_SHUFFLE(2,2,2,2));
+
   // the last coordinate is 1, so we ignore it
   auto u = _mm_mul_ps(p0, xxxx),
        v = _mm_mul_ps(p1, yyyy),
@@ -49,15 +52,10 @@ __m128 tform_point(__m128 p, const __m128& p0, const __m128& p1,
   return _mm_add_ps(p3, _mm_add_ps(_mm_add_ps(u, v), w));
 }
 
-
 void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
                     int N, int* inds, uint8_t* valid, float* coeffs)
 {
   const int h = im_size.rows, w = im_size.cols;
-
-  //const auto LB = _mm_set1_epi32(-1); // lower bound
-  //const auto UB = _mm_setr_epi32(w-1, h-1, w-1, h-1); // upper bounds [xyxy]
-  //const auto STRIDE = _mm_set1_ps(w);
   const auto ONES = _mm_set1_ps(1.0f);
 
   const auto p0 = _mm_load_ps(P), p1 = _mm_load_ps(P + 4), p2 = _mm_load_ps(P + 8),
@@ -118,6 +116,29 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
   }
 
   for( ; i < N; ++i) {
+    Eigen::Vector4f xw = Eigen::Map<const Eigen::Matrix4f,Eigen::Aligned>(P) *
+        Eigen::Map<const Eigen::Vector4f,Eigen::Aligned>(xyzw + 4*i);
+
+    float w_i = 1.0f / xw[2];
+
+    float xf = xw[0] * w_i,
+          yf = xw[1] * w_i;
+
+    int xi = static_cast<int>( std::floor(xf) ),
+        yi = static_cast<int>( std::floor(yf) );
+
+    inds[i] = yi*w + xi;
+
+    xf -= static_cast<float>( xi );
+    yf -= static_cast<float>( yi );
+
+    Eigen::Map<Eigen::Vector4f,Eigen::Aligned>(coeffs + 4*i) = Eigen::Vector4f(
+      (1.0 - yf) * (1.0 - xf),
+      (1.0 - yf) * xf,
+      yf * (1.0 - xf),
+      yf * xf);
+
+    valid[i] = (xi >= 0) && (xi < w-1) && (yi >= 0) && (yi < h-1);
   }
 
 }
