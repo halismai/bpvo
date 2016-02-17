@@ -58,8 +58,8 @@ struct TukeyOp
 
 
 template <class RobustFunction, class... Args> static inline
-void computeWeights(const std::vector<float>& residuals, float sigma,
-                    std::vector<float>& weights, Args ... args)
+void computeWeights(const ResidualsVector& residuals, float sigma,
+                    WeightsVector& weights, Args ... args)
 {
   RobustFunction robust_fn(std::forward<Args>(args)...);
   float sigma_inv = 1.0f / sigma;
@@ -69,8 +69,8 @@ void computeWeights(const std::vector<float>& residuals, float sigma,
 }
 
 template <class RobustFunction, class... Args> static inline
-void computeWeights(const std::vector<float>& residuals, const std::vector<uint8_t>& valid,
-                    float sigma, std::vector<float>& weights, Args ... args)
+void computeWeights(const ResidualsVector& residuals, const ValidVector& valid,
+                    float sigma, WeightsVector& weights, Args ... args)
 {
   RobustFunction robust_fn(std::forward<Args>(args)...);
 
@@ -81,8 +81,8 @@ void computeWeights(const std::vector<float>& residuals, const std::vector<uint8
 }
 
 void MEstimator::
-ComputeWeights(LossFunctionType loss_func, const std::vector<float>& residuals,
-               float sigma, std::vector<float>& weights)
+ComputeWeights(LossFunctionType loss_func, const ResidualsVector& residuals,
+               float sigma, WeightsVector& weights)
 {
   weights.resize(residuals.size());
 
@@ -200,7 +200,9 @@ static const int SIMD_VECTOR_UNIT_SIZE = 4;
 #endif // __AVX__
 
 static inline
-size_t huber_simd(const float* r_ptr, const uint8_t* /* v_ptr */, float* w_ptr,
+size_t huber_simd(const typename ResidualsVector::value_type* r_ptr,
+                  const typename  ValidVector::value_type* /* v_ptr */,
+                  typename WeightsVector::value_type* w_ptr,
                   size_t N, float sigma_inv, float huber_k)
 {
   constexpr int S = 2 * SIMD_VECTOR_UNIT_SIZE;
@@ -243,8 +245,8 @@ size_t huber_simd(const float* r_ptr, const uint8_t* /* v_ptr */, float* w_ptr,
 }
 
 static inline
-void computeWeightsHuberSimd(const std::vector<float>& residuals, const std::vector<uint8_t>& valid,
-                             float sigma, std::vector<float>& weights, float huber_k = 1.345f)
+void computeWeightsHuberSimd(const ResidualsVector& residuals, const ValidVector& valid,
+                             float sigma, WeightsVector& weights, float huber_k = 1.345f)
 {
   assert( valid.size() == residuals.size() );
   weights.resize(residuals.size());
@@ -262,7 +264,9 @@ void computeWeightsHuberSimd(const std::vector<float>& residuals, const std::vec
 }
 
 static inline
-size_t tukey_simd(const float* r_ptr, const uint8_t* /* v_ptr */, float* w_ptr,
+size_t tukey_simd(const typename ResidualsVector::value_type* r_ptr,
+                  const typename ValidVector::value_type* /* v_ptr */,
+                  typename ResidualsVector::value_type* w_ptr,
                   size_t N, float sigma_inv, float tukey_t)
 {
   size_t i = 0;
@@ -329,8 +333,9 @@ size_t tukey_simd(const float* r_ptr, const uint8_t* /* v_ptr */, float* w_ptr,
 }
 
 static inline
-void computeWeightsTukeySimd(const std::vector<float>& residuals, const std::vector<uint8_t>& valid,
-                             float sigma, std::vector<float>& weights)
+void computeWeightsTukeySimd(const ResidualsVector& residuals,
+                             const ValidVector& valid,
+                             float sigma, WeightsVector& weights)
 {
   assert( valid.size() == residuals.size() );
   weights.resize(valid.size());
@@ -350,8 +355,8 @@ void computeWeightsTukeySimd(const std::vector<float>& residuals, const std::vec
 #endif // WITH_SIMD
 
 void MEstimator::
-ComputeWeights(LossFunctionType loss_func, const std::vector<float>& residuals,
-               const std::vector<uint8_t>& valid, float sigma, std::vector<float>& weights)
+ComputeWeights(LossFunctionType loss_func, const ResidualsVector& residuals,
+               const ValidVector& valid, float sigma, WeightsVector& weights)
 {
   assert( residuals.size() == valid.size() );
   weights.resize(valid.size());
@@ -387,15 +392,17 @@ void AutoScaleEstimator::reset()
 
 float AutoScaleEstimator::getScale() const { return _scale; }
 
-float AutoScaleEstimator::estimateScale(const std::vector<float>& residuals,
-                                        const std::vector<uint8_t>& valid)
+float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
+                                        const ValidVector& valid)
 {
   assert( residuals.size() == valid.size() );
 
-  if(_delta_scale > _tol) {
+  if(_delta_scale > _tol)
+  {
     _buffer.clear();
 
-    for(size_t i = 0; i < residuals.size(); ++i) {
+    for(size_t i = 0; i < residuals.size(); ++i)
+    {
       if(valid[i])
         _buffer.push_back(std::fabs(residuals[i]));
     }

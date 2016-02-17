@@ -33,9 +33,6 @@ class LinearSystemBuilder
   typedef typename RigidBodyWarp::JacobianVector JacobianVector;
   typedef typename RigidBodyWarp::Jacobian       Jacobian;
 
-  typedef std::vector<float>   ResidualsVector;
-  typedef std::vector<uint8_t> ValidVector;
-
   typedef Eigen::Matrix<float, 6, 1> Gradient;
   typedef Eigen::Matrix<float, 6, 6> Hessian;
 

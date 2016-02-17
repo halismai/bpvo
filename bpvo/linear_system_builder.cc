@@ -37,10 +37,8 @@ class LinearSystemBuilderReduction
 {
  public:
   typedef typename LinearSystemBuilder::JacobianVector  JacobianVector;
-  typedef typename LinearSystemBuilder::ResidualsVector ResidualsVector;
   typedef typename LinearSystemBuilder::Hessian         Hessian;
   typedef typename LinearSystemBuilder::Gradient        Gradient;
-  typedef std::vector<uint8_t>                          ValidVector;
 
  public:
   LinearSystemBuilderReduction(const JacobianVector& J, const ResidualsVector& R,
@@ -136,7 +134,7 @@ void LinearSystemBuilderReduction::setZero()
 FORCE_INLINE void LinearSystemBuilderReduction::
 rankUpdatePoint(int i, float* data, Gradient& G, float& res_norm)
 {
-  float w = _W[i] * static_cast<float>(_valid[i]);
+  float w = _W[i] * static_cast<float>( _valid[i] );
 
 #if defined(WITH_SIMD)
   __m128 wwww = _mm_set1_ps(w);
@@ -228,11 +226,10 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
 #endif
   } else {
     // for sum of squares, it is faster to not parallarize
-    float ret = 0.0f;
-
-    const float* r_ptr = R.data();
-    const float* w_ptr = W.data();
-    const uint8_t* v_ptr = V.data();
+    auto ret = 0.0f;
+    const auto* r_ptr = R.data();
+    const auto* w_ptr = W.data();
+    const auto* v_ptr = V.data();
 
 #if defined(WITH_OPENMP)
 #pragma omp simd
@@ -281,9 +278,9 @@ static inline void getValidResiduals(const std::vector<uint8_t>& valid,
  * NC is the number of channels of the descriptor
  */
 static inline
-std::vector<uint8_t> makeValidFlags(const std::vector<uint8_t>& v, int NC = 8)
+ValidVector makeValidFlags(const ValidVector& v, int NC = 8)
 {
-  std::vector<uint8_t> ret(v.size()*NC);
+  ValidVector ret(v.size()*NC);
   auto* p = ret.data();
 
   for(int b = 0; b < NC; ++b)
@@ -294,7 +291,7 @@ std::vector<uint8_t> makeValidFlags(const std::vector<uint8_t>& v, int NC = 8)
 }
 
 float LinearSystemBuilder::Run(const JacobianVector& J, const ResidualsVector& residuals,
-                               const ResidualsVector& weights, const std::vector<uint8_t>& valid,
+                               const ResidualsVector& weights, const ValidVector& valid,
                                Hessian* A, Gradient* b)
 {
   auto nc = residuals.size() / valid.size();
@@ -303,7 +300,7 @@ float LinearSystemBuilder::Run(const JacobianVector& J, const ResidualsVector& r
   auto valid2 = residuals.size() != valid.size() ? makeValidFlags(valid, nc) : valid;
   assert( valid2.size() == residuals.size() );
 
-  float res_sq_norm=LinearSystemBuilderReduction::Run(J, residuals, weights, valid, A, b);
+  float res_sq_norm = LinearSystemBuilderReduction::Run(J, residuals, weights, valid, A, b);
   return std::sqrt(res_sq_norm);
 }
 

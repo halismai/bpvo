@@ -1,5 +1,4 @@
 #include "bpvo/imwarp.h"
-#include "bpvo/types.h"
 #include "bpvo/utils.h"
 
 #if !defined(WITH_SIMD)
@@ -24,7 +23,7 @@ namespace bpvo {
 struct SseRoundingMode
 {
  public:
-  SseRoundingMode()
+  inline SseRoundingMode()
       : _round_mode(_MM_GET_ROUNDING_MODE()), _flush_mode(_MM_GET_FLUSH_ZERO_MODE())
   {
     if(_round_mode != _MM_ROUND_TOWARD_ZERO)
@@ -34,7 +33,7 @@ struct SseRoundingMode
       _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
   }
 
-  ~SseRoundingMode()
+  inline ~SseRoundingMode()
   {
     if(_round_mode != _MM_ROUND_TOWARD_ZERO)
       _MM_SET_ROUNDING_MODE(_round_mode);
@@ -73,7 +72,8 @@ static inline __m128i Floor(__m128 x)
 }
 
 void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
-                    int N, int* inds, uint8_t* valid, float* coeffs)
+                    int N, int* inds, typename ValidVector::value_type* valid,
+                    float* coeffs)
 {
   const int h = im_size.rows, w = im_size.cols;
   const auto ONES = _mm_set1_ps(1.0f);

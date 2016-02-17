@@ -32,16 +32,16 @@ class MEstimator
  public:
   /**
   */
-  static void ComputeWeights(LossFunctionType, const std::vector<float>& residuals,
-                             float sigma, std::vector<float>& weights);
+  static void ComputeWeights(LossFunctionType, const ResidualsVector& residuals,
+                             float sigma, WeightsVector&);
 
   /**
    * computes the weights for valid points only, invalid points are assigned
    * zero weight
    */
-  static void ComputeWeights(LossFunctionType, const std::vector<float>& residuals,
-                             const std::vector<uint8_t>& valid, float sigma,
-                             std::vector<float>& weights);
+  static void ComputeWeights(LossFunctionType, const ResidualsVector& residuals,
+                             const ValidVector& valid, float sigma,
+                             WeightsVector& weights);
 }; // MEstimator
 
 /**
@@ -58,13 +58,16 @@ class AutoScaleEstimator
   float getScale() const;
 
   /**
-  */
-  float estimateScale(const std::vector<float>& residuals,
-                      const std::vector<uint8_t>& valid);
+   * Estimate the scale/stdandard deviation of errors
+   *
+   * \param residuals the vector of residuals
+   * \param valid indicates which points are valid
+   */
+  float estimateScale(const ResidualsVector& residuals, const ValidVector& valid);
 
  private:
   float _scale = 1.0, _delta_scale = 1e10, _tol = 1e-4;
-  std::vector<float> _buffer;
+  ResidualsVector _buffer;
 }; // AutoScaleEstimator
 
 }; // bpvo

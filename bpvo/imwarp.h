@@ -2,6 +2,7 @@
 #define BPVO_IMWARP_H
 
 #include <cstdint>
+#include <bpvo/types.h>
 
 namespace bpvo {
 
@@ -17,7 +18,8 @@ struct ImageSize;
  * \param coeffs interpolation coeffc                          [4xN]
  */
 void imwarp_precomp(const ImageSize&, const float* T, const float* xyzw,
-                    int N, int* inds, uint8_t* valid, float* coeffs);
+                    int N, int* inds, typename ValidVector::value_type* valid,
+                    float* coeffs);
 
 }; // bpvo
 

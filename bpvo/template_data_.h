@@ -105,7 +105,7 @@ class TemplateData_
    * computes the residuals given the input channels and pose
    */
   void computeResiduals(const Channels& channels, const Matrix44& pose,
-                        std::vector<float>& residuals, std::vector<uint8_t>& valid);
+                        std::vector<float>& residuals, ValidVector& valid);
 
   /**
    * reserves memory for 'n' points
@@ -175,7 +175,7 @@ class TemplateData_
   }
 
   cv::Mat_<float> _buffer; // buffer to compute saliency maps
-  std::vector<int> _inds;  // linear indices into valid points
+  ValidVector _inds;  // linear indices into valid points
 
   /**
    */
@@ -276,6 +276,7 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
   std::vector<uint16_t> tmp_inds;
   tmp_inds.reserve( image_size.rows * image_size.cols * 0.25 );
 
+  // no benefit more openmp here
   /*
 #if defined(WITH_OPENMP)
 #pragma omp parallel for if(do_nms)
@@ -364,8 +365,9 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
 }
 
 template <class CN, class W> inline
-void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matrix44& pose,
-                                           std::vector<float>& residuals, std::vector<uint8_t>& valid)
+void TemplateData_<CN,W>::
+computeResiduals(const Channels& channels, const Matrix44& pose,
+                 std::vector<float>& residuals, ValidVector& valid)
 {
   _warp.setPose(pose);
 
@@ -389,9 +391,6 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matri
     auto* I1_ptr = channels.channelData(c);
     auto* r_ptr = residuals.data() + off;
 
-#if 0 && !defined(WITH_BITPLANES) && defined(WITH_OPENMP)
-#pragma omp parallel for if(numPoints() > 5000)
-#endif
     for(int i = 0; i < numPoints(); ++i) {
       r_ptr[i] = interp(I1_ptr, i) - I0_ptr[i];
     }

@@ -36,7 +36,7 @@ int main()
   // error up to some tiny floating point errors
   //
   std::vector<float> residuals;
-  std::vector<uint8_t> valid;
+  std::vector<int> valid;
   ChannelsType channels(frame->image());
   Matrix44 pose(Matrix44::Identity());
   data.computeResiduals(channels, pose, residuals, valid);

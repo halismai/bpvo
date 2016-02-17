@@ -99,10 +99,6 @@ class PoseEstimatorBase
 
   static constexpr int NumParameters = Triats::NumParameters;
 
-  typedef std::vector<float> ResidualVector;
-  typedef std::vector<float> WeightsVector;
-  typedef std::vector<uint8_t> ValidVector;
-
   typedef PoseEstimatorData_<NumParameters> PoseEstimatorData;
 
  public:
@@ -126,7 +122,7 @@ class PoseEstimatorBase
   PoseEstimatorParameters _params;
   AutoScaleEstimator _scale_estimator;
 
-  ResidualVector _residuals;
+  ResidualsVector _residuals;
   WeightsVector _weights;
   ValidVector _valid;
 
@@ -138,8 +134,8 @@ class PoseEstimatorBase
   inline       Derived* derived()       { return static_cast<Derived*>(this); }
 
  protected:
-  inline const ResidualVector& residuals() const { return _residuals; }
-  inline       ResidualVector& residuals()       { return _residuals; }
+  inline const ResidualsVector& residuals() const { return _residuals; }
+  inline       ResidualsVector& residuals()       { return _residuals; }
 
   inline const WeightsVector& weights() const { return _weights; }
   inline       WeightsVector& weights()       { return _weights; }
@@ -222,7 +218,7 @@ class PoseEstimatorBase
       auto* ptr = tmp.data();
 
       for(int i = 0; i < m; ++i, ptr += _valid.size()) {
-        memcpy(ptr, _valid.data(), _valid.size() * sizeof(uint8_t));
+        memcpy(ptr, _valid.data(), _valid.size() * sizeof(_valid[0]));
       }
 
       _valid.swap(tmp);

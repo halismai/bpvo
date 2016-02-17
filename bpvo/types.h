@@ -51,6 +51,17 @@ SharedPointer<_T> make_shared(Args&& ... args) {
   return std::make_shared<_T>(std::forward<Args>(args)...);
 }
 
+#if defined(__AVX__)
+static constexpr int DefaultAlignment = 32;
+#else
+static constexpr int DefaultAlignment = 16;
+#endif
+
+
+typedef std::vector<uint8_t> ValidVector;
+typedef std::vector<float>   ResidualsVector;
+typedef ResidualsVector      WeightsVector;
+
 /**
  * 3D points are represented as 4-vectors
  */

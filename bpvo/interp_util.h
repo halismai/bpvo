@@ -104,14 +104,14 @@ class BilinearInterp
     return _valid[i] ? _interp_coeffs[i].dot(load_data(ptr, i)) : T(0);
   }
 
-  inline const std::vector<uint8_t>& valid() const { return _valid; }
-  inline       std::vector<uint8_t>& valid()       { return _valid; }
+  inline const ValidVector& valid() const { return _valid; }
+  inline       ValidVector& valid()       { return _valid; }
 
  protected:
   // [(1-yf)*(1-xf), (1-yf)*xf, yf*(1-xf), xf]
   typename EigenAlignedContainer<Vector4>::type _interp_coeffs;
   std::vector<int> _inds;       //< yi*cols + xi
-  std::vector<uint8_t>  _valid; //< valid flags
+  ValidVector     _valid; //< valid flags
   int _stride;
 
   void resize(size_t n)
