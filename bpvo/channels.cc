@@ -44,15 +44,7 @@ RawIntensity::RawIntensity(const cv::Mat& I)
 
 void RawIntensity::compute(const cv::Mat& I)
 {
-  //assert( I.type() == cv::DataType<uint8_t>::type );
   I.convertTo(_I, CV_32FC1);
-}
-
-cv::Mat_<float> RawIntensity::computeSaliencyMap() const
-{
-  cv::Mat_<float> ret(_I.size());
-  gradientAbsoluteMagnitude(_I, ret);
-  return ret;
 }
 
 void RawIntensity::computeSaliencyMap(cv::Mat_<float>& buffer) const

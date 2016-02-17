@@ -130,7 +130,6 @@ void gradientAbsoluteMagnitudeAcc(const cv::Mat_<float>& src, float* dst)
   {
     gradientAbsoluteMagnitudeAcc<false>(src_ptr, rows, cols, dst);
   }
-
 }
 
 }; // bpvo

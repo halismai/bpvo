@@ -36,7 +36,6 @@
  * extract the channels using a single core
  */
 #define EXTRACT_CHANNELS_SERIAL 0
-
 #if EXTRACT_CHANNELS_SERIAL
 #define TBB_PREVIEW_SERIAL_SUBSET 1
 #endif
@@ -102,25 +101,6 @@ struct BitPlanesChannelMaker
   BitPlanesData& _data;
 }; // BitPlanesChannelMaker
 
-#if 0
-BitPlanesData computeBitPlanes(const cv::Mat& I, float s1, float s2)
-{
-  auto C = census(I, s1);
-
-  BitPlanesData ret;
-
-  BitPlanesChannelMaker bp(C, s2, ret);
-  tbb::blocked_range<int> range(0, 8);
-
-#if EXTRACT_CHANNELS_SERIAL
-  tbb::serial::parallel_for(range, bp);
-#else
-  tbb::parallel_for(range, bp);
-#endif
-
-  return ret;
-}
-#endif
 
 BitPlanesData::BitPlanesData(float s1, float s2)
   : _sigma_ct(s1), _sigma_bp(s2) {}

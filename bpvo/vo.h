@@ -73,11 +73,12 @@ class VisualOdometry
 
   /**
    * \return the number of points at the specified pyramid level
+   * The is the same as pointsAtLevel(level).size()
    */
   int numPointsAtLevel(int level = 0) const;
 
   /**
-   * \return the points at the specified level
+   * \return all the points at the specified level
    */
   const PointVector& pointsAtLevel(int level = 0) const;
 

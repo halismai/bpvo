@@ -153,12 +153,16 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
   if(ret.isKeyFrame) {
     // if we do not have a keyframe candidate, this happens if keyframing is
     // disabled (e.g. minTranslationMagToKeyFrame = 0.0f), or if the first frame
-    // motion was too large
-    if(_kf_candidate.empty()) {
+    // motion passed the keyframing criteria
+    if(_kf_candidate.empty())
+    {
+      //Warn("\nEmpty keyframe candidate\n");
       setAsKeyFrame(_channels_pyr, ToOpenCV(D_ptr, _image_size));
       ret.pose = T_est * _T_kf.inverse();
       _T_kf.setIdentity();
-    } else {
+    } else
+    {
+
       //
       // set keyframe candidate as the current keyframe, and re-estimate the
       // pose with identity initialization
@@ -194,9 +198,9 @@ Impl::estimatePose(const std::vector<ChannelsT>& cn, const Matrix44& T_init,
 
   _pose_estimator.setParameters(_pose_est_params_low_res);
   int i = static_cast<int>(cn.size()) - 1;
-  for( ; i >= _params.maxTestLevel;  --i) {
-    dprintf("level %d/%d [num points %d]\n", i, _params.maxTestLevel,
-            _tdata_pyr[i]->numPoints());
+  for( ; i >= _params.maxTestLevel;  --i)
+  {
+    dprintf("level %d/%d [num points %d]\n", i, _params.maxTestLevel, _tdata_pyr[i]->numPoints());
 
     if(i == 0) { // set the original thresholds for the finest pyramid level
       _pose_estimator.setParameters(_pose_est_params);

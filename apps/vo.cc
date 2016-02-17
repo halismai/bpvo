@@ -70,6 +70,7 @@ int main(int argc, char** argv)
   while(f_i < max_frames) {
     if(image_buffer.pop(&frame)) {
       if(frame->image().empty()) {
+        printf("\n");
         Warn("could not get data\n");
         break;
       }
@@ -82,12 +83,14 @@ int main(int argc, char** argv)
       trajectory.push_back(result.pose);
 
       int num_iters = result.optimizerStatistics.front().numIterations;
-      if(num_iters == params.maxIterations)
+      if(num_iters == params.maxIterations) {
+        printf("\n");
         Warn("maximum iterations reached\n");
+      }
 
-      fprintf(stdout, "Frame %05d time %3.2f ms [%3.2f Hz] %03d iters isKeyFrame:%1d because:%16s num_points %06d\r",
-              f_i-1, tt, (f_i - 1) / total_time,  num_iters, result.isKeyFrame,
-              ToString(result.keyFramingReason).c_str(), vo.numPointsAtLevel(0));
+      fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d\r",
+              f_i-1, 6, tt, 5, (f_i - 1) / total_time,  num_iters,
+              ToString(result.keyFramingReason).c_str(), 8, vo.numPointsAtLevel(0));
       fflush(stdout);
 
       if(do_show) {
