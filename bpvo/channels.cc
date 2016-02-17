@@ -99,71 +99,14 @@ void BitPlanes::compute(const cv::Mat& I)
 #endif
 }
 
-cv::Mat_<float> BitPlanes::computeSaliencyMap() const
+void BitPlanes::computeSaliencyMap(cv::Mat_<float>& dst) const
 {
   assert( !_channels.front().empty() );
 
-  cv::Mat_<float> ret(_channels[0].rows, _channels[0].cols);
-  gradientAbsoluteMagnitude(_channels[0], ret);
+  dst.create(_channels[0].size());
+  gradientAbsoluteMagnitude(_channels[0], dst);
   for(int i = 1; i < NumChannels; ++i)
-    gradientAbsoluteMagnitudeAcc(_channels[i], ret.ptr<float>());
-
-  return ret;
-
-#if 0
-  auto rows = _channels[0].rows, cols = _channels[0].cols;
-
-  // TODO there is a lot of duplicate code here fix
-  cv::Mat_<float> ret(rows, cols);
-  {
-    //
-    // first channel, we initialize the map
-    //
-    auto dst_ptr = ret.ptr<float>();
-    memset(dst_ptr, 0.0f, sizeof(float)*cols);
-    dst_ptr += cols;
-    for(int y = 1; y < rows - 1; ++y) {
-      auto s0 = _channels[0].ptr<float>(y - 1),
-           s1 = _channels[0].ptr<float>(y + 1),
-           s = _channels[0].ptr<float>(y);
-
-      dst_ptr[0] = 0.0f;
-#pragma omp simd
-      for(int x = 1; x < cols - 1; ++x) {
-        dst_ptr[x] = std::fabs(static_cast<float>(s[x+1]) - static_cast<float>(s[x-1])) +
-            std::fabs(static_cast<float>(s1[x]) - static_cast<float>(s0[x]));
-      }
-
-      dst_ptr[cols - 1] = 0.0f;
-      dst_ptr += cols;
-    }
-    memset(dst_ptr, 0, sizeof(float)*cols);
-  }
-
-  {
-    // for the rest of the channels, we +=
-    for(int c = 1; c < NumChannels; ++c) {
-      auto dst_ptr = ret.ptr<float>();
-      dst_ptr += cols;
-      for(int y = 1; y < rows - 1; ++y) {
-        auto s0 = _channels[c].ptr<float>(y - 1),
-             s1 = _channels[c].ptr<float>(y + 1),
-             s = _channels[c].ptr<float>(y);
-
-        dst_ptr[0] = 0.0f;
-#pragma omp simd
-        for(int x = 1; x < cols - 1; ++x) {
-          dst_ptr[x] += std::fabs(s[x+1] - s[x-1]) + std::fabs(s1[x] - s0[x]);
-        }
-
-        dst_ptr[cols - 1] = 0.0f;
-        dst_ptr += cols;
-      }
-    }
-  }
-
-  return ret;
-#endif
+    gradientAbsoluteMagnitudeAcc(_channels[i], dst.ptr<float>());
 }
 
 }; // bpvo

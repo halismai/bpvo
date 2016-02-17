@@ -50,13 +50,10 @@ class RawIntensity
 
   void compute(const cv::Mat&);
 
-  cv::Mat_<float> computeSaliencyMap() const;
-
   void computeSaliencyMap(cv::Mat_<float>&) const;
 
   inline int rows() const { return _I.rows; }
   inline int cols() const { return _I.cols; }
-
 
  protected:
   cv::Mat_<ChannelDataType> _I;
@@ -95,7 +92,7 @@ class BitPlanes
   inline const float& sigmaCensus() const { return _sigma_ct; }
   inline const float& sigmaBitPlanes() const {  return _sigma_bp; }
 
-  cv::Mat_<float> computeSaliencyMap() const;
+  void computeSaliencyMap(cv::Mat_<float>&) const;
 
   void compute(const cv::Mat&);
 
