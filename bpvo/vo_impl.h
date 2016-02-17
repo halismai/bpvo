@@ -102,7 +102,7 @@ class VisualOdometry::Impl
   /**
    * keyframing based on pose and valid points
    */
-  KeyFramingReason shouldKeyFrame(const Matrix44&, const std::vector<float>& weights);
+  KeyFramingReason shouldKeyFrame(const Matrix44&, const WeightsVector& weights);
 
   struct KeyFrameCandidate
   {

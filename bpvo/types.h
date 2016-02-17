@@ -29,6 +29,8 @@
 #include <iosfwd>
 #include <string>
 
+#include <bpvo/aligned_allocator.h>
+
 namespace bpvo {
 
 template <typename _T> using
@@ -57,9 +59,17 @@ static constexpr int DefaultAlignment = 32;
 static constexpr int DefaultAlignment = 16;
 #endif
 
+template <typename T>
+struct AlignedVector
+{
+  typedef AlignedAllocator<T, DefaultAlignment> allocator_type;
+  typedef std::vector<T, allocator_type> type;
+}; // AlignedVector
 
-typedef std::vector<uint8_t> ValidVector;
-typedef std::vector<float>   ResidualsVector;
+//typedef std::vector<uint8_t> ValidVector;
+//typedef std::vector<float>   ResidualsVector;
+typedef typename AlignedVector<uint8_t>::type ValidVector;
+typedef typename AlignedVector<float>::type   ResidualsVector;
 typedef ResidualsVector      WeightsVector;
 
 /**

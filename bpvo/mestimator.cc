@@ -412,9 +412,10 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
     auto z = 1.4826 * (1.0 + 5.0/(_buffer.size()-6));
 
 #if DO_APPROX_MEDIAN
+    // TODO fix for AlignedVector
     auto m = approximate_median(_buffer, 0.0f, 255.0f, 0.5f);
 #else
-    auto m = median(_buffer);
+    auto m = median(_buffer.begin(), _buffer.end());
 #endif
 
     auto scale = z * m;

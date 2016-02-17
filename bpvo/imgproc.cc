@@ -43,35 +43,55 @@ template <bool Aligned> FORCE_INLINE
 void gradientAbsoluteMagnitude(const float* src_ptr, int rows, int cols,
                                float* dst_ptr)
 {
-  constexpr int S = 4;
-  const int n = cols & ~(S-1);
-
   std::fill_n(dst_ptr, cols, 0.0f);
 
-#if 0 && defined(WITH_OPENMP)
-#pragma omp parallel for if(rows > 320)
-#endif
+  auto src = src_ptr + cols;
+  auto dst = dst_ptr + cols;
+
+  int n = cols & ~(4-1);
+
   for(int r = 2; r < rows; ++r)
   {
-    auto src = src_ptr + r*cols;
-    auto dst = dst_ptr + r*cols;
-
     int x = 0;
-    for( ; x < n; x += S)
+    for( ; x < n; x += 4)
     {
       simd::store<Aligned>(dst + x, gradientAbsMag<Aligned>(src + x, cols));
     }
 
     for( ; x < cols; ++x) {
-      dst[x] = fabs(src[x-1]-src[x+1]) + fabs(src[x-cols] + src[x+cols]);
+      dst[x] = fabs(src[x+1]-src[x-1]) + fabs(src[x+cols] + src[x-cols]);
     }
 
     dst[x] = 0.0f;
     dst[cols-1] = 0.0f;
+
+    dst += cols;
+    src += cols;
+
   }
 
-  std::fill_n(dst_ptr + (rows-1)*cols, cols, 0.0f);
+  //std::fill_n(dst_ptr + (rows-1)*cols, cols, 0.0f);
+  std::fill_n(dst, cols, 0.0f);
 }
+
+/*
+template <bool Aligned> FORCE_INLINE
+void gradientAbsoluteMagnitude(const float* src_ptr, int rows, int cols, float* dst_ptr)
+{
+  for(int y = 0; y < rows; ++y)
+  {
+    auto s0 = src_ptr + (y > 0 ? y-1 : rows > 1 ? 1 : 0)*cols;
+    auto s1 = src_ptr + y*cols;
+    auto s2 = src_ptr - (y < rows - 1 ? y+1 : rows > 1 ? rows - 2 : 0);
+
+    int x = 0;
+    for( ; x <= cols - 4; x += 4)
+    {
+    }
+  }
+}
+*/
+
 
 void gradientAbsoluteMagnitude(const cv::Mat_<float>& src, cv::Mat_<float>& dst)
 {

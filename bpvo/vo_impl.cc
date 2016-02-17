@@ -241,7 +241,7 @@ auto VisualOdometry::Impl::pointsAtLevel(int level) const -> const PointVector&
 }
 
 KeyFramingReason
-VisualOdometry::Impl::shouldKeyFrame(const Matrix44& T, const std::vector<float>& weights)
+VisualOdometry::Impl::shouldKeyFrame(const Matrix44& T, const WeightsVector& weights)
 {
   auto t_norm = T.block<3,1>(0,3).squaredNorm();
   if(t_norm > math::sq(_params.minTranslationMagToKeyFrame)) {

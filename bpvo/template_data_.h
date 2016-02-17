@@ -105,7 +105,7 @@ class TemplateData_
    * computes the residuals given the input channels and pose
    */
   void computeResiduals(const Channels& channels, const Matrix44& pose,
-                        std::vector<float>& residuals, ValidVector& valid);
+                        ResidualsVector& residuals, ValidVector& valid);
 
   /**
    * reserves memory for 'n' points
@@ -175,7 +175,7 @@ class TemplateData_
   }
 
   cv::Mat_<float> _buffer; // buffer to compute saliency maps
-  ValidVector _inds;  // linear indices into valid points
+  std::vector<int> _inds;  // linear indices into valid points
 
   /**
    */
@@ -367,7 +367,7 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
 template <class CN, class W> inline
 void TemplateData_<CN,W>::
 computeResiduals(const Channels& channels, const Matrix44& pose,
-                 std::vector<float>& residuals, ValidVector& valid)
+                 ResidualsVector& residuals, ValidVector& valid)
 {
   _warp.setPose(pose);
 
