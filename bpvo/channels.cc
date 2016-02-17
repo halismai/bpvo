@@ -53,39 +53,11 @@ cv::Mat_<float> RawIntensity::computeSaliencyMap() const
   cv::Mat_<float> ret(_I.size());
   gradientAbsoluteMagnitude(_I, ret);
   return ret;
+}
 
-#if 0
-  int rows = _I.rows,
-      cols = _I.cols;
-
-  cv::Mat_<float> ret(rows, cols);
-  auto dst_ptr = ret.ptr<float>();
-  memset(dst_ptr, 0.0f, sizeof(float)*cols);
-  dst_ptr += cols;
-
-  for(int y = 1; y < rows - 1; ++y) {
-    auto s0 = _I.ptr<ChannelDataType>(y - 1),
-         s1 = _I.ptr<ChannelDataType>(y + 1),
-         s = _I.ptr<ChannelDataType>(y);
-
-    dst_ptr[0] = 0.0f;
-#if defined(WITH_OPENMP)
-#pragma omp simd
-#endif
-    for(int x = 1; x < cols - 1; ++x) {
-      dst_ptr[x] =
-          0.5f*std::fabs(static_cast<float>(s[x+1]) - static_cast<float>(s[x-1])) +
-          0.5f*std::fabs(static_cast<float>(s1[x]) - static_cast<float>(s0[x]));
-    }
-
-    dst_ptr[cols - 1] = 0.0f;
-    dst_ptr += cols;
-  }
-
-  memset(dst_ptr, 0, sizeof(float)*cols);
-
-  return ret;
-#endif
+void RawIntensity::computeSaliencyMap(cv::Mat_<float>& buffer) const
+{
+  gradientAbsoluteMagnitude(_I, buffer);
 }
 
 template <typename DstType> static inline

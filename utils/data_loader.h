@@ -153,7 +153,7 @@ class DataLoaderThread
   DataLoaderThread(UniquePointer<DataLoader> data_loader, BufferType& buffer);
   ~DataLoaderThread();
 
-  void stop();
+  void stop(bool empty_buffer = true);
 
   bool isRunning() const;
 

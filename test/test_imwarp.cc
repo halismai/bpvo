@@ -28,7 +28,9 @@ int main()
   float b = 0.1;
 
 
-  T(0,3) = 0.01;
+  T(0,3) = 0.001;
+  T(1,3) = 0.002;
+  T(2,3) = 0.003;
   RigidBodyWarp warp(K, b);
   warp.setPose(T);
 
@@ -67,10 +69,11 @@ int main()
   for(size_t i = 0; i < Iw.size(); ++i) {
     diff.push_back(std::abs(Iw[i] - Iw2[i]));
     if(diff.back() > 1e-3) {
-      //printf("%zu %f %f %f\n", i, Iw[i], Iw2[i], diff.back());
+      printf("%zu %f %f %f\n", i, Iw[i], Iw2[i], diff.back());
       ++n_bad;
     }
   }
+
 
   for(size_t i = Iw.size()-3; i < Iw.size(); ++i) {
     printf("%f %f\n", Iw[i], Iw2[i]);

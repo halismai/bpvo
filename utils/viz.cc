@@ -8,7 +8,7 @@ namespace bpvo {
 cv::Mat colorizeDisparity(const cv::Mat& D, double min_val, double max_val)
 {
   cv::Mat ret(D);
-  if(std::isnan(min_val) || std::isnan(max_val))
+  if(std::fabs(min_val - max_val) < 1e-3)
     cv::minMaxLoc(ret, &min_val, &max_val);
 
   ret = 255.0 * ((ret - min_val) / (max_val - min_val));
@@ -17,7 +17,7 @@ cv::Mat colorizeDisparity(const cv::Mat& D, double min_val, double max_val)
 
   for(int r = 0; r < ret.rows; ++r)
     for(int c = 0; c < ret.cols; ++c) {
-      if(D.at<float>(r,c) < 1e-3f) {
+      if(false && D.at<float>(r,c) < 1e-3f) {
         ret.at<cv::Vec3b>(r,c) = cv::Vec3b(0,0,0);
       }
     }

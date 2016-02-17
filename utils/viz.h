@@ -9,16 +9,13 @@ namespace bpvo {
 class ImageFrame;
 class StereoCalibration;
 
-cv::Mat colorizeDisparity(const cv::Mat&, double min_val=std::numeric_limits<double>::quiet_NaN(),
-                          double max_val = std::numeric_limits<double>::quiet_NaN());
+cv::Mat colorizeDisparity(const cv::Mat&, double min_val = 0.0, double max_val = 0.0);
 
 cv::Mat overlayDisparity(const cv::Mat& I, const cv::Mat& D, double alpha,
-                         double min_val = std::numeric_limits<double>::quiet_NaN(),
-                         double max_val = std::numeric_limits<double>::quiet_NaN());
+                         double min_val = 0.0, double max_val = 0.0);
 
-cv::Mat overlayDisparity(const ImageFrame* frame, double alpha = 0.5f,
-                         double min_val = std::numeric_limits<double>::quiet_NaN(),
-                         double max_val = std::numeric_limits<double>::quiet_NaN());
+cv::Mat overlayDisparity(const ImageFrame* frame, double alpha = 0.5,
+                         double min_val = 0.0, double max_val = 0.0);
 
 class DisparityPointCloudViewer
 {

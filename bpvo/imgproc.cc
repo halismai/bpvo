@@ -40,19 +40,25 @@ __m128 gradientAbsMag(const float* src, int stride)
 }
 
 template <bool Aligned> FORCE_INLINE
-void gradientAbsoluteMagnitude(const float* src, int rows, int cols, float* dst)
+void gradientAbsoluteMagnitude(const float* src_ptr, int rows, int cols,
+                               float* dst_ptr)
 {
   constexpr int S = 4;
   const int n = cols & ~(S-1);
 
-  std::fill_n(dst, cols, 0.0f);
+  std::fill_n(dst_ptr, cols, 0.0f);
 
-  src += cols;
-  dst += cols;
+#if 0 && defined(WITH_OPENMP)
+#pragma omp parallel for if(rows > 320)
+#endif
+  for(int r = 2; r < rows; ++r)
+  {
+    auto src = src_ptr + r*cols;
+    auto dst = dst_ptr + r*cols;
 
-  for(int r = 2; r < rows; ++r, src += cols, dst += cols) {
     int x = 0;
-    for( ; x < n; x += S) {
+    for( ; x < n; x += S)
+    {
       simd::store<Aligned>(dst + x, gradientAbsMag<Aligned>(src + x, cols));
     }
 
@@ -64,7 +70,7 @@ void gradientAbsoluteMagnitude(const float* src, int rows, int cols, float* dst)
     dst[cols-1] = 0.0f;
   }
 
-  std::fill_n(dst, cols, 0.0f);
+  std::fill_n(dst_ptr + (rows-1)*cols, cols, 0.0f);
 }
 
 void gradientAbsoluteMagnitude(const cv::Mat_<float>& src, cv::Mat_<float>& dst)
@@ -77,10 +83,11 @@ void gradientAbsoluteMagnitude(const cv::Mat_<float>& src, cv::Mat_<float>& dst)
   auto src_ptr = src.ptr<const float>();
   auto dst_ptr = dst.ptr<float>();
 
-  if(simd::isAligned<16>(src_ptr) && simd::isAligned<16>(dst_ptr) && simd::isAligned<16>(cols)) {
-    printf("aligned\n");
+  if(simd::isAligned<16>(src_ptr) && simd::isAligned<16>(dst_ptr) && simd::isAligned<16>(cols))
+  {
     gradientAbsoluteMagnitude<true>(src_ptr, rows, cols, dst_ptr);
-  } else {
+  } else
+  {
     gradientAbsoluteMagnitude<false>(src_ptr, rows, cols, dst_ptr);
   }
 }
@@ -117,9 +124,12 @@ void gradientAbsoluteMagnitudeAcc(const cv::Mat_<float>& src, float* dst)
   auto src_ptr = src.ptr<const float>();
 
   if(simd::isAligned<16>(src_ptr) && simd::isAligned<16>(cols) && simd::isAligned<16>(dst))
+  {
     gradientAbsoluteMagnitudeAcc<true>(src_ptr, rows, cols, dst);
-  else
+  } else
+  {
     gradientAbsoluteMagnitudeAcc<false>(src_ptr, rows, cols, dst);
+  }
 
 }
 

@@ -52,7 +52,7 @@ class MEstimator
 class AutoScaleEstimator
 {
  public:
-  AutoScaleEstimator(float tol = -1.0f);
+  AutoScaleEstimator(float tol = 1e-6);
 
   void reset();
   float getScale() const;

@@ -62,7 +62,7 @@ struct IsLocalMax
   inline IsLocalMax(const T* ptr, int stride, int radius)
       : _ptr(ptr), _stride(stride), _radius(radius)
   {
-    assert( _stride > 0);
+    if(_radius > 0) assert( _stride > 0);
   }
 
   inline void setStride(int s) { _stride = s; }
@@ -75,14 +75,38 @@ struct IsLocalMax
    */
   FORCE_INLINE bool operator()(int row, int col) const
   {
-    if(_radius > 0) {
-      auto v = _ptr[row*_stride + col];
-      for(int r = -_radius; r <= _radius; ++r)
-        for(int c = -_radius; c <= _radius; ++c)
-          if(!(!r && !c) && _ptr[(row+r)*_stride + col + c] >= v)
-            return false;
+    if(_radius <= 0)
+      return true;
+
+    switch(_radius)
+    {
+      case 1: // 3x3
+        {
+          auto p0 = _ptr + row*_stride + col,
+               p1 = p0 - _stride,
+               p2 = p0 + _stride;
+          auto v = *p0;
+
+          return
+              (v > p1[-1]) & (v > p1[0]) & (v > p1[1]) &
+              (v > p0[-1]) &               (v > p0[1]) &
+              (v > p2[-1]) & (v > p2[0]) & (v > p2[1]);
+        } break;
+
+        // TODO case 2
+      default:
+        {
+          // generic implementation for any radius
+          auto v = *(_ptr + row*_stride + col);
+          for(int r = -_radius; r <= _radius; ++r)
+            for(int c = -_radius; c <= _radius; ++c)
+              if(!(!r && !c) && *(_ptr + (row+r)*_stride + col + c) >= v)
+                return false;
+
+          return true;
+        }
     }
-    return true;
+
   }
 
  private:
@@ -128,6 +152,7 @@ class ValidPixelPredicate
  * computes the gradient absolute magnitude
  */
 void gradientAbsoluteMagnitude(const cv::Mat_<float>& src, cv::Mat_<float>& dst);
+
 
 /**
  * accumulates the abs gradient magnitude into dst

@@ -52,6 +52,12 @@ class RawIntensity
 
   cv::Mat_<float> computeSaliencyMap() const;
 
+  void computeSaliencyMap(cv::Mat_<float>&) const;
+
+  inline int rows() const { return _I.rows; }
+  inline int cols() const { return _I.cols; }
+
+
  protected:
   cv::Mat_<ChannelDataType> _I;
 }; // RawIntensity

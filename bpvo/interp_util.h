@@ -24,6 +24,7 @@
 
 #include <bpvo/types.h>
 #include <bpvo/imwarp.h>
+#include <iostream>
 
 namespace bpvo {
 
@@ -52,44 +53,34 @@ class BilinearInterp
 #if 0 && defined(WITH_OPENMP)
 #pragma omp parallel for if(points.size()>10*1000)
 #endif
-    for(size_t i = 0; i < points.size(); ++i) {
+    for(size_t i = 0; i < points.size(); ++i)
+    {
       const auto p = warp(points[i]);
       float xf = p.x(), yf = p.y();
       int xi = static_cast<int>(xf), yi = static_cast<int>(yf);
       xf -= xi;
       yf -= yi;
-      _valid[i] = xi>=0 && xi<cols-1 && yi>=0 && yi<rows-1;
-      _inds[i] = yi*cols + xi;
-      _interp_coeffs[i] = Vector4((1.0-yf)*(1.0-xf),
-                                  (1.0-yf)*xf,
-                                  yf*(1.0-xf),
-                                  yf*xf);
-    }
-  }
-
-  template <class Warp, class PointVector> inline
-  void init2(const Warp& warp, const PointVector& points, int rows, int cols)
-  {
-    _stride = cols;
-    const auto xw = warp.warpPoints(points);
-    const auto N = xw.size();
-    resize(N);
-
-    for(size_t i = 0; i < N; ++i) {
-      int xi = static_cast<int>(xw[i].x()),
-          yi = static_cast<int>(xw[i].y());
-      float xf = xw[i].x() - (float) xi;
-      float yf = xw[i].y() - (float) yi;
 
       _valid[i] = xi>=0 && xi<cols-1 && yi>=0 && yi<rows-1;
       _inds[i] = yi*cols + xi;
+
+      // reduce the floating point multiplications
+      float xfyf = xf*yf;
+      _interp_coeffs[i] = Vector4(
+          xfyf - yf - xf + 1.0,
+          xf - xfyf,
+          yf - xfyf,
+          xfyf);
+
+      /*
       _interp_coeffs[i] = Vector4((1.0-yf)*(1.0-xf),
                                   (1.0-yf)*xf,
                                   yf*(1.0-xf),
-                                  yf*xf);
+                                  yf*xf);*/
     }
   }
 
+  // this function is broken for now
   template <class Warp, class PointVector> inline
   void initFast(const Warp& warp, const PointVector& points, int rows, int cols)
   {
@@ -114,7 +105,7 @@ class BilinearInterp
   }
 
   inline const std::vector<uint8_t>& valid() const { return _valid; }
-  inline       std::vector<uint8_t>& valid()      { return _valid; }
+  inline       std::vector<uint8_t>& valid()       { return _valid; }
 
  protected:
   // [(1-yf)*(1-xf), (1-yf)*xf, yf*(1-xf), xf]

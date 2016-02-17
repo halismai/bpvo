@@ -280,18 +280,19 @@ DataLoaderThread::~DataLoaderThread()
   stop();
 }
 
-void DataLoaderThread::stop()
+void DataLoaderThread::stop(bool empty_buffer)
 {
   if(_is_running) {
     _stop_requested = true;
 
-    //
-    // we also need to empty the buffer, because the call to push() blocks
-    //
-    //
-    typename BufferType::value_type frame;
-    while( _buffer.pop(&frame, 10) )
-      ; // nothing here, just pop the frames
+    if(empty_buffer) {
+      //
+      // we also need to empty the buffer, because the call to push() blocks
+      //
+      typename BufferType::value_type frame;
+      while( _buffer.pop(&frame, 10) )
+        ; // nothing here, just pop the frames
+    }
 
     if(_thread.joinable()) {
       _thread.join();

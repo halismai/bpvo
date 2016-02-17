@@ -165,8 +165,9 @@ rankUpdatePoint(int i, float* data, Gradient& G, float& res_norm)
   HessianMap(data).noalias() += _W[i] * _J[i].transpose() * _J[i];
 #endif
 
-  G.noalias() += w * _R[i] * _J[i].transpose();
-  res_norm += w * _R[i] * _R[i];
+  float wR = w *_R[i];
+  G.noalias() += wR * _J[i].transpose();
+  res_norm += wR * _R[i];
 }
 
 auto LinearSystemBuilderReduction::toEigen(const float* data) -> Hessian
@@ -195,7 +196,7 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
   if(H && G) {
     LinearSystemBuilderReduction reduction(J, R, W, V);
 
-#if 1 || (defined(WITH_BITPLANES) && defined(WITH_TBB))
+#if (defined(WITH_BITPLANES) && defined(WITH_TBB))
     tbb::parallel_reduce(tbb::blocked_range<int>(0, (int) R.size()), reduction);
     *H = reduction.hessian();
     *G = reduction.gradient();
@@ -243,7 +244,6 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
     return ret;
   }
 }
-
 
 
 static inline void getValidResiduals(const std::vector<uint8_t>& valid,

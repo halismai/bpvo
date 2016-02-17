@@ -88,13 +88,13 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
 
   constexpr int S = 4;
   int n = N & ~(S-1), i = 0;
-#if defined(WITH_OPENMP)
+#if 0 && defined(WITH_OPENMP)
   bool use_parallel = n > 10*1000;
 #else
   bool use_parallel = false;
 #endif
 
-#if defined(WITH_OPENMP)
+#if 0 && defined(WITH_OPENMP)
 #pragma omp parallel for if(use_parallel)
 #endif
   for(i = 0; i < n; i += 4)
@@ -129,6 +129,7 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
 
       alignas(16) int xi_buf[4];
       _mm_store_si128((__m128i*) xi_buf, xi);
+
       inds[i + 0] = xi_buf[0] + xi_buf[1]*w;
       inds[i + 1] = xi_buf[2] + xi_buf[3]*w;
       valid[i + 0] = (xi_buf[0]>=0) & (xi_buf[0] < w-1) & (xi_buf[1]>=0) & (xi_buf[1]<h-1);
@@ -165,6 +166,7 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
 
       alignas(16) int xi_buf[4];
       _mm_store_si128((__m128i*) xi_buf, xi);
+
       inds[i + 2] = xi_buf[0] + xi_buf[1]*w;
       inds[i + 3] = xi_buf[2] + xi_buf[3]*w;
       valid[i + 2] = (xi_buf[0]>=0) & (xi_buf[0] < w-1) & (xi_buf[1]>=0) & (xi_buf[1]<h-1);

@@ -34,14 +34,13 @@ namespace simd {
 
 template <int Alignment> bool FORCE_INLINE isAligned(size_t n)
 {
-  return 0 == (n & ~(Alignment-1));
+  return 0 == (n & (Alignment-1));
 }
 
 template <int Alignment, typename T> bool FORCE_INLINE isAligned(const T* ptr)
 {
   return isAligned<Alignment>(reinterpret_cast<size_t>(ptr));
 }
-
 
 /**
  * loads from ptr to __m128 register

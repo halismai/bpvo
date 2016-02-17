@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 
   ProgramOptions options;
   options
-      ("config,c", "../conf/tsukuba.cfg", "config file")
+      ("config,c", "/home/halismai/code/bpvo/conf/tsukuba.cfg", "config file")
       ("output,o", "output.txt", "trajectory output file")
       ("numframes,n", int(100), "number of frames to process")
       ("buffersize,b", int(16), "buffer size to load images")
@@ -85,13 +85,13 @@ int main(int argc, char** argv)
       if(num_iters == params.maxIterations)
         Warn("maximum iterations reached\n");
 
-      fprintf(stdout, "Frame %05d time %03.2f ms [%03.2f Hz] %03d iters isKeyFrame:%1d because:%16s num_points %06d\r",
+      fprintf(stdout, "Frame %05d time %3.2f ms [%3.2f Hz] %03d iters isKeyFrame:%1d because:%16s num_points %06d\r",
               f_i-1, tt, (f_i - 1) / total_time,  num_iters, result.isKeyFrame,
               ToString(result.keyFramingReason).c_str(), vo.numPointsAtLevel(0));
       fflush(stdout);
 
       if(do_show) {
-        cv::imshow("image", overlayDisparity(frame.get(), 0.75f));
+        cv::imshow("image", overlayDisparity(frame.get(), 0.5f));
         int k = 0xff & cv::waitKey(2);
         if(k == ' ') k = cv::waitKey(0);
         if(k == 'q' || k == 27)

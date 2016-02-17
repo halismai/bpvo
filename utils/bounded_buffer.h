@@ -51,6 +51,11 @@ class BoundedBuffer
    */
   bool pop(value_type* item, int wait_time_ms = 1);
 
+  /**
+   * \return true if the buffer is full
+   */
+  bool full();
+
  private:
   BoundedBuffer(const BoundedBuffer&) = delete;
   BoundedBuffer& operator=(const BoundedBuffer&) = delete;
@@ -92,6 +97,18 @@ bool BoundedBuffer<T>::pop(value_type* item, int wait_time_ms)
     lock.unlock();
     return false;
   }
+}
+
+template <typename T> inline
+bool BoundedBuffer<T>::full()
+{
+  if(_mutex.try_lock()) {
+    bool ret = _container.full();
+    _mutex.unlock();
+    return ret;
+  }
+
+  return false;
 }
 
 }; // bpvo

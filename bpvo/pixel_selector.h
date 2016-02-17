@@ -48,6 +48,7 @@ class Range_
 class PixelSelector
 {
   typedef Range_<float> RangeT;
+
  public:
   /**
    * \param nms_radius Non-Maxima suppression radius (if 0 or negative no nms
@@ -64,8 +65,7 @@ class PixelSelector
    * \param smap_size size of the saliency map
    * \param smap_ptr pointer to the disparity map
    */
-  void run(const DisparityPyramidLevel& dmap, const ImageSize& smap_size,
-           const float* smap_ptr);
+  void run(const DisparityPyramidLevel& dmap, const ImageSize& smap_size, const float* smap_ptr);
 
   inline const std::vector<int> validIndices() const { return _inds; }
   inline const std::vector<float> validDisparities() const { return _disparities; }

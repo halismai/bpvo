@@ -17,7 +17,7 @@ int main()
   float w = 0.5f;
   float r = 2.1f;
 
-  __m128 wwww = _mm_set1_ps(w);
+  __m128 wwww = _mm_set1_ps(w * r);
   __m128 v1234 = _mm_loadu_ps(J);
   __m128 v56xx = _mm_loadu_ps(J + 4);
 

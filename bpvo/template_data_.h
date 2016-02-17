@@ -50,29 +50,49 @@ template <class ChannelsType, class WarpType>
 class TemplateData_
 {
  public:
-  typedef WarpType Warp;
-  typedef typename Warp::Point Point;
-  typedef typename Warp::Jacobian Jacobian;
-  typedef typename Warp::WarpJacobian WarpJacobian;
-  typedef typename Warp::PointVector PointVector;
-  typedef typename Warp::JacobianVector JacobianVector;
+  typedef WarpType                          Warp;
+  typedef typename Warp::Point              Point;
+  typedef typename Warp::Jacobian           Jacobian;
+  typedef typename Warp::WarpJacobian       WarpJacobian;
+  typedef typename Warp::PointVector        PointVector;
+  typedef typename Warp::JacobianVector     JacobianVector;
   typedef typename Warp::WarpJacobianVector WarpJacobianVector;
 
-  typedef ChannelsType Channels;
+  typedef ChannelsType                   Channels;
   typedef typename Channels::PixelVector PixelVector;
 
   static constexpr int NumChannels = Channels::NumChannels;
 
  public:
-  inline TemplateData_(const Matrix33& K, const float& baseline, int pyr_level,
+  /**
+   * \param K the intrinsics matrix
+   * \param baseline the stereo baseline
+   * \param pyr_level the pyramid level
+   * \param min_pixels_for_nms minimum number of pixels to do NMS
+   * \param min_saliency minimum saliency for a pixel to be used
+   * \param min_disparity minimum disparity for a pixel to be used
+   * \param max_disparity maximum disparity for a pixel to be used
+   * \param non maxima suppresion radius
+   */
+  inline TemplateData_(const Matrix33& K,
+                       float baseline,
+                       int pyr_level,
                        int min_pixels_for_nms = 320*240,
                        float min_saliency = 0.01f,
                        float min_disparity = 1.0f,
-                       float max_disparity = 512.0f)
-      : _pyr_level(pyr_level)
-        , _warp(K, baseline)
+                       float max_disparity = 512.0f,
+                       int nms_radius = 1)
+      : _warp(K, baseline)
+        , _pyr_level(pyr_level)
         , _min_pixels_for_nms(min_pixels_for_nms)
-        , _pixel_selector(1, min_saliency, {min_disparity, max_disparity}) {}
+        , _min_saliency(min_saliency)
+        , _min_disparity(min_disparity)
+        , _max_disparity(max_disparity)
+        , _nms_radius(nms_radius)
+  {
+    assert( _pyr_level >= 0 );
+    assert( nms_radius > 0 );
+  }
 
   inline ~TemplateData_() {}
 
@@ -82,6 +102,9 @@ class TemplateData_
    */
   void setData(const Channels& channels, const cv::Mat& disparity);
 
+  /**
+   * computes the residuals given the input channels and pose
+   */
   void computeResiduals(const Channels& channels, const Matrix44& pose,
                         std::vector<float>& residuals, std::vector<uint8_t>& valid);
 
@@ -95,7 +118,10 @@ class TemplateData_
     _pixels.reserve(n * NumChannels);
   }
 
+  /** \return the number of points */
   inline int numPoints() const { return _points.size(); }
+
+  /** \return the number of pixels */
   inline int numPixels() const { return _pixels.size(); }
 
   /**
@@ -122,20 +148,18 @@ class TemplateData_
   inline const PointVector& points() const { return _points; }
 
  protected:
+  Warp _warp;
+
   int _pyr_level;
+  int _min_pixels_for_nms;
+  float _min_saliency;
+  float _min_disparity;
+  float _max_disparity;
+  int _nms_radius;
 
   JacobianVector _jacobians;
   PointVector _points;
   PixelVector _pixels;
-
-  Warp _warp;
-
-  int _min_pixels_for_nms;
-
-  PixelSelector _pixel_selector;
-  float _min_saliency;
-  float _min_disparity;
-  float _max_disparity;
 
   inline void clear()
   {
@@ -151,48 +175,19 @@ class TemplateData_
     _pixels.resize( n * NumChannels );
   }
 
+  cv::Mat_<float> _buffer; // buffer to compute saliency maps
+  std::vector<int> _inds;  // linear indices into valid points
+
+  /**
+   */
+  void getValidPoints(const Channels& cn, const cv::Mat& D);
+
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 }; // TemplateData_
 
 
 namespace {
-
-template <class Points>
-static void writePointsToFile(std::string filename, const Points& pts)
-{
-  std::ofstream ofs(filename);
-  if(!ofs.is_open())
-    Fatal("Failed to open %s\n", filename.c_str());
-
-  for(const auto& p : pts) {
-    ofs << p.transpose() << std::endl;
-  }
-
-  ofs.close();
-}
-
-template <class SaliencyMapT> std::vector<std::pair<int,float>>
-getValidPixelsLocations(const DisparityPyramidLevel& dmap, const SaliencyMapT& smap,
-                        int nms_radius, bool do_nonmax_supp, float min_saliency,
-                        float min_disparity, float max_disparity)
-{
-  std::vector<std::pair<int,float>> ret;
-  ret.reserve(smap.rows * smap.cols * 0.25);
-
-  const ValidPixelPredicate<SaliencyMapT> is_pixel_valid(
-      dmap, smap, do_nonmax_supp ? nms_radius : -1, min_saliency, min_disparity, max_disparity);
-
-  const int border = std::max(2, nms_radius);
-  for(int y = border; y < smap.rows - border - 1; ++y)
-    for(int x = border; x < smap.cols - border - 1; ++x) {
-      if(is_pixel_valid(y, x)) {
-        ret.push_back({y*smap.cols + x, dmap(y,x)});
-      }
-    }
-
-  return ret;
-}
 
 #if defined(WITH_TBB)
 #if TEMPLATE_DATA_SET_DATA_WITH_TBB
@@ -245,52 +240,118 @@ class TemplateDataExtractor
 }; // namespace
 
 template <class CN, class W> inline
+void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
+{
+  //
+  // clear the  revious points
+  //
+  _points.clear();
+  _inds.clear();
+
+  const ImageSize image_size(cn.rows(), cn.cols());
+  IsLocalMax<float> is_local_max(nullptr, cn.cols(), -1);
+
+  //
+  // we'll pre-compute the saliency maps anyways because this is faster with
+  // BitPlanes, but if we are doing intensity only we are better off computing
+  // the saliency on the fly if nms is not neededq
+  //
+  cn.computeSaliencyMap(_buffer);
+
+  bool do_nms = image_size.rows * image_size.cols >= _min_pixels_for_nms;
+  if(do_nms)
+  {
+    //
+    // set the data for NMS
+    //
+    is_local_max.setPointer(_buffer.ptr<float>());
+    is_local_max.setStride(_buffer.cols);
+    is_local_max.setRadius(_nms_radius);
+  }
+
+  const int border = std::max(2, _nms_radius);
+
+  //
+  // we'll split this in two loops for cache & branch prediction friendlyness
+  //
+  std::vector<uint16_t> tmp_inds;
+  tmp_inds.reserve( image_size.rows * image_size.cols * 0.25 );
+
+  /*
+#if defined(WITH_OPENMP)
+#pragma omp parallel for if(do_nms)
+#endif
+*/
+  for(int y = border; y < image_size.rows - border - 1; ++y)
+  {
+    auto s_row = _buffer.ptr<float>(y);
+    for(int x = border; x < image_size.cols - border - 1; ++x)
+    {
+      if(s_row[x] <= _min_saliency || !is_local_max(y,x))
+        continue;
+
+      /*
+#if defined(WITH_OPENMP)
+#pragma omp critical
+#endif
+*/
+      {
+        tmp_inds.push_back(y);
+        tmp_inds.push_back(x);
+      }
+    }
+  }
+
+  _inds.reserve(tmp_inds.size()/2);
+  _points.reserve(tmp_inds.size()/2);
+  auto D_ptr = D.ptr<float>();
+  for(size_t i = 0; i < tmp_inds.size(); i += 2)
+  {
+    int y = static_cast<int>( tmp_inds[i + 0] );
+    int x = static_cast<int>( tmp_inds[i + 1] );
+    int ii = y*image_size.cols + x;
+    float d = D_ptr[ (1<<_pyr_level)*(y*D.cols + x) ];
+    if(d > _min_disparity && d < _max_disparity)
+    {
+      _points.push_back( _warp.makePoint(x, y, d) );
+      _inds.push_back( ii );
+    }
+  }
+
+  _warp.setNormalization(_points);
+}
+
+template <class CN, class W> inline
 void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
 {
   assert( D.type() == cv::DataType<float>::type );
 
-  const auto smap = channels.computeSaliencyMap();
-  if(smap.rows * smap.cols < _min_pixels_for_nms) {
-    _pixel_selector.setNonMaximaSuppRadius(-1); // disable NMS
-  }
+  getValidPoints(channels, D);
 
-  _pixel_selector.run(DisparityPyramidLevel(D, _pyr_level),
-                      {smap.rows, smap.cols}, reinterpret_cast<const float*>(smap.data));
-
-  const auto& inds = _pixel_selector.validIndices();
-  const auto& dvals = _pixel_selector.validDisparities();
-
- _points.resize(inds.size());
-  auto stride = smap.cols;
-
-  //
-  // compute the points
-  //
-  for(size_t i = 0; i < inds.size(); ++i) {
-    int x = 0, y = 0;
-    ind2sub(stride, inds[i], y, x);
-    _points[i] = _warp.makePoint(x, y, dvals[i]);
-  }
-
-  _warp.setNormalization(_points);
-
-  _pixels.resize(_points.size() * NumChannels);
-  _jacobians.resize(_points.size() * NumChannels);
+  const auto N = _points.size();
+  _pixels.resize(N * NumChannels);
+  _jacobians.resize(N * NumChannels);
 
 #if defined(WITH_TBB) && TEMPLATE_DATA_SET_DATA_WITH_TBB
   TemplateDataExtractor<TemplateData_<CN,W>> tde(*this, Jw, inds, channels);
-  tbb::parallel_for(tbb::blocked_range<int>(0,NumChannels), tde);
+  tbb::parallel_for(tbb::blocked_range<int>(0, NumChannels), tde);
 #else
+  const int stride = channels.cols();
   //
   // compute the pixels and jacobians for all channels
   //
-  for(int c = 0; c < channels.size(); ++c) {
+#if defined(WITH_OPENMP) && defined(WITH_BITPLANES)
+#pragma omp parallel for
+#endif
+  for(int c = 0; c < channels.size(); ++c)
+  {
     auto c_ptr = channels.channelData(c);
-    auto J_ptr = _jacobians.data() + c*inds.size();
-    auto P_ptr = _pixels.data() + c*inds.size();
+    auto J_ptr = _jacobians.data() + c*N;
+    auto P_ptr = _pixels.data() + c*N;
 
-    for(size_t i = 0; i < inds.size(); ++i) {
-      auto ii = inds[i];
+    for(size_t i = 0; i < N; ++i)
+    {
+      auto ii = _inds[i];
       P_ptr[i] = c_ptr[ii];
       float Ix = 0.5f * (c_ptr[ii+1] - c_ptr[ii-1]),
             Iy = 0.5f * (c_ptr[ii+stride] - c_ptr[ii-stride]);
@@ -302,48 +363,6 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   // NOTE: we push an empty Jacobian at the end because of SSE code loading
   _jacobians.push_back(Jacobian::Zero());
 }
-
-
-#if 0
-// working version
-template <class CN, class W> inline
-void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matrix44& pose,
-                                           std::vector<float>& residuals, std::vector<uint8_t>& valid)
-{
-  int max_rows = channels[0].rows - 1,
-      max_cols = channels[0].cols - 1,
-      stride = channels[0].cols,
-      n = numPoints();
-
-  _warp.setPose(pose);
-  residuals.resize(n);
-  valid.resize(n);
-
-  for(int i = 0; i < n; ++i) {
-    auto x = _warp(_points[i]);
-    float xf = x[0],
-          yf = x[1];
-    int xi = static_cast<int>(xf),
-        yi = static_cast<int>(yf);
-
-    valid[i] = xi >= 0 && xi < max_cols && yi >= 0 && yi < max_rows;
-    if(valid[i]) {
-      xf -= xi;
-      yf -= yi;
-      const float* p0 = channels.channelData(0) + yi*stride + xi;
-      float i0 = static_cast<float>( *p0 ),
-              i1 = static_cast<float>( *(p0 + 1) ),
-              i2 = static_cast<float>( *(p0 + stride) ),
-              i3 = static_cast<float>( *(p0 + stride + 1) ),
-              Iw = (1.0f-yf) * ((1.0f-xf)*i0 + xf*i1) +
-                  yf  * ((1.0f-xf)*i2 + xf*i3);
-      residuals[i] = Iw - _pixels[i];
-    } else {
-      residuals[i] = 0.0f;
-    }
-  }
-}
-#endif
 
 template <class CN, class W> inline
 void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matrix44& pose,
@@ -364,7 +383,8 @@ void TemplateData_<CN,W>::computeResiduals(const Channels& channels, const Matri
 #if defined(WITH_BITPLANES) && defined(WITH_OPENMP)
 #pragma omp parallel for
 #endif
-  for(int c = 0; c < channels.size(); ++c) {
+  for(int c = 0; c < channels.size(); ++c)
+  {
     int off = c*numPoints();
     auto* I0_ptr = _pixels.data() + off;
     auto* I1_ptr = channels.channelData(c);
