@@ -50,7 +50,7 @@ if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL 
 endif()
 
 include(cmake/MakeVersion.cmake)
-MakeVersion(BPVO 0 7 0)
+MakeVersion(BPVO 0 8 0)
 
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Direct Visual Odometry")
