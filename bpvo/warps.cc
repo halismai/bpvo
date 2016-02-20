@@ -30,32 +30,12 @@ namespace bpvo {
 RigidBodyWarp::RigidBodyWarp(const Matrix33& K, float b)
     : _K(K), _b(b), _T(Matrix44::Identity()), _T_inv(Matrix44::Identity()) {}
 
-auto RigidBodyWarp::makePoint(float x, float y, float d) const -> Point
-{
-  float fx = _K(0,0),
-        fy = _K(1,1),
-        cx = _K(0,2),
-        cy = _K(1,2);
-  float Bf = _b * fx;
-
-  float Z = Bf / d;
-  float X = (x - cx) * Z / fx;
-  float Y = (y - cy) * Z / fy;
-
-  return Point(X, Y, Z, 1.0);
-}
-
-void RigidBodyWarp::setPose(const Matrix44& T)
-{
-  _P = _K * T.block<3,4>(0,0);
-}
-
 auto RigidBodyWarp::warpPoints(const PointVector& points) const -> ImagePointVector
 {
   typedef Eigen::Matrix<float,4,Eigen::Dynamic> MatrixType;
   typedef Eigen::Map<const MatrixType, Eigen::Aligned> MapType;
 
-  auto N = points.size();
+  const auto N = points.size();
   Eigen::Matrix<float,3,Eigen::Dynamic> Xw = _P * MapType(points[0].data(), 4, N);
 
   ImagePointVector ret(N);
@@ -64,11 +44,6 @@ auto RigidBodyWarp::warpPoints(const PointVector& points) const -> ImagePointVec
   }
 
   return ret;
-}
-
-Matrix44 RigidBodyWarp::scalePose(const Matrix44& T) const
-{
-  return _T_inv * T * _T;
 }
 
 auto RigidBodyWarp::warpJacobianAtZero(const Point& p) const -> WarpJacobian
@@ -100,20 +75,6 @@ auto RigidBodyWarp::jacobian(const Point& p, float Ix, float Iy) const -> Jacobi
   J[5] = -(1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy))/s;
 
   return J;
-}
-
-void RigidBodyWarp::jacobian(const Point& p, float Ix, float Iy, float* J) const
-{
-  float X = p[0], Y = p[1], Z = p[2];
-  float fx = _K(0,0), fy = _K(1,1);
-  float s = _T(0,0), c1 = _T_inv(0,3), c2 = _T_inv(1,3), c3 = _T_inv(2,3);
-
-  J[0] = -1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(Y-c2)-(Iy*fy*(Z-c3))/Z;
-  J[1] = 1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(X-c1)+(Ix*fx*(Z-c3))/Z;
-  J[2] = (Iy*fy*(X-c1))/Z-(Ix*fx*(Y-c2))/Z;
-  J[3] = (Ix*fx)/(Z*s);
-  J[4] = (Iy*fy)/(Z*s);
-  J[5] = -(1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy))/s;
 }
 
 void RigidBodyWarp::setNormalization(const Matrix44& T)

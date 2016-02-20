@@ -26,6 +26,8 @@
 
 namespace bpvo {
 
+class Trajectory;
+
 class VisualOdometry
 {
   typedef typename EigenAlignedContainer<Point>::type PointVector;
@@ -81,6 +83,12 @@ class VisualOdometry
    * \return all the points at the specified level
    */
   const PointVector& pointsAtLevel(int level = 0) const;
+
+
+  /**
+   * \return the trajectory thus far
+   */
+  const Trajectory& trajectory() const;
 
  private:
   class Impl;

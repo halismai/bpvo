@@ -44,6 +44,7 @@ class Trajectory
   inline size_t size() const { return _poses.size(); }
 
   bool writeCameraPath(std::string filename) const;
+  bool write(std::string filename) const;
 
  private:
   PoseVector _poses;

@@ -57,30 +57,34 @@ std::ostream& operator<<(std::ostream& os, const PointWithInfo& p)
   return os;
 }
 
-PointCloud::PointCloud() {}
+PointCloud::PointCloud() : _points(), _pose(Transform::Identity()) {}
 
-PointCloud::PointCloud(const PointVector& v) : _points(v) {}
+PointCloud::PointCloud(const PointWithInfoVector& v) :
+    PointCloud(v, Transform::Identity()) {}
+
+PointCloud::PointCloud(const PointWithInfoVector& v, const Transform& T) :
+    _points(v), _pose(T) {}
 
 PointCloud::~PointCloud() {}
 
-const Point& PointCloud::operator[](int i) const
+const typename PointWithInfoVector::value_type& PointCloud::operator[](int i) const
 {
   assert( i >= 0 && i < (int) size() );
   return _points[i];
 }
 
-Point& PointCloud::operator[](int i)
+typename PointWithInfoVector::value_type& PointCloud::operator[](int i)
 {
   assert( i >= 0 && i < (int) size() );
   return _points[i];
 }
 
-auto PointCloud::points() const -> const PointVector&
+const PointWithInfoVector& PointCloud::points() const
 {
   return _points;
 }
 
-auto PointCloud::points() -> PointVector&
+PointWithInfoVector& PointCloud::points()
 {
   return _points;
 }
@@ -110,6 +114,9 @@ void PointCloud::resize(size_t n)
   _points.resize(n);
 }
 
+auto PointCloud::pose() const -> const Transform& { return _pose; }
+auto PointCloud::pose() -> Transform& { return _pose; }
+
 static inline bool IsLittleEndain()
 {
   int n = 1;
@@ -136,13 +143,9 @@ bool ToPlyFile(std::string filename, const PointWithInfoVector& points, std::str
     ofs << "property uchar alpha" << std::endl;
     ofs << "end_header" << std::endl;
 
-    /*
-    for(const auto& p : points) {
-      ofs.write((const char*)p.xyzw().data(), 3*sizeof(float));
-      ofs.write((const char*)p.rgba().data(), 4*sizeof(uint8_t));
-    }
-    */
-
+    //
+    // we'll copy the data into a buffer and write everything at once
+    //
     int nbytes = points.size() * (3*sizeof(float) + 4*sizeof(uint8_t));
     std::vector<char> data(nbytes);
     auto ptr = data.data();

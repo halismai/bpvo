@@ -44,5 +44,10 @@ auto VisualOdometry::pointsAtLevel(int level) const -> const PointVector&
   return _impl->pointsAtLevel(level);
 }
 
+const Trajectory& VisualOdometry::trajectory() const
+{
+  return _impl->trajectory();
+}
+
 }; // bpvo
 

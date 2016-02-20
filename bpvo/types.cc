@@ -22,6 +22,7 @@
 #include "bpvo/types.h"
 #include "bpvo/utils.h"
 #include "bpvo/config_file.h"
+#include "bpvo/point_cloud.h"
 #include <iostream>
 #include <string>
 
@@ -196,6 +197,24 @@ Result::Result()
   , covariance(PoseCovariance::Identity())
   , isKeyFrame(false)
   , keyFramingReason(kNoKeyFraming) {}
+
+Result::Result(Result&& other)
+  : pose(other.pose)
+  , covariance(other.covariance)
+  , isKeyFrame(other.isKeyFrame)
+  , pointCloud(std::move(other.pointCloud)) {}
+
+Result::~Result() {}
+
+Result& Result::operator=(Result&& r)
+{
+  pose = r.pose;
+  covariance = r.covariance;
+  isKeyFrame = r.isKeyFrame;
+  keyFramingReason = r.keyFramingReason;
+  pointCloud = std::move(r.pointCloud);
+  return *this;
+}
 
 std::ostream& operator<<(std::ostream& os, const Result& r)
 {

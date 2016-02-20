@@ -355,6 +355,8 @@ struct OptimizerStatistics
   friend std::ostream& operator<<(std::ostream& os, const OptimizerStatistics&);
 }; // OptimizerStats
 
+class PointCloud;
+
 /**
  * Output from VO include the pose and other useful statistics
  */
@@ -390,11 +392,26 @@ struct Result
   KeyFramingReason keyFramingReason;
 
   /**
+   * Point cloud and its own.
+   * check the pointer before using it, it is not null iff we have points (based
+   * on keyframing)
+   *
+   * Before using the point cloud, it must also be transformed with the
+   * associated pose
+   */
+  UniquePointer<PointCloud> pointCloud;
+
+  /**
    * stream insertion
    */
   friend std::ostream& operator<<(std::ostream&, const Result&);
 
   Result();
+  Result(Result&&);
+
+  Result& operator=(Result&&);
+
+  ~Result();
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 }; // Result

@@ -117,6 +117,7 @@ class PoseEstimatorBase
   inline const PoseEstimatorParameters& parameters() const { return _params; }
 
   inline const WeightsVector& getWeights() const { return _weights; }
+  inline const ValidVector& getValidFlags() const { return _valid; }
 
  protected:
   PoseEstimatorParameters _params;

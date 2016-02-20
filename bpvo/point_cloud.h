@@ -62,29 +62,25 @@ class PointWithInfo
 
 typedef typename EigenAlignedContainer<PointWithInfo>::type PointWithInfoVector;
 
-/**
- * \return true if the points where written to file successfuly
- */
-bool ToPlyFile(std::string filename, const PointWithInfoVector& pc,
-               std::string comment = "");
-
 
 class PointCloud
 {
  public:
-  typedef typename EigenAlignedContainer<Point>::type PointVector;
+  typedef Matrix44 Transform;
+  typedef typename PointWithInfoVector::iterator iterator;
+  typedef typename PointWithInfoVector::const_iterator const_iterator;
 
  public:
   PointCloud();
-  PointCloud(const PointVector& v);
+  PointCloud(const PointWithInfoVector& v);
+  PointCloud(const PointWithInfoVector& v, const Transform& T);
   virtual ~PointCloud();
 
-  const Point& operator[](int i) const;
+  const typename PointWithInfoVector::value_type& operator[](int i) const;
+  typename PointWithInfoVector::value_type& operator[](int i);
 
-  Point& operator[](int i);
-
-  const PointVector& points() const;
-  PointVector& points();
+  const PointWithInfoVector& points() const;
+  PointWithInfoVector& points();
 
   bool empty() const;
   size_t size() const;
@@ -93,9 +89,35 @@ class PointCloud
   void resize(size_t);
   void reserve(size_t);
 
+  void push_back(const typename PointWithInfoVector::value_type& p) { _points.push_back(p); }
+
+  const Transform& pose() const;
+  Transform& pose();
+
+  inline iterator begin() { return _points.begin(); }
+  inline const_iterator begin() const { return _points.begin(); }
+  inline iterator end() { return _points.end(); }
+  inline const_iterator end() const { return _points.end(); }
+
  protected:
-  PointVector _points;
+  PointWithInfoVector _points;
+  Transform _pose;
 }; // PointCloud
+
+/**
+ * \return true if the points where written to file successfuly
+ */
+bool ToPlyFile(std::string filename, const PointWithInfoVector& pc,
+               std::string comment = "");
+
+inline bool ToPlyFile(std::string filename, const PointCloud& pc, std::string comment="")
+
+{
+  return ToPlyFile(filename, pc.points(), comment);
+}
+
+
+
 
 }; // bpvo
 

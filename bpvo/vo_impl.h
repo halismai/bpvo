@@ -30,6 +30,8 @@
 #include <bpvo/template_data_.h>
 #include <bpvo/channels.h>
 #include <bpvo/linear_system_builder.h>
+#include <bpvo/trajectory.h>
+#include <bpvo/point_cloud.h>
 
 #include <vector>
 
@@ -81,22 +83,70 @@ class VisualOdometry::Impl
    */
   const PointVector& pointsAtLevel(int) const;
 
+  /**
+   */
+  inline const Trajectory& trajectory() const { return _trajectory; }
+
  protected:
+  /** AlgorithmParameters */
   AlgorithmParameters _params;
+
+  /** PoseEstimatorParameters for fine pyramid levels (high res) */
   PoseEstimatorParameters _pose_est_params;
+
+  /** PoseEstimatorParameters for coarse pyramid levels (low res) */
   PoseEstimatorParameters _pose_est_params_low_res;
+
+  /** the image size */
   ImageSize _image_size;
 
+  /** pose estimator */
   PoseEstimatorT _pose_estimator;
+
+  /** TemplateData _pyr pyramid level */
   std::vector<TDataPointer> _tdata_pyr;
+
+  /** buffer to contain input data pyr pyramid level */
   std::vector<ChannelsT> _channels_pyr;
 
+  /** Transformation wrt to the keyframe, used to initialize the pose for new frames */
   Matrix44 _T_kf;
+
+  /** trajectory since the first call to addFrame */
+  Trajectory _trajectory;
+
+  /**
+   * the point cloud corresponding to the current keyframe
+   */
+  PointCloud _kf_point_cloud;
+
+  /**
+   * used to get the pose of the point cloud from the trajectory
+   *
+   * T_pc_kf = _trajectory[ _kf_pose_index ];
+   */
+  int _kf_pose_index = 0;
+  int _frame_index = 0;
+
+  /**
+   * we keep this here for point cloud colorization
+   */
+  cv::Mat _input_image;
 
  protected:
   void setAsKeyFrame(const std::vector<ChannelsT>&, const cv::Mat&);
 
-  Matrix44 estimatePose(const std::vector<ChannelsT>&, const Matrix44& T_init,
+  /**
+   * Estimate the pose of the input channels with respect to the current keyframe
+   *
+   * \param input_channels the input channels
+   * \param T_init         pose initialization
+   * \param stats          optimization stats per pyramid level
+   *
+   * \return the estimated pose
+   */
+  Matrix44 estimatePose(const std::vector<ChannelsT>& input_channels,
+                        const Matrix44& T_init,
                         std::vector<OptimizerStatistics>& stats);
 
   /**
@@ -104,10 +154,14 @@ class VisualOdometry::Impl
    */
   KeyFramingReason shouldKeyFrame(const Matrix44&, const WeightsVector& weights);
 
+
+  /**
+   * Holds the data need to set a new keyframe
+   */
   struct KeyFrameCandidate
   {
-    std::vector<ChannelsT> channels_pyr;
-    cv::Mat disparity;
+    std::vector<ChannelsT> channels_pyr; // the channels
+    cv::Mat disparity;            // the disparity image
 
     /**
      * \return true if the KeyFrameCandidate is is empty
@@ -120,14 +174,16 @@ class VisualOdometry::Impl
     void clear();
   }; // KeyFrameCandidate
 
-  void setAsKeyFrame(const KeyFrameCandidate& kfc) {
+  KeyFrameCandidate _kf_candidate;
+
+  inline void setAsKeyFrame(const KeyFrameCandidate& kfc) {
     this->setAsKeyFrame(kfc.channels_pyr, kfc.disparity);
   }
 
-  KeyFrameCandidate _kf_candidate;
-
+  /**
+   * a wrapper to create template data given calibration and pyramid level
+   */
   UniquePointer<TData> makeTemplateData(const Matrix33& K, float b, int pyr_level) const;
-
 }; // VisualOdometry
 
 }; // bpvo

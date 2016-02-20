@@ -21,7 +21,7 @@ A minimal example is as follows:
 
 	  // you also need the imgae size
 	  ImageSize image_size = ...
-	
+
 	  // decide on the parameters you want to use
 	  AlgorithmParameters params = ...
 
@@ -34,5 +34,5 @@ A minimal example is as follows:
 	  }
 
   }
-  
+
 

@@ -67,7 +67,20 @@ class RigidBodyWarp
  public:
   RigidBodyWarp(const Matrix33& K, float b);
 
-  Point makePoint(float x, float y, float d) const;
+  inline Point makePoint(float x, float y, float d) const
+  {
+    float fx = _K(0,0),
+          fy = _K(1,1),
+          cx = _K(0,2),
+          cy = _K(1,2);
+    float Bf = _b * fx;
+
+    float Z = Bf / d;
+    float X = (x - cx) * Z * (1.0f / fx);
+    float Y = (y - cy) * Z * (1.0f / fy);
+
+    return Point(X, Y, Z, 1.0f);
+  }
 
   void setNormalization(const Matrix44&);
   void setNormalization(const PointVector& points);
@@ -76,12 +89,27 @@ class RigidBodyWarp
 
   Jacobian jacobian(const Point&, float Ix, float Iy) const;
 
-  void jacobian(const Point&, float Ix, float Iy, float* J) const;
+  inline void jacobian(const Point& p, float Ix, float Iy, float* J) const
+  {
+    float X = p[0], Y = p[1], Z = p[2];
+    float fx = _K(0,0), fy = _K(1,1);
+    float s = _T(0,0), c1 = _T_inv(0,3), c2 = _T_inv(1,3), c3 = _T_inv(2,3);
+
+    J[0] = -1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(Y-c2)-(Iy*fy*(Z-c3))/Z;
+    J[1] = 1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(X-c1)+(Ix*fx*(Z-c3))/Z;
+    J[2] = (Iy*fy*(X-c1))/Z-(Ix*fx*(Y-c2))/Z;
+    J[3] = (Ix*fx)/(Z*s);
+    J[4] = (Iy*fy)/(Z*s);
+    J[5] = -(1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy))/s;
+  }
 
   inline const Matrix33& K() const { return _K; }
   inline const Matrix34& P() const { return _P; }
 
-  void setPose(const Matrix44& T);
+  inline void setPose(const Matrix44& T)
+  {
+    _P = _K * T.block<3,4>(0,0);
+  }
 
   inline const Matrix34& pose() const { return _P; }
 
@@ -92,25 +120,35 @@ class RigidBodyWarp
     return ImagePoint(z_i * x[0], z_i * x[1]);
   }
 
-  Matrix44 scalePose(const Matrix44& T) const;
-
-  template <class Derived> inline
-  Matrix44 paramsToPose(const Eigen::MatrixBase<Derived>& p) const
+  ImagePoint getImagePoint(const Point& X) const
   {
-    return scalePose(math::TwistToMatrix(p));
+    Eigen::Vector3f x = _K * X.head<3>();
+    float z_i = 1.0f / x.z();
+    return ImagePoint(z_i * x[0], z_i * x[1]);
   }
 
-  ImagePointVector warpPoints(const PointVector&) const;
+  inline Matrix44 scalePose(const Matrix44& T) const
+  {
+    return _T_inv * T * _T;
+  }
 
- protected:
-  Matrix33 _K;
-  float _b;
+  template <class Derived> inline
+Matrix44 paramsToPose(const Eigen::MatrixBase<Derived>& p) const
+{
+  return scalePose(math::TwistToMatrix(p));
+}
 
-  Matrix34 _P;
+ImagePointVector warpPoints(const PointVector&) const;
 
-  // normalization
-  Matrix44 _T;
-  Matrix44 _T_inv;
+protected:
+Matrix33 _K;
+float _b;
+
+Matrix34 _P;
+
+// normalization
+Matrix44 _T;
+Matrix44 _T_inv;
 }; // RigidBodyWarp
 
 Matrix44 HartlyNormalization(const typename RigidBodyWarp::PointVector& pts);
