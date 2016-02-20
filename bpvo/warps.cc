@@ -46,48 +46,6 @@ auto RigidBodyWarp::warpPoints(const PointVector& points) const -> ImagePointVec
   return ret;
 }
 
-auto RigidBodyWarp::warpJacobianAtZero(const Point& p) const -> WarpJacobian
-{
-  auto x = p.x(), y = p.y(), z = p.z(), z2 = z*z;
-
-  float s = _T(0,0),
-        c1 = _T_inv(0,3),
-        c2 = _T_inv(1,3),
-        c3 = _T_inv(2,3);
-
-  return (WarpJacobian() <<
-          -(x*(y - c2))/z2, (z - c3)/z + (x*(x - c1))/z2, -(y - c2)/z, 1.0f/(z*s),    0.0, -x/(z2*s),
-          -(z - c3)/z - (y*(y - c2))/z2,   (y*(x - c1))/z2,  (x - c1)/z,  0.0f, 1.0f/(z*s), -z/(z2*s)).finished();
-}
-
-auto RigidBodyWarp::jacobian(const Point& p, float Ix, float Iy) const -> Jacobian
-{
-  float X = p[0], Y = p[1], Z = p[2];
-  float fx = _K(0,0), fy = _K(1,1);
-  float s = _T(0,0), c1 = _T_inv(0,3), c2 = _T_inv(1,3), c3 = _T_inv(2,3);
-
-  Jacobian J;
-  J[0] = -1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(Y-c2)-(Iy*fy*(Z-c3))/Z;
-  J[1] = 1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(X-c1)+(Ix*fx*(Z-c3))/Z;
-  J[2] = (Iy*fy*(X-c1))/Z-(Ix*fx*(Y-c2))/Z;
-  J[3] = (Ix*fx)/(Z*s);
-  J[4] = (Iy*fy)/(Z*s);
-  J[5] = -(1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy))/s;
-
-  return J;
-}
-
-void RigidBodyWarp::setNormalization(const Matrix44& T)
-{
-  _T = T;
-  _T_inv = T.inverse();
-}
-
-void RigidBodyWarp::setNormalization(const PointVector& points)
-{
-  setNormalization(HartlyNormalization(points));
-}
-
 Matrix44 HartlyNormalization(const typename RigidBodyWarp::PointVector& pts)
 {
   Point c(Point::Zero());

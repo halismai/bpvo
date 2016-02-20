@@ -198,7 +198,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
 
       _trajectory.push_back( ret.pose );
       ret.pointCloud->pose() = _trajectory[_kf_pose_index];
-      printf("\n_kf_pose_index %d\n", _kf_pose_index);
+      //printf("\n_kf_pose_index %d\n", _kf_pose_index);
 
     } else
     {

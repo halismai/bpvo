@@ -45,9 +45,9 @@ template <> struct warp_traits<RigidBodyWarp>
   typedef typename EigenAlignedContainer<Point>::type         PointVector;
   typedef typename EigenAlignedContainer<WarpJacobian>::type  WarpJacobianVector;
 }; // warp_traits
+}; // detail
 
-}; // details
-
+Matrix44 HartlyNormalization(const typename detail::warp_traits<RigidBodyWarp>::PointVector& pts);
 
 class RigidBodyWarp
 {
@@ -82,12 +82,37 @@ class RigidBodyWarp
     return Point(X, Y, Z, 1.0f);
   }
 
-  void setNormalization(const Matrix44&);
-  void setNormalization(const PointVector& points);
+  inline void setNormalization(const Matrix44& T)
+  {
+    _T = T;
+    _T_inv = T.inverse();
+  }
 
-  WarpJacobian warpJacobianAtZero(const Point&) const;
+  inline void setNormalization(const PointVector& points)
+  {
+    setNormalization(HartlyNormalization(points));
+  }
 
-  Jacobian jacobian(const Point&, float Ix, float Iy) const;
+  inline WarpJacobian warpJacobianAtZero(const Point& p) const
+  {
+    auto x = p.x(), y = p.y(), z = p.z(), z2 = z*z;
+
+    float s = _T(0,0),
+          c1 = _T_inv(0,3),
+          c2 = _T_inv(1,3),
+          c3 = _T_inv(2,3);
+
+    return (WarpJacobian() <<
+            -(x*(y - c2))/z2, (z - c3)/z + (x*(x - c1))/z2, -(y - c2)/z, 1.0f/(z*s),    0.0, -x/(z2*s),
+            -(z - c3)/z - (y*(y - c2))/z2,   (y*(x - c1))/z2,  (x - c1)/z,  0.0f, 1.0f/(z*s), -z/(z2*s)).finished();
+  }
+
+  inline Jacobian jacobian(const Point& p, float Ix, float Iy) const
+  {
+    Jacobian ret;
+    jacobian(p, Ix, Iy, ret.data());
+    return ret;
+  }
 
   inline void jacobian(const Point& p, float Ix, float Iy, float* J) const
   {
@@ -127,31 +152,27 @@ class RigidBodyWarp
     return ImagePoint(z_i * x[0], z_i * x[1]);
   }
 
-  inline Matrix44 scalePose(const Matrix44& T) const
-  {
-    return _T_inv * T * _T;
-  }
+  inline Matrix44 scalePose(const Matrix44& T) const { return _T_inv * T * _T; }
 
   template <class Derived> inline
-Matrix44 paramsToPose(const Eigen::MatrixBase<Derived>& p) const
-{
-  return scalePose(math::TwistToMatrix(p));
-}
+  Matrix44 paramsToPose(const Eigen::MatrixBase<Derived>& p) const
+  {
+    return scalePose(math::TwistToMatrix(p));
+  }
 
-ImagePointVector warpPoints(const PointVector&) const;
+  ImagePointVector warpPoints(const PointVector&) const;
 
-protected:
-Matrix33 _K;
-float _b;
+ protected:
+  Matrix33 _K;
+  float _b;
 
-Matrix34 _P;
+  Matrix34 _P;
 
-// normalization
-Matrix44 _T;
-Matrix44 _T_inv;
+  // normalization
+  Matrix44 _T;
+  Matrix44 _T_inv;
 }; // RigidBodyWarp
 
-Matrix44 HartlyNormalization(const typename RigidBodyWarp::PointVector& pts);
 
 }; // bpvo
 
