@@ -191,15 +191,11 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
                               _pose_estimator.getWeights());
 
       ret.pointCloud = make_unique<PointCloud>(_kf_point_cloud);
+      ret.pointCloud->pose() = _trajectory[_kf_pose_index];
 
       setAsKeyFrame(_channels_pyr, ToOpenCV(D_ptr, _image_size));
       ret.pose = T_est * _T_kf.inverse();
       _T_kf.setIdentity();
-
-      _trajectory.push_back( ret.pose );
-      ret.pointCloud->pose() = _trajectory[_kf_pose_index];
-      //printf("\n_kf_pose_index %d\n", _kf_pose_index);
-
     } else
     {
 
