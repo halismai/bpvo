@@ -1,6 +1,9 @@
-### BPVO
+# BPVO
 
-A library for (semi-dense) real-time visual odometry.
+A library for (semi-dense) real-time visual odometry. There two modes of
+operation that are compiled separately. First, is the _real-time_ mode that not
+handle difficult lighting (60+ fps). Second, is an illumination robust mode
+handles low light using the Bit-Planes descriptor as described [here][bp]
 
 
 USAGE
@@ -38,3 +41,5 @@ A minimal example is as follows:
   }
 
 
+
+[bp]: http://arxiv.org/abs/1602.00307
