@@ -19,33 +19,31 @@
  * Contributor: halismai@cs.cmu.edu
  */
 
-#include "bpvo/warps.h"
-#include <cmath>
+
+#include "bpvo/disparity_space_warp.h"
 
 namespace bpvo {
 
-Matrix44 HartlyNormalization(const typename detail::warp_traits<RigidBodyWarp>::PointVector& pts)
+DisparitySpaceWarp::DisparitySpaceWarp(const Matrix33& K, float b)
+    : _K(K), _H(Matrix44::Identity()), _T(Matrix44::Identity()), _T_inv(Matrix44::Identity())
 {
-  Point c(Point::Zero());
-  for(const auto& p : pts)
-    c.noalias() += p;
-  c /= (float) pts.size();
+  const auto fx = K(0,0), fy = K(1,1);
 
-  float m = 0.0f;
-  for(const auto& p : pts)
-    m += (p - c).norm();
-  m /= (float) pts.size();
+  _fx_i = 1.0f / fx;
+  _fy_i = 1.0f / fy;
+  _b_i = 1.0f / b;
 
-  float s = std::sqrt(3.0) / std::max(m, 1e-6f);
+  _G <<
+      fx, 0, 0, 0,
+      0, fy, 0, 0,
+      0, 0, 0, fx*b,
+      0, 0, 1, 0;
 
-  Matrix44 ret;
-  ret.block<3,3>(0,0) = s * Matrix33::Identity();
-  ret.block<3,1>(0,3) = -s*c.head<3>();
-  ret.block<1,3>(3,0).setZero();
-  ret(3,3) = 1.0f;
-
-  return ret;
+  _G_inv <<
+      (1.0/fx), 0, 0, 0,
+      0, (1.0/fy), 0, 0,
+      0, 0, 0, 1,
+      0, 0, (1.0/(fx*b)), 0;
 }
 
-}; // bpvo
-
+} // bpvo

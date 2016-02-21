@@ -32,6 +32,7 @@
 #include <bpvo/linear_system_builder.h>
 #include <bpvo/trajectory.h>
 #include <bpvo/point_cloud.h>
+#include <bpvo/rigid_body_warp.h>
 
 #include <vector>
 

@@ -33,7 +33,10 @@ template <class> struct warp_traits;
 }; // detail
 
 class RigidBodyWarp;
+class DisparitySpaceWarp;
+
 namespace detail {
+
 template <> struct warp_traits<RigidBodyWarp>
 {
   typedef bpvo::Point Point;
@@ -45,133 +48,119 @@ template <> struct warp_traits<RigidBodyWarp>
   typedef typename EigenAlignedContainer<Point>::type         PointVector;
   typedef typename EigenAlignedContainer<WarpJacobian>::type  WarpJacobianVector;
 }; // warp_traits
+
+template <> struct warp_traits<DisparitySpaceWarp> :
+  public warp_traits<RigidBodyWarp> {};
+
 }; // detail
 
+/**
+ * Apply Hartely's normalization on the points
+ * \return a scaling matrix such that T * X results in points with zero mean and
+ * unit std. dev on a 3-sphere
+ */
 Matrix44 HartlyNormalization(const typename detail::warp_traits<RigidBodyWarp>::PointVector& pts);
 
-class RigidBodyWarp
+
+template <class Derived>
+class WarpBase
 {
  public:
-  typedef detail::warp_traits<RigidBodyWarp> Traits;
+  typedef detail::warp_traits<Derived> Traits;
 
-  typedef typename Traits::Point              Point;
-  typedef typename Traits::ImagePoint         ImagePoint;
-  typedef typename Traits::Jacobian           Jacobian;
-  typedef typename Traits::WarpJacobian       WarpJacobian;
-  typedef typename Traits::PointVector        PointVector;
-  typedef typename Traits::JacobianVector     JacobianVector;
+  typedef typename Traits::Point          Point;
+  typedef typename Traits::ImagePoint     ImagePoint;
+  typedef typename Traits::Jacobian       Jacobian;
+  typedef typename Traits::WarpJacobian   WarpJacobian;
+  typedef typename Traits::JacobianVector JacobianVector;
+  typedef typename Traits::PointVector    PointVector;
   typedef typename Traits::WarpJacobianVector WarpJacobianVector;
 
-  typedef typename EigenAlignedContainer<ImagePoint>::type ImagePointVector;
+  static constexpr int DOF = Jacobian::ColsAtCompileTime;
+  static_assert( DOF != Eigen::Dynamic, "DOF's must be known at compile time");
 
  public:
-  RigidBodyWarp(const Matrix33& K, float b);
-
+  /**
+   * create a point from x,y,d
+   *
+   * \param x, y coordinates in the image plane
+   * \param d    the disparity
+   */
   inline Point makePoint(float x, float y, float d) const
   {
-    float fx = _K(0,0),
-          fy = _K(1,1),
-          cx = _K(0,2),
-          cy = _K(1,2);
-    float Bf = _b * fx;
-
-    float Z = Bf / d;
-    float X = (x - cx) * Z * (1.0f / fx);
-    float Y = (y - cy) * Z * (1.0f / fy);
-
-    return Point(X, Y, Z, 1.0f);
+    return derived()->makePoint(x, y, d);
   }
 
+  /**
+   * \return the intrinsic calibration matrix
+   */
+  inline const Matrix33& K() const { return derived()->K(); }
+
+  /**
+   * set the camera pose for the warp. This must be called before warping points
+   */
+  inline void setPose(const Matrix44& T)
+  {
+    derived()->setPose(T);
+  }
+
+  /**
+   * set a normalizatioon matrix for the points. Effects of normalization will
+   * propagate throw to the Jacobian computation
+   */
   inline void setNormalization(const Matrix44& T)
   {
-    _T = T;
-    _T_inv = T.inverse();
+    derived()->setNormalization(T);
   }
 
+  /**
+   * set the normalization using the vector of points
+   */
   inline void setNormalization(const PointVector& points)
   {
     setNormalization(HartlyNormalization(points));
   }
 
-  inline WarpJacobian warpJacobianAtZero(const Point& p) const
+  /**
+   * compute the Jacobian at zero given a point and image gradient [Ix, Iy]
+   */
+  template <class ... Args> inline
+  void jacobian(const Point& p, float Ix, float Iy, float* J, Args&& ... args) const
   {
-    auto x = p.x(), y = p.y(), z = p.z(), z2 = z*z;
-
-    float s = _T(0,0),
-          c1 = _T_inv(0,3),
-          c2 = _T_inv(1,3),
-          c3 = _T_inv(2,3);
-
-    return (WarpJacobian() <<
-            -(x*(y - c2))/z2, (z - c3)/z + (x*(x - c1))/z2, -(y - c2)/z, 1.0f/(z*s),    0.0, -x/(z2*s),
-            -(z - c3)/z - (y*(y - c2))/z2,   (y*(x - c1))/z2,  (x - c1)/z,  0.0f, 1.0f/(z*s), -z/(z2*s)).finished();
+    derived()->jacobian(p, Ix, Iy, J, args...);
   }
 
-  inline Jacobian jacobian(const Point& p, float Ix, float Iy) const
+  /**
+   * converts a vector of parameters to a 4x4 pose matrix
+   */
+  template <class EigenType> inline
+  Matrix44 paramsToPose(const Eigen::MatrixBase<EigenType>& p) const
   {
-    Jacobian ret;
-    jacobian(p, Ix, Iy, ret.data());
-    return ret;
+    return derived()->paramsToPose(p);
   }
 
-  inline void jacobian(const Point& p, float Ix, float Iy, float* J) const
+  /**
+   * transforms the the point given the current camera pose
+   */
+  inline ImagePoint operator()(const Point& p) const
   {
-    float X = p[0], Y = p[1], Z = p[2];
-    float fx = _K(0,0), fy = _K(1,1);
-    float s = _T(0,0), c1 = _T_inv(0,3), c2 = _T_inv(1,3), c3 = _T_inv(2,3);
-
-    J[0] = -1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(Y-c2)-(Iy*fy*(Z-c3))/Z;
-    J[1] = 1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(X-c1)+(Ix*fx*(Z-c3))/Z;
-    J[2] = (Iy*fy*(X-c1))/Z-(Ix*fx*(Y-c2))/Z;
-    J[3] = (Ix*fx)/(Z*s);
-    J[4] = (Iy*fy)/(Z*s);
-    J[5] = -(1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy))/s;
+    return derived()->operator()(p);
   }
 
-  inline const Matrix33& K() const { return _K; }
-  inline const Matrix34& P() const { return _P; }
-
-  inline void setPose(const Matrix44& T)
+  /**
+   * \return the 2D image point from thhe input
+   * used when colorizing the point clouds
+   */
+  inline ImagePoint getImagePoint(const Point& p) const
   {
-    _P = _K * T.block<3,4>(0,0);
+    return derived()->getImagePoint(p);
   }
-
-  inline const Matrix34& pose() const { return _P; }
-
-  inline ImagePoint operator()(const Point& X) const
-  {
-    Eigen::Vector3f x = _P * X;
-    float z_i = 1.0f / x.z();
-    return ImagePoint(z_i * x[0], z_i * x[1]);
-  }
-
-  ImagePoint getImagePoint(const Point& X) const
-  {
-    Eigen::Vector3f x = _K * X.head<3>();
-    float z_i = 1.0f / x.z();
-    return ImagePoint(z_i * x[0], z_i * x[1]);
-  }
-
-  inline Matrix44 scalePose(const Matrix44& T) const { return _T_inv * T * _T; }
-
-  template <class Derived> inline
-  Matrix44 paramsToPose(const Eigen::MatrixBase<Derived>& p) const
-  {
-    return scalePose(math::TwistToMatrix(p));
-  }
-
-  ImagePointVector warpPoints(const PointVector&) const;
 
  protected:
-  Matrix33 _K;
-  float _b;
+  inline const Derived* derived() const { return static_cast<const Derived*>(this); }
+  inline Derived* derived() { return static_cast<Derived*>(this); }
+}; // WarpBase
 
-  Matrix34 _P;
-
-  // normalization
-  Matrix44 _T;
-  Matrix44 _T_inv;
-}; // RigidBodyWarp
 
 
 }; // bpvo

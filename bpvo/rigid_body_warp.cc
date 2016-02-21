@@ -19,33 +19,29 @@
  * Contributor: halismai@cs.cmu.edu
  */
 
+
 #include "bpvo/warps.h"
-#include <cmath>
+#include "bpvo/rigid_body_warp.h"
 
 namespace bpvo {
 
-Matrix44 HartlyNormalization(const typename detail::warp_traits<RigidBodyWarp>::PointVector& pts)
+RigidBodyWarp::RigidBodyWarp(const Matrix33& K, float b)
+    : _K(K), _b(b), _T(Matrix44::Identity()), _T_inv(Matrix44::Identity()) {}
+
+auto RigidBodyWarp::warpPoints(const PointVector& points) const -> ImagePointVector
 {
-  Point c(Point::Zero());
-  for(const auto& p : pts)
-    c.noalias() += p;
-  c /= (float) pts.size();
+  typedef Eigen::Matrix<float,4,Eigen::Dynamic> MatrixType;
+  typedef Eigen::Map<const MatrixType, Eigen::Aligned> MapType;
 
-  float m = 0.0f;
-  for(const auto& p : pts)
-    m += (p - c).norm();
-  m /= (float) pts.size();
+  const auto N = points.size();
+  Eigen::Matrix<float,3,Eigen::Dynamic> Xw = _P * MapType(points[0].data(), 4, N);
 
-  float s = std::sqrt(3.0) / std::max(m, 1e-6f);
-
-  Matrix44 ret;
-  ret.block<3,3>(0,0) = s * Matrix33::Identity();
-  ret.block<3,1>(0,3) = -s*c.head<3>();
-  ret.block<1,3>(3,0).setZero();
-  ret(3,3) = 1.0f;
+  ImagePointVector ret(N);
+  for(size_t i = 0; i < N; ++i) {
+    ret[i] = Xw.col(i).head<2>() * (1.0f / Xw(2,i));
+  }
 
   return ret;
 }
 
-}; // bpvo
-
+} // bpvo

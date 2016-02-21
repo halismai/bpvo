@@ -1,3 +1,4 @@
+#include "bpvo/rigid_body_warp.h"
 #include "bpvo/pose_estimator_gn.h"
 #include "bpvo/template_data_.h"
 #include "bpvo/channels.h"

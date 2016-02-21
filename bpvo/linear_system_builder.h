@@ -30,8 +30,8 @@ namespace bpvo {
 class LinearSystemBuilder
 {
  public:
-  typedef typename RigidBodyWarp::JacobianVector JacobianVector;
-  typedef typename RigidBodyWarp::Jacobian       Jacobian;
+  typedef typename detail::warp_traits<RigidBodyWarp>::JacobianVector JacobianVector;
+  typedef typename detail::warp_traits<RigidBodyWarp>::Jacobian       Jacobian;
 
   typedef Eigen::Matrix<float, 6, 1> Gradient;
   typedef Eigen::Matrix<float, 6, 6> Hessian;

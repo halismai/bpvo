@@ -2,6 +2,7 @@
 #include "bpvo/warps.h"
 #include "bpvo/interp_util.h"
 #include "bpvo/timer.h"
+#include "bpvo/rigid_body_warp.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
