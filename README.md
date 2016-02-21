@@ -3,7 +3,19 @@
 A library for (semi-dense) real-time visual odometry. There two modes of
 operation that are compiled separately. First, is the _real-time_ mode that not
 handle difficult lighting (60+ fps). Second, is an illumination robust mode
-handles low light using the Bit-Planes descriptor as described [here][bp]
+handles low light using the Bit-Planes descriptor as described [here][bp].
+
+
+## Building
+
+### Dependencies
+
+* [Eigen][eigen] version 3.2+
+* [OpenCV][opencv] version 2.11 usage of opencv is limited to a few function.
+  You need the `core`, `imgproc`, and optionally `highgui` and `contrib`
+  modules.
+
+### Real-time mode
 
 
 USAGE
@@ -43,3 +55,9 @@ A minimal example is as follows:
 
 
 [bp]: http://arxiv.org/abs/1602.00307
+
+[eigen]: http://bitbucket.org/eigen/eigen/get/3.2.8.tar.bz2
+
+[opencv]: https://github.com/Itseez/opencv/archive/2.4.11.zip
+
+
