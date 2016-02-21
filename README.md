@@ -82,17 +82,46 @@ int main()
   // you can also get the trajectory of the camera at any point by calling
   auto trajectory = vo.trajectory();
 
+  // DONE, there is nothing special to do delete the object
+  return EXIT_SUCCESS;
 }
 ```
 
+## AlgorithmParameters
+The parameters for the algorithm are documented in `bpvo/types.h`. It is important to get the parameters right for the type of data. Below are additional comments
+
+### Common parameters
+* `numPyramidLevels` You want this to be as small as possible to handle large motions. If you set it to -1, the code will automatically decide the number of pyramid levels. Sometimes, the lowest resolution image is too small and things might not work. For 640x480 images a value of 4 works ok.
+
+* `lossFunction` this is the type of the robust loss function used in the IRLS optimization. Use `kTukey`, or 'kHuber'. You can also run without weighting with 'kL2', which is much faster but unreliable.
+
+* `goodPointThreshold` Weights assigned to every point are between 0 and 1. Set this value to determine which points should be considered *good*. This will affect the number of 3D points you get in the point cloud. If the data is relatively clean, set this value to something high (e.g. 0.85), but if the data is fairly difficult without much stereo, set it to something lower (e.g. 0.5).
+
+* `minNumPixelsForNonMaximaSuppression` to achieve real-time VO, when the number of pixels in the image exceeds minNumPixelsForNonMaximaSuppression we do non-maxima suppression on a saliency map extracted from the image. This results in semi-dense maps at the highest resolution. If you do not want this, and instead you want as many 3D points at possible, set minNumPixelsForNonMaximaSuppression to a value higher than the number of pixels of your image
+
+* `minSaliency` minimum saliency to use a pixel. If you want to use all pixels irrespective of their saliency, set this to a negative value
+
+### Keyframing
+
+* `minTranslationMagToKeyFrame`
+* `minRotationMagToKeyFrame`
+* `maxFractionOfGoodPointsToKeyFrame`
+
+If you want to disable keyframing in order to get pose and point clouds for every image you add, set `minTranslationMagToKeyFrame=0.0`
+
+### parameters specific to illumination robust mode
+
+* `sigmaPriorToCensusTransform` this is the standard deviation of a Gaussian to blur the image before computing Bit-Planes. This should have a value less than 1.5, otherwise too much information is lost. A value of 0.5-0.75 is good.
+
+* `sigmaBitPlanes` a std dev of Gaussian to smooth the Bit-Planes descriptor. You should experiment with this as it affects the basin of convergence. It also depends on how much motion there is in the data. A value of 0.75-1.5 is good.
 
 
-
+## 3D point clouds
+Point clouds are generated from the current keyframe. You should check if result.pointCloud is not NULL prior to accessing it. The point cloud comes with its pose as well in the world coordinate system.
 
 [bp]: http://arxiv.org/abs/1602.00307
 
 [eigen]: http://bitbucket.org/eigen/eigen/get/3.2.8.tar.bz2
 
 [opencv]: https://github.com/Itseez/opencv/archive/2.4.11.zip
-
 
