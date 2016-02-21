@@ -1,4 +1,6 @@
-BPVO
+### BPVO
+
+A library for (semi-dense) real-time visual odometry.
 
 
 USAGE
