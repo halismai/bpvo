@@ -15,16 +15,34 @@
    along with bpvo.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef BPVO_CONFIG_H
-#define BPVO_CONFIG_H
+/*
+ * Contributor: halismai@cs.cmu.edu
+ */
 
-/** DO NOT EDIT auto generated header */
-#define BPVO_VERSION_MAJOR "0"
-#define BPVO_VERSION_MINOR "8"
-#define BPVO_VERSION_PATCH "5-8dcca11-RelWithDebInfo"
-#define BPVO_BUILD_DATE    "Sat Feb 20 22:06:16 EST 2016"
-#define BPVO_BUILD_STR \
-    "BPVO version: " BPVO_VERSION_MAJOR "." BPVO_VERSION_MINOR "." BPVO_VERSION_PATCH \
-    "\nBuilt on: " BPVO_BUILD_DATE
+#include "bpvo/vector6.h"
+#include <iostream>
+#include <random>
 
-#endif // BPVO_CONFIG_H
+namespace bpvo {
+
+std::ostream& operator<<(std::ostream& os, const Vector6& v)
+{
+  os << "[" << v._data[0] << "," << v._data[1] << "," << v._data[2]
+     << "," << v._data[3] << "," << v._data[4] << "," << v._data[5] << "]";
+    return os;
+}
+
+Vector6 Vector6::Random()
+{
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+
+  Vector6 ret;
+  for(int i = 0; i < 6; ++i)
+    ret[i] = dist(gen);
+
+  return ret;
+}
+
+} // bpvo

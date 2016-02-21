@@ -12,6 +12,13 @@ static inline void printm128(const char* prefix, const __m128& x)
   printf("%s: [%f %f %f %f]\n", prefix, buf[0], buf[1], buf[2], buf[3]);
 }
 
+static inline float DOT(const float* a, const float* b)
+{
+  float ret;
+  _mm_store_ss(&ret, _mm_dp_ps(_mm_load_ps(a), _mm_load_ps(b), 0xff));
+  return ret;
+}
+
 
 int main()
 {
@@ -35,6 +42,20 @@ int main()
     auto t = bpvo::TimeCode(10000000, code);
     printf("Eigen time %f\n", t);
   }
+
+  {
+    std::vector<float> vals(10);
+    auto code = [&]()
+    {
+      for(int i = 0; i < 100; ++i)
+        vals[i % vals.size()]  = DOT(a.data(), b.data());
+    };
+
+    auto t = bpvo::TimeCode(10000000, code);
+    printf("SSE4  time %f\n", t);
+  }
+
+  printf("%f %f\n", a.dot(b), DOT(a.data(), b.data()));
 
   return 0;
 }

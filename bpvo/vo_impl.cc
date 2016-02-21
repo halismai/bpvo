@@ -188,7 +188,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     if(_kf_candidate.empty())
     {
       updatePointCloudWeights(_kf_point_cloud, _pose_estimator.getValidFlags(),
-                              _pose_estimator.getWeights());
+                              _pose_estimator.getWeights(), _channels_pyr.front().size());
 
       ret.pointCloud = make_unique<PointCloud>(_kf_point_cloud);
       ret.pointCloud->pose() = _trajectory[_kf_pose_index];

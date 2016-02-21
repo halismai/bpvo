@@ -101,8 +101,8 @@ struct IsLocalMax
           auto v = *p0;
 
           return
+              (v > p0[-1]) &                (v > p0[1]) &
               (v > p1[-1]) & (v > p1[0]) & (v > p1[1]) &
-              (v > p0[-1]) &               (v > p0[1]) &
               (v > p2[-1]) & (v > p2[0]) & (v > p2[1]);
         } break;
 

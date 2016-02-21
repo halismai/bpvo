@@ -50,34 +50,43 @@ class BilinearInterp
     _stride = cols;
     resize(points.size());
 
-#if 0 && defined(WITH_OPENMP)
-#pragma omp parallel for if(points.size()>10*1000)
-#endif
-    for(size_t i = 0; i < points.size(); ++i)
-    {
-      const auto p = warp(points[i]);
-      float xf = p.x(), yf = p.y();
-      int xi = static_cast<int>(xf), yi = static_cast<int>(yf);
-      xf -= xi;
-      yf -= yi;
+    size_t N = points.size(), i = 0;
+    constexpr int S = 4;
+    size_t n = N & ~(S-1);
 
-      _valid[i] = xi>=0 && xi<cols-1 && yi>=0 && yi<rows-1;
-      _inds[i] = yi*cols + xi;
-
-      // reduce the floating point multiplications
-      float xfyf = xf*yf;
-      _interp_coeffs[i] = Vector4(
-          xfyf - yf - xf + 1.0,
-          xf - xfyf,
-          yf - xfyf,
-          xfyf);
-
-      /*
-      _interp_coeffs[i] = Vector4((1.0-yf)*(1.0-xf),
-                                  (1.0-yf)*xf,
-                                  yf*(1.0-xf),
-                                  yf*xf);*/
+#define INTERP_POINT_AT( index )           \
+    {                                      \
+      auto p = warp( points[i + index ] ); \
+      float xf = p.x(), yf = p.y();        \
+      int xi = static_cast<int>(xf), yi = static_cast<int>(yf); \
+      xf -= xi; yf -= yi;                  \
+      _valid[i + index] = xi>=0 && xi<cols-1 && yi>=0 && yi<rows-1; \
+      _inds[i + index] = yi*cols + xi;                              \
+      float xfyf = xf*yf;                                           \
+      _interp_coeffs[i + index] = Vector4(xfyf - yf - xf + 1.0, xf - xfyf, yf - xfyf, xfyf); \
     }
+
+    bool parallel = false;
+
+#if 0 && !defined(WITH_BITPLANES) && defined(WITH_OPENMP)
+    parallel = n > 10*1000;
+#pragma omp parallel for if(parallel)
+#endif
+    for(i=0; i < n; i += S)
+    {
+      INTERP_POINT_AT( 0 );
+      INTERP_POINT_AT( 1 );
+      INTERP_POINT_AT( 2 );
+      INTERP_POINT_AT( 3 );
+    }
+
+    if(parallel) i = n;
+
+    for( ; i < N; ++i)
+    {
+      INTERP_POINT_AT( 0 );
+    }
+
   }
 
   // this function is broken for now
@@ -98,10 +107,70 @@ class BilinearInterp
   /**
    * \return interpolated value at point 'i'
    */
-  template <class ImageT> inline
-  T operator()(const ImageT* ptr, int i) const
+  template <class ImageT> inline T operator()(const ImageT* ptr, int i) const
   {
-    return _valid[i] ? _interp_coeffs[i].dot(load_data(ptr, i)) : T(0);
+    return _valid[i] ? dot_(_interp_coeffs[i], load_data(ptr, i)) : T(0);
+  }
+
+  /**
+  */
+  template <class ImageT> inline
+  void run(const ImageT* I0_ptr, const ImageT* I1_ptr, T* r_ptr) const
+  {
+    constexpr int S = 8;
+
+    int num_points = static_cast<int>(_valid.size()),
+        n = num_points & ~(S-1),
+        i = 0;
+
+    for( ; i < n; i += S)
+    {
+#if defined(WITH_SIMD)
+
+#if defined(__AVX__)
+      _mm256_storeu_ps(r_ptr + i,
+                   _mm256_sub_ps(_mm256_setr_ps(
+                           this->operator()(I1_ptr, i + 0),
+                           this->operator()(I1_ptr, i + 1),
+                           this->operator()(I1_ptr, i + 2),
+                           this->operator()(I1_ptr, i + 3),
+                           this->operator()(I1_ptr, i + 4),
+                           this->operator()(I1_ptr, i + 5),
+                           this->operator()(I1_ptr, i + 6),
+                           this->operator()(I1_ptr, i + 7)), _mm256_loadu_ps(I0_ptr + i)));
+#else
+      _mm_store_ps(r_ptr + i,
+                   _mm_sub_ps(_mm_setr_ps(
+                           this->operator()(I1_ptr, i + 0),
+                           this->operator()(I1_ptr, i + 1),
+                           this->operator()(I1_ptr, i + 2),
+                           this->operator()(I1_ptr, i + 3)), _mm_load_ps(I0_ptr + i)));
+      _mm_store_ps(r_ptr + i + 4,
+                   _mm_sub_ps(_mm_setr_ps(
+                           this->operator()(I1_ptr, i + 4),
+                           this->operator()(I1_ptr, i + 5),
+                           this->operator()(I1_ptr, i + 6),
+                           this->operator()(I1_ptr, i + 7)), _mm_load_ps(I0_ptr + i)));
+
+#endif // __AVX__
+#else // WITH_SIMD
+      r_ptr[i + 0] = this->operator()(I1_ptr, i + 0) - I0_ptr[i + 0];
+      r_ptr[i + 1] = this->operator()(I1_ptr, i + 1) - I0_ptr[i + 1];
+      r_ptr[i + 2] = this->operator()(I1_ptr, i + 2) - I0_ptr[i + 2];
+      r_ptr[i + 3] = this->operator()(I1_ptr, i + 3) - I0_ptr[i + 3];
+      r_ptr[i + 4] = this->operator()(I1_ptr, i + 4) - I0_ptr[i + 4];
+      r_ptr[i + 5] = this->operator()(I1_ptr, i + 5) - I0_ptr[i + 5];
+      r_ptr[i + 6] = this->operator()(I1_ptr, i + 6) - I0_ptr[i + 6];
+      r_ptr[i + 7] = this->operator()(I1_ptr, i + 7) - I0_ptr[i + 7];
+#endif
+    }
+
+#if defined(WITH_SIMD) && defined(__AVX__)
+    _mm256_zeroupper();
+#endif
+
+    for( ; i < num_points; ++i)
+      r_ptr[i] = this->operator()(I1_ptr, i) - I0_ptr[i];
   }
 
   inline const ValidVector& valid() const { return _valid; }
@@ -121,17 +190,28 @@ class BilinearInterp
     _valid.resize(n);
   }
 
-  template <class ImageT> inline
-  Vector4 load_data(const ImageT* ptr, int i) const
+  template <class ImageT> inline Vector4 load_data(const ImageT* ptr, int i) const
   {
     auto p = ptr + _inds[i];
     return Vector4(*p, *(p + 1), *(p + _stride), *(p + _stride + 1));
   }
 
-}; // BilinearInterp
+  inline float dot_(const Vector4& a, const Vector4& b) const
+  {
+#if defined(__SSE4_1__)
+    float ret;
+    _mm_store_ss(&ret, _mm_dp_ps(_mm_load_ps(a.data()), _mm_load_ps(b.data()), 0xff));
+    return ret;
+#else
+    // EIGEN uses 2 applications of hadd after mul, dp seems faster if we have
+    // sse4
+    return a.dot(b);
+#endif
+  }
 
+}; // BilinearInterp
 
 }; // bpvo
 
-
 #endif // INTERP_UTIL_H
+

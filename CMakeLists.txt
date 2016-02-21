@@ -50,7 +50,7 @@ if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL 
 endif()
 
 include(cmake/MakeVersion.cmake)
-MakeVersion(BPVO 0 8 5)
+MakeVersion(BPVO 0 9 0)
 
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Direct Visual Odometry")
@@ -111,6 +111,7 @@ endif()
 # optional stuff
 find_package(TBB)
 find_package(GooglePerfTools)
+find_package(GTest)
 
 if(TBB_FOUND)
   include_directories(${TBB_INCLUDE_DIRS})
@@ -131,6 +132,12 @@ if(WITH_TCMALLOC)
   if(GOOGLE_PERFTOOLS_FOUND)
     list(APPEND MY_LIBRARIES ${TCMALLOC_LIBRARY})
   endif()
+endif()
+
+if(GTEST_FOUND)
+  include_directories(${GTEST_INCLUDE_DIRS})
+  list(APPEND MY_LIBRARIES ${GTEST_LIBRARIES})
+  add_definitions(-DWITH_GTEST)
 endif()
 
 if(WITH_TCMALLOC OR WITH_PROFILER)

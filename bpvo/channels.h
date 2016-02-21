@@ -22,6 +22,7 @@
 #ifndef BPVO_CHANNELS_H
 #define BPVO_CHANNELS_H
 
+#include <bpvo/types.h>
 #include <opencv2/core/core.hpp>
 #include <vector>
 
@@ -31,7 +32,7 @@ class RawIntensity
 {
  public:
   static constexpr int NumChannels = 1;
-  typedef std::vector<float> PixelVector;
+  typedef typename AlignedVector<float>::type PixelVector;
   typedef float ChannelDataType;
 
  public:
@@ -64,7 +65,7 @@ class BitPlanes
 {
  public:
   static constexpr int NumChannels = 8;
-  typedef std::vector<float> PixelVector;
+  typedef typename AlignedVector<float>::type PixelVector;
   typedef float ChannelDataType;
 
  public:
@@ -95,6 +96,9 @@ class BitPlanes
   void computeSaliencyMap(cv::Mat_<float>&) const;
 
   void compute(const cv::Mat&);
+
+  inline int rows() const { return _channels.front().rows; }
+  inline int cols() const { return _channels.front().cols; }
 
  protected:
   float _sigma_ct = 0.0f;

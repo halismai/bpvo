@@ -37,10 +37,8 @@
 
 #if defined(WITH_TBB)
 #define TEMPLATE_DATA_SET_DATA_WITH_TBB 0
-#if TEMPLATE_DATA_SET_DATA_WITH_TBB
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
-#endif
 #endif
 
 namespace bpvo {
@@ -276,16 +274,19 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
   std::vector<uint16_t> tmp_inds;
   tmp_inds.reserve( image_size.rows * image_size.cols * 0.25 );
 
+  int max_rows = image_size.rows - border - 1,
+      max_cols = image_size.cols - border - 1;
+
   // no benefit more openmp here
   /*
 #if defined(WITH_OPENMP)
 #pragma omp parallel for if(do_nms)
 #endif
 */
-  for(int y = border; y < image_size.rows - border - 1; ++y)
+  for(int y = border; y < max_rows; ++y)
   {
     auto s_row = _buffer.ptr<float>(y);
-    for(int x = border; x < image_size.cols - border - 1; ++x)
+    for(int x = border; x < max_cols; ++x)
     {
       if(s_row[x] <= _min_saliency || !is_local_max(y,x))
         continue;
@@ -332,11 +333,30 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   _pixels.resize(N * NumChannels);
   _jacobians.resize(N * NumChannels);
 
-#if defined(WITH_TBB) && TEMPLATE_DATA_SET_DATA_WITH_TBB
-  TemplateDataExtractor<TemplateData_<CN,W>> tde(*this, Jw, inds, channels);
-  tbb::parallel_for(tbb::blocked_range<int>(0, NumChannels), tde);
-#else
   const int stride = channels.cols();
+#if defined(WITH_BITPLANES) && defined(WITH_TBB) /*&& TEMPLATE_DATA_SET_DATA_WITH_TBB*/
+  //TemplateDataExtractor<TemplateData_<CN,W>> tde(*this, Jw, inds, channels);
+  //tbb::parallel_for(tbb::blocked_range<int>(0, NumChannels), tde);
+  tbb::parallel_for(tbb::blocked_range<int>(0, NumChannels),
+                    [&](const tbb::blocked_range<int>& range)
+                    {
+                      for(int c = range.begin(); c != range.end(); ++c)
+                      {
+                      auto c_ptr = channels.channelData(c);
+                      auto J_ptr = _jacobians.data() + c*N;
+                      auto P_ptr = _pixels.data() + c*N;
+
+                      for(size_t i = 0; i < N; ++i)
+                      {
+                        auto ii = _inds[i];
+                        P_ptr[i] = c_ptr[ii];
+                        float Ix = 0.5f * (c_ptr[ii+1] - c_ptr[ii-1]),
+                        Iy = 0.5f * (c_ptr[ii+stride] - c_ptr[ii-stride]);
+                        J_ptr[i] = _warp.jacobian(_points[i], Ix, Iy);
+                      }
+                      }
+                    });
+#else
   //
   // compute the pixels and jacobians for all channels
   //
@@ -372,6 +392,7 @@ computeResiduals(const Channels& channels, const Matrix44& pose,
   _warp.setPose(pose);
 
   BilinearInterp<float> interp;
+
 #if 1
   interp.init(_warp, _points, channels[0].rows, channels[0].cols);
 #else
@@ -381,6 +402,21 @@ computeResiduals(const Channels& channels, const Matrix44& pose,
   valid.resize(_pixels.size());
   residuals.resize(_pixels.size());
 
+#if defined(WITH_BITPLANES) && defined(WITH_TBB)
+  tbb::parallel_for(tbb::blocked_range<int>(0, channels.size()),
+                    [&](const tbb::blocked_range<int>& r)
+                    {
+                      for(int c = r.begin(); c != r.end(); ++c)
+                      {
+                        int off = c*numPoints();
+                        auto* I0_ptr = _pixels.data() + off;
+                        auto* I1_ptr = channels.channelData(c);
+                        auto* r_ptr = residuals.data() + off;
+
+                        interp.run(I0_ptr, I1_ptr, r_ptr);
+                      }
+                    });
+#else
 #if defined(WITH_BITPLANES) && defined(WITH_OPENMP)
 #pragma omp parallel for
 #endif
@@ -391,10 +427,9 @@ computeResiduals(const Channels& channels, const Matrix44& pose,
     auto* I1_ptr = channels.channelData(c);
     auto* r_ptr = residuals.data() + off;
 
-    for(int i = 0; i < numPoints(); ++i) {
-      r_ptr[i] = interp(I1_ptr, i) - I0_ptr[i];
-    }
+    interp.run(I0_ptr, I1_ptr, r_ptr);
   }
+#endif
 
   valid.swap(interp.valid());
 }
