@@ -22,6 +22,7 @@
 #include "bpvo/channels.h"
 #include "bpvo/census.h"
 #include "bpvo/imgproc.h"
+#include "bpvo/parallel.h"
 #include <cmath>
 
 #include <opencv2/imgproc/imgproc.hpp>
@@ -74,29 +75,40 @@ void extractChannel(const cv::Mat& C, cv::Mat& dst, int b, float sigma)
     cv::GaussianBlur(dst, dst, cv::Size(5,5), sigma, sigma);
 }
 
+namespace {
+
+struct BitPlanesComputeBody : public ParallelForBody
+{
+ public:
+  typedef typename BitPlanes::ChannelsArray ChannelsArray;
+
+ public:
+  BitPlanesComputeBody(const cv::Mat& I, float sigma_ct, float sigma_bp,
+                       ChannelsArray& channels)
+      : _C(census(I, sigma_ct)), _sigma_bp(sigma_bp), _channels(channels) {}
+
+  inline void operator()(const Range& range) const
+  {
+    for(int c = range.begin(); c != range.end(); ++c)
+    {
+      extractChannel<float>(_C, _channels[c], c, _sigma_bp);
+    }
+  }
+
+ protected:
+  cv::Mat _C;
+  float _sigma_bp;
+  ChannelsArray& _channels;
+};
+
+}; // namespace
+
 void BitPlanes::compute(const cv::Mat& I)
 {
   assert( I.type() == cv::DataType<uint8_t>::type );
 
-  auto C = census(I, _sigma_ct);
-
-#if DO_BITPLANES_WITH_TBB
-  tbb::parallel_for(tbb::blocked_range<int>(0, NumChannels),
-                    [=](const tbb::blocked_range<int>& r)
-                    {
-                      for(int c = r.begin(); c != r.end(); ++c)
-                      {
-                        extractChannel<float>(C, _channels[c], c, _sigma_bp);
-                      }
-                    });
-#else
-#if defined(WITH_OPENMP)
-#pragma omp parallel for
-#endif
-  for(size_t i = 0; i < NumChannels; ++i) {
-    extractChannel<float>(C, _channels[i], i, _sigma_bp);
-  }
-#endif
+  BitPlanesComputeBody func(I, _sigma_ct, _sigma_bp, _channels);
+  parallel_for(Range(0, NumChannels), func);
 }
 
 void BitPlanes::computeSaliencyMap(cv::Mat_<float>& dst) const

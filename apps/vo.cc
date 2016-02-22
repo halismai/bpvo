@@ -49,6 +49,7 @@ int main(int argc, char** argv)
   std::cout << params << std::endl;
   std::cout << "-----------------------------------" << std::endl;
 
+  auto maxTestLevel = params.maxTestLevel;
   auto vo = VisualOdometry(data_loader.get(), params);
 
   Trajectory trajectory;
@@ -82,7 +83,7 @@ int main(int argc, char** argv)
       f_i += 1;
       trajectory.push_back(result.pose);
 
-      int num_iters = result.optimizerStatistics.front().numIterations;
+      int num_iters = result.optimizerStatistics[maxTestLevel].numIterations;
       if(num_iters == params.maxIterations) {
         printf("\n");
         Warn("maximum iterations reached\n");
@@ -90,7 +91,7 @@ int main(int argc, char** argv)
 
       fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d\r",
               f_i-1, 6, tt, 5, (f_i - 1) / total_time,  num_iters,
-              ToString(result.keyFramingReason).c_str(), 8, vo.numPointsAtLevel(0));
+              ToString(result.keyFramingReason).c_str(), 8, vo.numPointsAtLevel());
       fflush(stdout);
 
       if(do_show) {

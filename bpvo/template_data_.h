@@ -390,10 +390,6 @@ computeResiduals(const Channels& channels, const Matrix44& pose,
   valid.swap(interp.valid());
 }
 
-#if defined(WITH_TBB)
-#undef TEMPLATE_DATA_SET_DATA_WITH_TBB
-#endif
-
 }; // bpvo
 
 #endif // BPVO_TEMPLATE_DATA__H

@@ -15,16 +15,45 @@
    along with bpvo.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef BPVO_CONFIG_H
-#define BPVO_CONFIG_H
+/*
+ * Contributor: halismai@cs.cmu.edu
+ */
 
-/** DO NOT EDIT auto generated header */
-#define BPVO_VERSION_MAJOR "0"
-#define BPVO_VERSION_MINOR "9"
-#define BPVO_VERSION_PATCH "0-ece6b05-RelWithDebInfo"
-#define BPVO_BUILD_DATE    "Mon Feb 22 16:33:04 EST 2016"
-#define BPVO_BUILD_STR \
-    "BPVO version: " BPVO_VERSION_MAJOR "." BPVO_VERSION_MINOR "." BPVO_VERSION_PATCH \
-    "\nBuilt on: " BPVO_BUILD_DATE
+#ifndef BPVO_IMAGE_PYRAMID_H
+#define BPVO_IMAGE_PYRAMID_H
 
-#endif // BPVO_CONFIG_H
+#include <opencv2/core/core.hpp>
+#include <vector>
+
+
+namespace bpvo {
+
+class ImagePyramid
+{
+ public:
+  ImagePyramid(int num_levels);
+
+ public:
+  void compute(const cv::Mat&);
+
+  inline const cv::Mat& operator[](int i) const
+  {
+    assert( i >= 0 && i < size() );
+    return _pyr[i];
+  }
+
+  inline cv::Mat& operator[](int i)
+  {
+    assert( i >= 0 && i < size() );
+    return _pyr[i];
+  }
+
+  inline int size() const { return static_cast<int>(_pyr.size()); }
+
+ protected:
+  std::vector<cv::Mat> _pyr;
+}; // ImagePyramid
+
+}; // bpvo
+
+#endif // BPVO_IMAGE_PYRAMID_H

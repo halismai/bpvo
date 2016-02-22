@@ -67,6 +67,7 @@ class BitPlanes
   static constexpr int NumChannels = 8;
   typedef typename AlignedVector<float>::type PixelVector;
   typedef float ChannelDataType;
+  typedef std::array<cv::Mat_<ChannelDataType>,NumChannels> ChannelsArray;
 
  public:
   /**
@@ -103,7 +104,7 @@ class BitPlanes
  protected:
   float _sigma_ct = 0.0f;
   float _sigma_bp = 0.0f;
-  std::array<cv::Mat_<ChannelDataType>,NumChannels> _channels;
+  ChannelsArray _channels;
 }; // BitPlanes
 
 

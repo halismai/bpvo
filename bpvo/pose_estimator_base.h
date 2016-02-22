@@ -261,29 +261,38 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
     return ret;
   }
 
+  if(!data.solve())
+  {
+    Warn("Failed to solve system\n");
+    ret.status = PoseEstimationStatus::kSolverError;
+    return ret;
+  }
+
+
   _f_norm_prev = 0.0f;
   float dp_norm_prev = 0.0f;
   bool has_converged = false;
 
-  while(ret.numIterations++ < _params.maxIterations && !has_converged &&
-        _num_fun_evals < _params.maxFuncEvals) {
-
-    if(!derived()->runIteration(tdata, channels, data, f_norm, ret.status)) {
-      break;
-    }
-
-    data.T = data.T * tdata->warp().paramsToPose(-data.dp); // update the pose
+  do {
+    data.T = data.T * tdata->warp().paramsToPose(-data.dp);
 
     float dp_norm = data.dp.norm();
     g_norm = data.gradientNorm();
+
     printIteration(ret.numIterations, f_norm, g_norm, dp_norm, std::abs(_f_norm_prev-f_norm));
 
     has_converged = testConvergence(dp_norm, dp_norm_prev, g_norm, f_norm, ret.status);
-
     dp_norm_prev = dp_norm;
     _f_norm_prev = f_norm;
-  }
 
+    if(!has_converged) {
+      if(!derived()->runIteration(tdata, channels, data, f_norm, ret.status)) {
+        break;
+      }
+    }
+
+  } while( ret.numIterations++ < _params.maxIterations && !has_converged &&
+          _num_fun_evals < _params.maxFuncEvals );
 
   if(ret.status != PoseEstimationStatus::kSolverError)
     T = data.T;

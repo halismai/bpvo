@@ -15,16 +15,28 @@
    along with bpvo.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef BPVO_CONFIG_H
-#define BPVO_CONFIG_H
+/*
+ * Contributor: halismai@cs.cmu.edu
+ */
 
-/** DO NOT EDIT auto generated header */
-#define BPVO_VERSION_MAJOR "0"
-#define BPVO_VERSION_MINOR "9"
-#define BPVO_VERSION_PATCH "0-ece6b05-RelWithDebInfo"
-#define BPVO_BUILD_DATE    "Mon Feb 22 16:33:04 EST 2016"
-#define BPVO_BUILD_STR \
-    "BPVO version: " BPVO_VERSION_MAJOR "." BPVO_VERSION_MINOR "." BPVO_VERSION_PATCH \
-    "\nBuilt on: " BPVO_BUILD_DATE
+#include "bpvo/image_pyramid.h"
+#include <opencv2/imgproc/imgproc.hpp>
 
-#endif // BPVO_CONFIG_H
+namespace bpvo {
+
+ImagePyramid::ImagePyramid(int num_levels)
+    : _pyr( num_levels )
+{
+  assert( num_levels >= 0 );
+}
+
+void ImagePyramid::compute(const cv::Mat& I)
+{
+  assert( !_pyr.empty() );
+  _pyr[0] = I.clone();
+
+  for(size_t i = 1; i < _pyr.size(); ++i)
+    cv::pyrDown(_pyr[i-1], _pyr[i]);
+}
+
+} // bpvo

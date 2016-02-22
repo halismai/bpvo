@@ -20,10 +20,11 @@
  */
 
 #include "bpvo/linear_system_builder.h"
+#include "bpvo/parallel.h"
 
 #if defined(WITH_TBB)
-#include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
+#include <tbb/blocked_range.h>
 #endif
 
 #if defined(WITH_SIMD)

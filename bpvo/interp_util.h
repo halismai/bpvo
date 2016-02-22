@@ -44,6 +44,7 @@ class BilinearInterp
    * \param points a vector of 3D points
    * \param rows, cols the size of the image
    */
+#if 0
   template <class Warp, class PointVector> inline
   void init(const Warp& warp, const PointVector& points, int rows, int cols)
   {
@@ -57,15 +58,19 @@ class BilinearInterp
     int max_cols = cols - 1,
         max_rows = rows - 1;
 
+#if defined(__AVX__)
+    _mm256_zeroupper();
+#endif
+
 #define PROCESS_POINT_AT( index )          \
     {                                      \
       auto p = warp( points[i + index ] ); \
       float xf = p.x(), yf = p.y();        \
-      int xi = static_cast<int>(xf), yi = static_cast<int>(yf); \
-      xf -= xi; yf -= yi;                  \
+      int xi = static_cast<int>(xf), yi = static_cast<int>(yf);         \
+      xf -= xi; yf -= yi;                                               \
       _valid[i + index] = xi>=0 && xi<max_cols && yi>=0 && yi<max_rows; \
-      _inds[i + index] = yi*cols + xi;                              \
-      float xfyf = xf*yf;                                           \
+      _inds[i + index] = yi*cols + xi;                                  \
+      float xfyf = xf*yf;                                               \
       _interp_coeffs[i + index] = Vector4(xfyf - yf - xf + 1.0f, xf - xfyf, yf - xfyf, xfyf); \
     }
 
@@ -88,7 +93,27 @@ class BilinearInterp
     }
 
 #undef PROCESS_POINT_AT
+  }
+#endif
 
+  template <class Warp, class PointVector> inline
+  void init(const Warp& warp, const PointVector& points, int rows, int cols)
+  {
+    _stride = cols;
+    resize(points.size());
+
+    for(size_t i = 0; i < points.size(); ++i)
+    {
+      auto p = warp(points[i]);
+      float xf = p.x(), yf = p.y();
+      int xi = static_cast<int>(xf), yi = static_cast<int>(yf);
+      xf -= xi;
+      yf -= yi;
+      _valid[i] = xi>=0 && xi<cols-1 && yi>= 0 && yi<rows-1;
+      _inds[i] = yi*cols + xi;
+      float xfyf = xf*yf;
+      _interp_coeffs[i] = Vector4(xfyf - yf - xf + 1.0f, xf - xfyf, yf - xfyf, xfyf);
+    }
   }
 
   // this function is broken for now

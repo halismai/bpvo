@@ -33,6 +33,7 @@
 #include <bpvo/trajectory.h>
 #include <bpvo/point_cloud.h>
 #include <bpvo/rigid_body_warp.h>
+#include <bpvo/image_pyramid.h>
 
 #include <vector>
 
@@ -107,6 +108,9 @@ class VisualOdometry::Impl
 
   /** TemplateData _pyr pyramid level */
   std::vector<TDataPointer> _tdata_pyr;
+
+  /** image pyramid */
+  UniquePointer<ImagePyramid> _image_pyramid;
 
   /** buffer to contain input data pyr pyramid level */
   std::vector<ChannelsT> _channels_pyr;
@@ -186,6 +190,11 @@ class VisualOdometry::Impl
    * a wrapper to create template data given calibration and pyramid level
    */
   UniquePointer<TData> makeTemplateData(const Matrix33& K, float b, int pyr_level) const;
+
+  inline bool isFirstFrame() const
+  {
+    return _tdata_pyr[_params.maxTestLevel]->numPoints() == 0;
+  }
 }; // VisualOdometry
 
 }; // bpvo
