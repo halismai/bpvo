@@ -156,7 +156,6 @@ class WarpBase
     return derived()->getImagePoint(p);
   }
 
- protected:
   inline const Derived* derived() const { return static_cast<const Derived*>(this); }
   inline Derived* derived() { return static_cast<Derived*>(this); }
 }; // WarpBase

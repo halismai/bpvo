@@ -28,6 +28,7 @@
 #include <bpvo/imgproc.h>
 #include <bpvo/math_utils.h>
 #include <bpvo/interp_util.h>
+#include <bpvo/parallel.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -36,7 +37,6 @@
 #include <fstream>
 
 #if defined(WITH_TBB)
-#define TEMPLATE_DATA_SET_DATA_WITH_TBB 0
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
 #endif
@@ -139,10 +139,13 @@ class TemplateData_
   const typename PixelVector::value_type& I(size_t i) const { return _pixels[i]; }
   typename PixelVector::value_type& I(size_t i) { return _pixels[i]; }
 
-  inline const Warp warp() const { return _warp; }
+  inline const WarpBase<Warp>& warp() const { return _warp; }
 
   inline const JacobianVector& jacobians() const { return _jacobians; }
   inline const PointVector& points() const { return _points; }
+
+  inline const PixelVector& pixels() const { return _pixels; }
+  inline       PixelVector& pixels()       { return _pixels; }
 
  protected:
   Warp _warp;
@@ -183,58 +186,6 @@ class TemplateData_
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 }; // TemplateData_
 
-
-namespace {
-
-#if defined(WITH_TBB)
-#if TEMPLATE_DATA_SET_DATA_WITH_TBB
-
-template <class TData>
-class TemplateDataExtractor
-{
- public:
-  typedef typename TData::WarpJacobianVector WarpJacobianVector;
-  typedef typename TData::Channels Channels;
-  typedef Eigen::Matrix<float,1,2> ImageGradient;
-
- public:
-  TemplateDataExtractor(TData& tdata, const WarpJacobianVector& Jw,
-                        const std::vector<std::pair<int,float>>& inds,
-                        const Channels& channels)
-      : _tdata(tdata), _Jw(Jw), _inds(inds), _channels(channels) {}
-
-  inline void operator()(tbb::blocked_range<int>& range) const
-  {
-    float Fx = _tdata.warp().K()(0,0) * 0.5f;
-    float Fy = _tdata.warp().K()(1,1) * 0.5f;
-    for(int c = range.begin(); c != range.end(); ++c) {
-      auto c_ptr = _channels[c].ptr();
-      auto stride = _channels[c].cols;
-      auto offset = c * _inds.size();
-      auto J_ptr = &_tdata.J(0) + offset;
-      auto P_ptr = &_tdata.I(0) + offset;
-
-      for(size_t i = 0; i < _inds.size(); ++i) {
-        auto ii = _inds[i].first;
-        P_ptr[i] = static_cast<float>(c_ptr[ii]);
-        auto Ix = static_cast<float>(c_ptr[ii+1]) - static_cast<float>(c_ptr[ii-1]),
-             Iy = static_cast<float>(c_ptr[ii+stride]) - static_cast<float>(c_ptr[ii-stride]);
-        J_ptr[i] = ImageGradient(Fx*Ix, Fy*Iy) * _Jw[i];
-      }
-    }
-  }
-
- protected:
-  TData& _tdata;
-  const WarpJacobianVector& _Jw;
-  const std::vector<std::pair<int,float>>& _inds;
-  const Channels& _channels;
-}; // TemplateDataExtractor
-
-#endif // TEMPLATE_DATA_SET_DATA_WITH_TBB
-#endif // WITH_TBB
-
-}; // namespace
 
 template <class CN, class W> inline
 void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
@@ -278,11 +229,6 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
       max_cols = image_size.cols - border - 1;
 
   // no benefit more openmp here
-  /*
-#if defined(WITH_OPENMP)
-#pragma omp parallel for if(do_nms)
-#endif
-*/
   for(int y = border; y < max_rows; ++y)
   {
     auto s_row = _buffer.ptr<float>(y);
@@ -291,11 +237,6 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
       if(s_row[x] <= _min_saliency || !is_local_max(y,x))
         continue;
 
-      /*
-#if defined(WITH_OPENMP)
-#pragma omp critical
-#endif
-*/
       {
         tmp_inds.push_back(y);
         tmp_inds.push_back(x);
@@ -322,6 +263,61 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
   _warp.setNormalization(_points);
 }
 
+namespace {
+
+template <class TemplateDataT>
+struct SetTemplateDataBody : public ParallelForBody
+{
+  typedef typename TemplateDataT::Channels Channels;
+  typedef typename TemplateDataT::Warp     WarpType;
+  typedef typename TemplateDataT::JacobianVector JacobianVector;
+  typedef typename TemplateDataT::PointVector    PointVector;
+  typedef typename TemplateDataT::PixelVector    PixelVector;
+
+ public:
+  SetTemplateDataBody(const Channels& channels, const PointVector& points,
+                      const std::vector<int>& inds, const WarpBase<WarpType>& warp,
+                      PixelVector& pixels, JacobianVector& jacobians)
+      : _channels(channels)
+      , _points(points)
+      , _inds(inds)
+      , _warp(warp)
+      , _pixels(pixels)
+      , _jacobians(jacobians) {}
+
+  inline void operator()(const Range& range) const
+  {
+    const int n = _points.size();
+    const int stride = _channels.cols();
+
+    for(int c = range.begin(); c != range.end(); ++c)
+    {
+      auto c_ptr = _channels.channelData(c);
+      auto P_ptr = _pixels.data() + c*n;
+      auto J_ptr = _jacobians.data() + c*n;
+
+      for(int i = 0; i < n; ++i)
+      {
+        auto ii = _inds[i];
+        P_ptr[i] = c_ptr[ii];
+        float Ix = 0.5f * (c_ptr[ii+1] - c_ptr[ii-1]),
+              Iy = 0.5f * (c_ptr[ii+stride] - c_ptr[ii-stride]);
+        _warp.jacobian(_points[i], Ix, Iy, J_ptr[i].data());
+      }
+    }
+  }
+
+ protected:
+  const Channels& _channels;
+  const PointVector& _points;
+  const std::vector<int>& _inds;
+  const WarpBase<WarpType>& _warp;
+  PixelVector& _pixels;
+  JacobianVector& _jacobians;
+}; // SetTemplateDataBody
+
+}; // namespace
+
 template <class CN, class W> inline
 void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
 {
@@ -330,59 +326,50 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   getValidPoints(channels, D);
 
   const auto N = _points.size();
+
   _pixels.resize(N * NumChannels);
   _jacobians.resize(N * NumChannels);
 
-  const int stride = channels.cols();
-#if defined(WITH_BITPLANES) && defined(WITH_TBB) /*&& TEMPLATE_DATA_SET_DATA_WITH_TBB*/
-  //TemplateDataExtractor<TemplateData_<CN,W>> tde(*this, Jw, inds, channels);
-  //tbb::parallel_for(tbb::blocked_range<int>(0, NumChannels), tde);
-  tbb::parallel_for(tbb::blocked_range<int>(0, NumChannels),
-                    [&](const tbb::blocked_range<int>& range)
-                    {
-                      for(int c = range.begin(); c != range.end(); ++c)
-                      {
-                      auto c_ptr = channels.channelData(c);
-                      auto J_ptr = _jacobians.data() + c*N;
-                      auto P_ptr = _pixels.data() + c*N;
+  SetTemplateDataBody<TemplateData_<CN,W>> func(channels, _points, _inds,
+                                                warp(), _pixels, _jacobians);
 
-                      for(size_t i = 0; i < N; ++i)
-                      {
-                        auto ii = _inds[i];
-                        P_ptr[i] = c_ptr[ii];
-                        float Ix = 0.5f * (c_ptr[ii+1] - c_ptr[ii-1]),
-                        Iy = 0.5f * (c_ptr[ii+stride] - c_ptr[ii-stride]);
-                        J_ptr[i] = _warp.jacobian(_points[i], Ix, Iy);
-                      }
-                      }
-                    });
-#else
-  //
-  // compute the pixels and jacobians for all channels
-  //
-#if defined(WITH_OPENMP) && defined(WITH_BITPLANES)
-#pragma omp parallel for
-#endif
-  for(int c = 0; c < channels.size(); ++c)
-  {
-    auto c_ptr = channels.channelData(c);
-    auto J_ptr = _jacobians.data() + c*N;
-    auto P_ptr = _pixels.data() + c*N;
-
-    for(size_t i = 0; i < N; ++i)
-    {
-      auto ii = _inds[i];
-      P_ptr[i] = c_ptr[ii];
-      float Ix = 0.5f * (c_ptr[ii+1] - c_ptr[ii-1]),
-            Iy = 0.5f * (c_ptr[ii+stride] - c_ptr[ii-stride]);
-      J_ptr[i] = _warp.jacobian(_points[i], Ix, Iy);
-    }
-  }
-#endif
+  parallel_for(Range(0, NumChannels), func);
 
   // NOTE: we push an empty Jacobian at the end because of SSE code loading
   _jacobians.push_back(Jacobian::Zero());
 }
+
+template <class Channels>
+class ComputeResidualsBody : public ParallelForBody
+{
+ public:
+  ComputeResidualsBody(const Channels& cn, const BilinearInterp<float>& interp,
+                       int num_points, const float* pixels, float* residuals)
+      : _channels(cn)
+      , _interp(interp)
+      , _num_points(num_points)
+      , _pixels(pixels)
+      , _residuals(residuals) {}
+
+  inline void operator()(const Range& range) const
+  {
+    for(int c = range.begin(); c != range.end(); ++c)
+    {
+      int off = c * _num_points;
+      auto I0_ptr = _pixels + off;
+      auto I1_ptr = _channels.channelData(c);
+      auto r_ptr = _residuals + off;
+      _interp.run(I0_ptr, I1_ptr, r_ptr);
+    }
+  }
+
+ protected:
+  const Channels& _channels;
+  const BilinearInterp<float>& _interp;
+  int _num_points;
+  const float* _pixels;
+  float* _residuals;
+}; // computeResiduals
 
 template <class CN, class W> inline
 void TemplateData_<CN,W>::
@@ -392,44 +379,13 @@ computeResiduals(const Channels& channels, const Matrix44& pose,
   _warp.setPose(pose);
 
   BilinearInterp<float> interp;
-
-#if 1
   interp.init(_warp, _points, channels[0].rows, channels[0].cols);
-#else
-  interp.initFast(_warp, _points, channels[0].rows, channels[0].cols);
-#endif
 
-  valid.resize(_pixels.size());
   residuals.resize(_pixels.size());
 
-#if defined(WITH_BITPLANES) && defined(WITH_TBB)
-  tbb::parallel_for(tbb::blocked_range<int>(0, channels.size()),
-                    [&](const tbb::blocked_range<int>& r)
-                    {
-                      for(int c = r.begin(); c != r.end(); ++c)
-                      {
-                        int off = c*numPoints();
-                        auto* I0_ptr = _pixels.data() + off;
-                        auto* I1_ptr = channels.channelData(c);
-                        auto* r_ptr = residuals.data() + off;
-
-                        interp.run(I0_ptr, I1_ptr, r_ptr);
-                      }
-                    });
-#else
-#if defined(WITH_BITPLANES) && defined(WITH_OPENMP)
-#pragma omp parallel for
-#endif
-  for(int c = 0; c < channels.size(); ++c)
-  {
-    int off = c*numPoints();
-    auto* I0_ptr = _pixels.data() + off;
-    auto* I1_ptr = channels.channelData(c);
-    auto* r_ptr = residuals.data() + off;
-
-    interp.run(I0_ptr, I1_ptr, r_ptr);
-  }
-#endif
+  ComputeResidualsBody<CN> func(channels, interp, numPoints(),
+                                _pixels.data(), residuals.data());
+  parallel_for(Range(0, NumChannels), func);
 
   valid.swap(interp.valid());
 }

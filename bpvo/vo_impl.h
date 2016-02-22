@@ -52,6 +52,7 @@ class VisualOdometry::Impl
 #else
   typedef RawIntensity ChannelsT;
 #endif
+
   typedef RigidBodyWarp WarpT;
   typedef TemplateData_<ChannelsT, WarpT> TData;
   typedef PoseEstimatorGN<TData> PoseEstimatorT_;

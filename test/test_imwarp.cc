@@ -88,7 +88,9 @@ int main()
     std::vector<float> ii( points.size() );
     auto code = [&]() {
       interp.init(warp, points, D.rows,  D.cols);
+#if defined(WITH_OPENMP)
 #pragma omp parallel for
+#endif
       for(size_t i = 0; i < points.size(); ++i)
         ii[i] = interp(I_ptr, i);
     };
@@ -101,7 +103,9 @@ int main()
     std::vector<float> ii( points.size() );
     auto code = [&]() {
       interp.initFast(warp, points, D.rows,  D.cols);
+#if defined(WITH_OPENMP)
 #pragma omp parallel for
+#endif
       for(size_t i = 0; i < points.size(); ++i)
         ii[i] = interp(I_ptr, i);
     };

@@ -51,41 +51,43 @@ class BilinearInterp
     resize(points.size());
 
     size_t N = points.size(), i = 0;
-    constexpr int S = 4;
+    constexpr int S = 8;
     size_t n = N & ~(S-1);
 
-#define INTERP_POINT_AT( index )           \
+    int max_cols = cols - 1,
+        max_rows = rows - 1;
+
+#define PROCESS_POINT_AT( index )          \
     {                                      \
       auto p = warp( points[i + index ] ); \
       float xf = p.x(), yf = p.y();        \
       int xi = static_cast<int>(xf), yi = static_cast<int>(yf); \
       xf -= xi; yf -= yi;                  \
-      _valid[i + index] = xi>=0 && xi<cols-1 && yi>=0 && yi<rows-1; \
+      _valid[i + index] = xi>=0 && xi<max_cols && yi>=0 && yi<max_rows; \
       _inds[i + index] = yi*cols + xi;                              \
       float xfyf = xf*yf;                                           \
-      _interp_coeffs[i + index] = Vector4(xfyf - yf - xf + 1.0, xf - xfyf, yf - xfyf, xfyf); \
+      _interp_coeffs[i + index] = Vector4(xfyf - yf - xf + 1.0f, xf - xfyf, yf - xfyf, xfyf); \
     }
 
-    bool parallel = false;
-
-#if 0 && !defined(WITH_BITPLANES) && defined(WITH_OPENMP)
-    parallel = n > 10*1000;
-#pragma omp parallel for if(parallel)
-#endif
     for(i=0; i < n; i += S)
     {
-      INTERP_POINT_AT( 0 );
-      INTERP_POINT_AT( 1 );
-      INTERP_POINT_AT( 2 );
-      INTERP_POINT_AT( 3 );
+      PROCESS_POINT_AT( 0 );
+      PROCESS_POINT_AT( 1 );
+      PROCESS_POINT_AT( 2 );
+      PROCESS_POINT_AT( 3 );
+      PROCESS_POINT_AT( 4 );
+      PROCESS_POINT_AT( 5 );
+      PROCESS_POINT_AT( 6 );
+      PROCESS_POINT_AT( 7 );
+      PROCESS_POINT_AT( 8 );
     }
-
-    if(parallel) i = n;
 
     for( ; i < N; ++i)
     {
-      INTERP_POINT_AT( 0 );
+      PROCESS_POINT_AT( 0 );
     }
+
+#undef PROCESS_POINT_AT
 
   }
 
@@ -125,8 +127,9 @@ class BilinearInterp
 
     for( ; i < n; i += S)
     {
+      // TODO we only need the loadu because of multi-channel data. Either store
+      // the pixels in different buffers, or ifdef things
 #if defined(WITH_SIMD)
-
 #if defined(__AVX__)
       _mm256_storeu_ps(r_ptr + i,
                    _mm256_sub_ps(_mm256_setr_ps(
