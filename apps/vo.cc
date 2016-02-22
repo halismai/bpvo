@@ -134,32 +134,31 @@ int main(int argc, char** argv)
 
 void writePointCloud(std::string prefix, int i, const PointCloud& pc, float min_weight)
 {
-  char buf[1024];
-  snprintf(buf, sizeof(buf), "%s_%05d.txt", prefix.c_str(), i);
-
   PointCloud pc_out;
   pc_out.reserve( pc.size() );
-
-  std::cout << "POINT CLOUD POSE\n\n" << pc.pose() << "\n\n\n";
-
-  FILE* fp = fopen(buf, "w");
-  THROW_ERROR_IF(fp == NULL, "failed to open file");
-
   for(size_t i = 0; i < pc.size(); ++i)
   {
     if(pc[i].weight() > min_weight) {
       auto p = pc[i];
-      fprintf(fp, "%f %f %f\n", p.xyzw()[0], p.xyzw()[1], p.xyzw()[2]);
-
       p.xyzw() = pc.pose() * p.xyzw();
       pc_out.push_back(p);
     }
   }
 
-  fclose(fp);
-
+  char buf[1024];
   snprintf(buf, sizeof(buf), "%s_%05d.ply", prefix.c_str(), i);
-
   ToPlyFile(std::string(buf), pc_out);
+
+#if 0
+  snprintf(buf, sizeof(buf), "%s_%05d.txt", prefix.c_str(), i);
+  FILE* fp = fopen(buf, "w");
+  if(fp) {
+    for(const auto& p : pc_out) {
+      fprintf(fp, "%g %g %g\n", p.xyzw()[0], p.xyzw()[1], p.xyzw()[2]);
+    }
+    fclose(fp);
+  }
+#endif
+
 }
 

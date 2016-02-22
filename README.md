@@ -99,7 +99,7 @@ The parameters for the algorithm are documented in `bpvo/types.h`. It is importa
 
 * `minNumPixelsForNonMaximaSuppression` to achieve real-time VO, when the number of pixels in the image exceeds minNumPixelsForNonMaximaSuppression we do non-maxima suppression on a saliency map extracted from the image. This results in semi-dense maps at the highest resolution. If you do not want this, and instead you want as many 3D points at possible, set minNumPixelsForNonMaximaSuppression to a value higher than the number of pixels of your image
 
-* `minSaliency` minimum saliency to use a pixel. If you want to use all pixels irrespective of their saliency, set this to a negative value
+* `minSaliency` minimum saliency to use a pixel. If you want to use all pixels irrespective of their saliency, set this to a negative value. **IMPORTANT** with compiling with BIT_PLANES this value must be reall small, something like 0.01, but when doing the real-time mode a value of 2.5 would be good
 
 ### Keyframing
 

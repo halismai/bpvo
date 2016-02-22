@@ -148,7 +148,8 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
   Result ret;
   ret.optimizerStatistics.resize(_channels_pyr.size());
 
-  if(0 == _tdata_pyr.front()->numPoints()) {
+  if(0 == _tdata_pyr[_params.maxTestLevel]->numPoints())
+  {
     //
     // the first frame added to vo
     //
@@ -170,7 +171,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
 
   ++_frame_index;
 
-  THROW_ERROR_IF(_params.maxTestLevel != 0, "maxTestLevel must be 0 for now");
+  //THROW_ERROR_IF(_params.maxTestLevel != 0, "maxTestLevel must be 0 for now");
 
   //
   // initialize pose estimation for the next frame using the latest estimate
@@ -182,17 +183,17 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
 
   if(ret.isKeyFrame)
   {
+    updatePointCloudWeights(_kf_point_cloud, _pose_estimator.getValidFlags(),
+                            _pose_estimator.getWeights(), _channels_pyr.front().size());
+
+    ret.pointCloud = make_unique<PointCloud>(_kf_point_cloud);
+    ret.pointCloud->pose() = _trajectory[_kf_pose_index];
+
     // if we do not have a keyframe candidate, this happens if keyframing is
     // disabled (e.g. minTranslationMagToKeyFrame = 0.0f), or if the first frame
     // motion passed the keyframing criteria
     if(_kf_candidate.empty())
     {
-      updatePointCloudWeights(_kf_point_cloud, _pose_estimator.getValidFlags(),
-                              _pose_estimator.getWeights(), _channels_pyr.front().size());
-
-      ret.pointCloud = make_unique<PointCloud>(_kf_point_cloud);
-      ret.pointCloud->pose() = _trajectory[_kf_pose_index];
-
       setAsKeyFrame(_channels_pyr, ToOpenCV(D_ptr, _image_size));
       ret.pose = T_est * _T_kf.inverse();
       _T_kf.setIdentity();
@@ -218,7 +219,8 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
   {
     // TODO test if there is enough good disparity estimates for the frame to be
     // assigned as a keyframe candidate
-    if(isDisparityGood(D_ptr, _image_size)) {
+    if(isDisparityGood(D_ptr, _image_size))
+    {
       _kf_candidate.channels_pyr.swap(_channels_pyr);
       _kf_candidate.disparity = ToOpenCV(D_ptr, _image_size).clone();
     }
@@ -226,12 +228,14 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     ret.pose = T_est * _T_kf.inverse(); // return the relative motion wrt to the added frame
     _T_kf = T_est; // replace the initialization with the new motion
 
+#if 0
     // update the weights
     const auto& valid = _pose_estimator.getValidFlags();
     const auto& weights = _pose_estimator.getWeights();
 
-    THROW_ERROR_IF(valid.size() != _kf_point_cloud.size(),
+    THROW_ERROR_IF(valid.size()/ChannelsT::NumChannels != _kf_point_cloud.size(),
                    "num valid points mismatch point cloud size");
+#endif
   }
 
   _trajectory.push_back( ret.pose );
@@ -246,15 +250,16 @@ Impl::estimatePose(const std::vector<ChannelsT>& cn, const Matrix44& T_init,
   stats.resize(cn.size());
   Matrix44 T_est = T_init;
 
-  THROW_ERROR_IF( _params.maxTestLevel != 0, "maxTestLevel must be 0 for now" );
+  //THROW_ERROR_IF( _params.maxTestLevel != 0, "maxTestLevel must be 0 for now" );
 
   _pose_estimator.setParameters(_pose_est_params_low_res);
   int i = static_cast<int>(cn.size()) - 1;
   for( ; i >= _params.maxTestLevel;  --i)
   {
-    dprintf("level %d/%d [num points %d]\n", i, _params.maxTestLevel, _tdata_pyr[i]->numPoints());
+    if(_params.verbosity == VerbosityType::kIteration)
+      printf("level %d/%d [num points %d]\n", i, _params.maxTestLevel, _tdata_pyr[i]->numPoints());
 
-    if(i == 0) { // set the original thresholds for the finest pyramid level
+    if(i >= _params.maxTestLevel) { // set the original thresholds for the finest pyramid level
       _pose_estimator.setParameters(_pose_est_params);
     }
 
@@ -265,6 +270,9 @@ Impl::estimatePose(const std::vector<ChannelsT>& cn, const Matrix44& T_init,
            _tdata_pyr[i]->numPoints(), _params.minNumPixelsToWork);;
     }
   }
+
+  if(_params.verbosity == VerbosityType::kIteration)
+    printf("\n\n");
 
   return T_est;
 }
@@ -313,17 +321,17 @@ void VisualOdometry::Impl::setAsKeyFrame(const std::vector<ChannelsT>& cn,
 {
   assert( _tdata_pyr.size() == cn.size() );
 
-  for(size_t i = 0; i < cn.size(); ++i)
+  for(int i = cn.size()-1; i >= _params.maxTestLevel; --i)
     _tdata_pyr[i]->setData(cn[i], disparity);
 
-  auto n = _tdata_pyr[0]->numPoints();
+  auto n = _tdata_pyr[_params.maxTestLevel]->numPoints();
 
   _kf_point_cloud.resize( n );
   for(int i = 0; i < n; ++i)
   {
-    _kf_point_cloud[i].xyzw() = _tdata_pyr[0]->points()[i];
+    _kf_point_cloud[i].xyzw() = _tdata_pyr[_params.maxTestLevel]->points()[i];
 
-    auto uv = _tdata_pyr[0]->warp().getImagePoint(_kf_point_cloud[i].xyzw());
+    auto uv = _tdata_pyr[_params.maxTestLevel]->warp().getImagePoint(_kf_point_cloud[i].xyzw());
     _kf_point_cloud[i].rgba() = makeColor(_input_image, uv);
 
     //  when we set a new keyframe, we have no idea about the weights of the

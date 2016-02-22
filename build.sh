@@ -9,5 +9,5 @@ mkdir -p build && cd build && cmake .. \
   -DENABLE_OMIT_FRAME_POINTER=ON    \
   -DENABLE_FAST_MATH=ON             \
   -DBUILD_STATIC=ON                 \
-  -DWITH_BITPLANES=ON && make -j2
+  -DWITH_BITPLANES=OFF && make -j2
 

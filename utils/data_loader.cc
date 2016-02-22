@@ -307,10 +307,13 @@ void DataLoaderThread::start()
   typename BufferType::value_type frame;
   int f_i = _data_loader->firstFrameNumber();
 
-  _is_running = true;
-  while( !_stop_requested && (nullptr != (frame=_data_loader->getFrame(f_i++))))
-  {
-    _buffer.push(std::move(frame));
+  try {
+    _is_running = true;
+    while( !_stop_requested && (nullptr != (frame=_data_loader->getFrame(f_i++))))
+      _buffer.push(std::move(frame));
+  } catch(const std::exception& ex) {
+    _is_running = false;
+    _buffer.push(nullptr);
   }
 
   _is_running = false;
