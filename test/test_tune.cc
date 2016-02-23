@@ -12,7 +12,7 @@ int main(int argc, char** argv)
   ProgramOptions options;
   options
       ("config,c", "/home/halismai/code/bpvo/conf/tsukuba.cfg", "config file")
-      ("numframes,n", int(1000), "number of frames to process")
+      ("numframes,n", int(500), "number of frames to process")
       .parse(argc, argv);
 
   std::string conf_fn = options.get<std::string>("config");

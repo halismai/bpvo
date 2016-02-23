@@ -11,6 +11,7 @@
 #include "bpvo/utils.h"
 #include "bpvo/point_cloud.h"
 #include "bpvo/config_file.h"
+#include "bpvo/parallel.h"
 
 #include <iostream>
 #include <fstream>
@@ -25,6 +26,8 @@ void writePointCloud(std::string prefix, int i, const PointCloud& pc, float min_
 int main(int argc, char** argv)
 {
   fprintf(stdout, "%s\n", BPVO_BUILD_STR);
+
+  printf("num threads %d\n", getNumThreads());
 
   ProgramOptions options;
   options

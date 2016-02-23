@@ -276,7 +276,7 @@ struct SetTemplateDataBody : public ParallelForBody
 
  public:
   SetTemplateDataBody(const Channels& channels, const PointVector& points,
-                      const std::vector<int>& inds, const WarpBase<WarpType>& warp,
+                      const std::vector<int>& inds, const WarpType& warp,
                       PixelVector& pixels, JacobianVector& jacobians)
       : _channels(channels)
       , _points(points)
@@ -311,7 +311,7 @@ struct SetTemplateDataBody : public ParallelForBody
   const Channels& _channels;
   const PointVector& _points;
   const std::vector<int>& _inds;
-  const WarpBase<WarpType>& _warp;
+  const WarpType& _warp;
   PixelVector& _pixels;
   JacobianVector& _jacobians;
 }; // SetTemplateDataBody
@@ -331,7 +331,7 @@ void TemplateData_<CN,W>::setData(const Channels& channels, const cv::Mat& D)
   _jacobians.resize(N * NumChannels);
 
   SetTemplateDataBody<TemplateData_<CN,W>> func(channels, _points, _inds,
-                                                warp(), _pixels, _jacobians);
+                                                *warp().derived(), _pixels, _jacobians);
 
   parallel_for(Range(0, NumChannels), func);
 

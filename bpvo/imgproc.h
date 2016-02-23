@@ -95,9 +95,9 @@ struct IsLocalMax
     {
       case 1: // 3x3
         {
-          auto p0 = _ptr + row*_stride + col,
-               p1 = p0 - _stride,
-               p2 = p0 + _stride;
+          const T* p0 = _ptr + row*_stride + col;
+          const T* p1 = p0 - _stride;
+          const T* p2 = p0 + _stride;
           auto v = *p0;
 
           return
@@ -119,15 +119,12 @@ struct IsLocalMax
           return true;
         }
     }
-
   }
 
  private:
   const T* _ptr;
   int _stride, _radius;
 }; // IsLocalMax
-
-
 }; // bpvo
 
 #endif // BPVO_IMGPROC_H
