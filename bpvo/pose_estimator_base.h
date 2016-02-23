@@ -171,7 +171,7 @@ class PoseEstimatorBase
   bool testConvergence(float dp_norm, float dp_norm_prev, float g_norm, float f_norm,
                        PoseEstimationStatus& status) const
   {
-    const auto sqrt_eps = std::sqrt(std::numeric_limits<float>::epsilon());
+    static const auto sqrt_eps = std::sqrt(std::numeric_limits<float>::epsilon());
 
     if(dp_norm < _params.parameterTolerance ||
        dp_norm < _params.parameterTolerance * (sqrt_eps + dp_norm_prev)) {
@@ -282,6 +282,7 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
     printIteration(ret.numIterations, f_norm, g_norm, dp_norm, std::abs(_f_norm_prev-f_norm));
 
     has_converged = testConvergence(dp_norm, dp_norm_prev, g_norm, f_norm, ret.status);
+
     dp_norm_prev = dp_norm;
     _f_norm_prev = f_norm;
 

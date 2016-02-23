@@ -225,15 +225,6 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
 
     ret.pose = T_est * _T_kf.inverse(); // return the relative motion wrt to the added frame
     _T_kf = T_est; // replace the initialization with the new motion
-
-#if 0
-    // update the weights
-    const auto& valid = _pose_estimator.getValidFlags();
-    const auto& weights = _pose_estimator.getWeights();
-
-    THROW_ERROR_IF(valid.size()/ChannelsT::NumChannels != _kf_point_cloud.size(),
-                   "num valid points mismatch point cloud size");
-#endif
   }
 
   _trajectory.push_back( ret.pose );
@@ -247,7 +238,6 @@ Impl::estimatePose(const std::vector<ChannelsT>& cn, const Matrix44& T_init,
 {
   stats.resize(cn.size());
   Matrix44 T_est = T_init;
-
 
   _pose_estimator.setParameters(_pose_est_params_low_res);
   int i = static_cast<int>(cn.size()) - 1;

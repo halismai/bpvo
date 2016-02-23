@@ -68,7 +68,7 @@ void extractChannel(const cv::Mat& C, cv::Mat& dst, int b, float sigma)
 #pragma omp simd
 #endif
   for(int i = 0; i < n; ++i) {
-    dst_ptr[i] = static_cast<DstType>( (src_ptr[i] & (1<<b)) >> b );
+    dst_ptr[i] = 255.0f * static_cast<DstType>( (src_ptr[i] & (1<<b)) >> b );
   }
 
   if(sigma > 0.0f)
