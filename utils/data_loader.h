@@ -80,7 +80,7 @@ class StereoDataLoader : public DataLoader
   ImageSize imageSize() const;
   ImageFramePointer getFrame(int) const;
 
- private:
+ protected:
   UniquePointer<StereoAlgorithm> _stereo_alg;
 
  protected:
@@ -112,9 +112,31 @@ class KittiDataLoader : public StereoDataLoader
  private:
   StereoCalibration _calib;
   void load_calibration(std::string filename);
-
 }; // KittiDataLoader
 
+
+class BumblebeeDataLoader : public StereoDataLoader
+{
+ public:
+  typedef typename StereoDataLoader::ImageFramePointer ImageFramePointer;
+
+ public:
+  explicit BumblebeeDataLoader(const ConfigFile& cf);
+  explicit BumblebeeDataLoader(std::string conf_f);
+  virtual ~BumblebeeDataLoader();
+
+  StereoCalibration calibration() const;
+
+  ImageSize imageSize() const;
+  static UniquePointer<DataLoader> Create(const ConfigFile& cf);
+
+  ImageFramePointer getFrame(int) const;
+
+ private:
+  StereoCalibration _calib;
+  std::vector<std::string> _left;
+  std::vector<std::string> _right;
+}; // BumblebeeDataLoader
 
 class DisparityDataLoader : public DataLoader
 {

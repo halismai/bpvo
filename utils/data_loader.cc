@@ -1,6 +1,7 @@
 #include "utils/data_loader.h"
 #include "utils/stereo_algorithm.h"
 #include "utils/tunnel_data_loader.h"
+#include "utils/glob.h"
 #include "bpvo/config_file.h"
 #include "bpvo/utils.h"
 
@@ -26,6 +27,8 @@ UniquePointer<DataLoader> DataLoader::FromConfig(std::string conf_fn)
   } else if(icompare("tunnel", dataset)) {
     dprintf("tunnel data\n");
     return TunnelDataLoader::Create(cf);
+  } else if(icompare("bumblebee", dataset)) {
+    return BumblebeeDataLoader::Create(cf);
   } else {
     char buf[1024];
     snprintf(buf, 1024, "Unknown dataset %s\n", dataset.c_str());
@@ -239,7 +242,6 @@ static inline Matrix34 set_kitti_camera_from_line(std::string line)
   return ret;
 }
 
-
 void KittiDataLoader::load_calibration(std::string filename)
 {
   std::ifstream ifs(filename);
@@ -270,6 +272,72 @@ UniquePointer<DataLoader> KittiDataLoader::Create(const ConfigFile& cf)
   return UniquePointer<DataLoader>(new KittiDataLoader(cf));
 }
 
+BumblebeeDataLoader::BumblebeeDataLoader(const ConfigFile& cf)
+  : StereoDataLoader(cf)
+{
+  auto root = fs::expand_tilde(cf.get<std::string>("DataSetRootDirectory"));
+
+  const auto err_msg = Format("data root directory %s does not exist", root.c_str());
+  THROW_ERROR_IF(!fs::exists(root), err_msg.c_str());
+
+  auto left_glob_pattern = root + cf.get<std::string>("LeftGlobPattern", "*left-rect*png");
+  auto right_glob_pattern = root + cf.get<std::string>("RightGlobPattern", "*right-rect*png");
+
+  printf("%s\n", left_glob_pattern.c_str());
+
+  _left = glob(left_glob_pattern);
+  _right = glob(right_glob_pattern);
+
+  THROW_ERROR_IF( _left.empty(), "could not glob from pattern" );
+  THROW_ERROR_IF( _left.size() != _right.size(), "number of files mismatch" );
+
+  // fixed for now
+  float f = 487.109;
+  float cx = 320.788;
+  float cy = 245.845;
+  _calib.K << f, 0, cx, 0, f, cy, 0, 0, 1;
+  _calib.baseline = 0.120006;
+
+  this->_first_frame_number = cf.get<int>("firstFrameNumber", 0);
+}
+
+BumblebeeDataLoader::BumblebeeDataLoader(std::string conf_fn)
+  : BumblebeeDataLoader(ConfigFile(conf_fn)) {}
+
+StereoCalibration BumblebeeDataLoader::calibration() const { return _calib; }
+
+BumblebeeDataLoader::~BumblebeeDataLoader() {}
+
+auto BumblebeeDataLoader::getFrame(int f_i) const -> ImageFramePointer
+{
+  if(f_i >= 0 && f_i < (int) _left.size())
+  {
+    auto I1 = cv::imread(_left[f_i], cv::IMREAD_GRAYSCALE),
+         I2 = cv::imread(_right[f_i], cv::IMREAD_GRAYSCALE);
+
+    auto msg = Format("failed to load %s\n", _left[f_i].c_str());
+    THROW_ERROR_IF(I1.empty() || I2.empty(), msg.c_str());
+
+    if(this->_scale_by > 1) {
+      float s = 1.0f / _scale_by;
+      cv::resize(I1, I1, cv::Size(), s, s);
+      cv::resize(I2, I2, cv::Size(), s, s);
+    }
+
+    cv::Mat D;
+    this->_stereo_alg->run(I1, I2, D);
+    return ImageFramePointer(new StereoFrame(I1, I2, D));
+  }
+
+  return nullptr;
+}
+
+UniquePointer<DataLoader> BumblebeeDataLoader::Create(const ConfigFile& cf)
+{
+  return  UniquePointer<DataLoader>(new BumblebeeDataLoader(cf));
+}
+
+ImageSize BumblebeeDataLoader::imageSize() const { return ImageSize(480, 640); }
 
 DataLoaderThread::DataLoaderThread(UniquePointer<DataLoader> data_loader,
                                    BufferType& buffer)

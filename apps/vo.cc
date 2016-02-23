@@ -10,6 +10,7 @@
 #include "bpvo/config.h"
 #include "bpvo/utils.h"
 #include "bpvo/point_cloud.h"
+#include "bpvo/config_file.h"
 
 #include <iostream>
 #include <fstream>
@@ -18,7 +19,8 @@
 
 using namespace bpvo;
 
-void writePointCloud(std::string prefix, int i, const PointCloud& pc, float min_weight = 0.75f);
+void writePointCloud(std::string prefix, int i, const PointCloud& pc, float min_weight = 0.9f,
+                     float max_depth = 5.0f);
 
 int main(int argc, char** argv)
 {
@@ -58,6 +60,14 @@ int main(int argc, char** argv)
   std::cout << data_loader->calibration() << std::endl;
   DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
 
+  float min_weight = 0.9,
+        max_depth = 5.0;
+  {
+    ConfigFile cf(conf_fn);
+    min_weight = cf.get<float>("minPointWeight", 0.9);
+    max_depth = cf.get<float>("maxDepth", 5.0);
+  }
+
   double total_time = 0.0;
   int f_i = 0;
   while(f_i < max_frames) {
@@ -77,7 +87,7 @@ int main(int argc, char** argv)
       {
         //assert( result.pointCloud && "null point cloud?" );
         if(result.pointCloud)
-          writePointCloud(points_prefix, f_i, *result.pointCloud);
+          writePointCloud(points_prefix, f_i, *result.pointCloud, min_weight, max_depth);
       }
 
       f_i += 1;
@@ -86,7 +96,7 @@ int main(int argc, char** argv)
       int num_iters = result.optimizerStatistics[maxTestLevel].numIterations;
       if(num_iters == params.maxIterations) {
         printf("\n");
-        Warn("maximum iterations reached\n");
+        Warn("maximum iterations reached %d\n", params.maxIterations);
       }
 
       fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d\r",
@@ -133,33 +143,22 @@ int main(int argc, char** argv)
 }
 
 
-void writePointCloud(std::string prefix, int i, const PointCloud& pc, float min_weight)
+void writePointCloud(std::string prefix, int i, const PointCloud& pc,
+                     float min_weight, float max_depth)
 {
   PointCloud pc_out;
   pc_out.reserve( pc.size() );
   for(size_t i = 0; i < pc.size(); ++i)
   {
-    if(pc[i].weight() > min_weight) {
+    if(pc[i].weight() > min_weight && pc[i].xyzw().z() <= max_depth)
+    {
       auto p = pc[i];
       p.xyzw() = pc.pose() * p.xyzw();
       pc_out.push_back(p);
     }
   }
 
-  char buf[1024];
-  snprintf(buf, sizeof(buf), "%s_%05d.ply", prefix.c_str(), i);
-  ToPlyFile(std::string(buf), pc_out);
-
-#if 0
-  snprintf(buf, sizeof(buf), "%s_%05d.txt", prefix.c_str(), i);
-  FILE* fp = fopen(buf, "w");
-  if(fp) {
-    for(const auto& p : pc_out) {
-      fprintf(fp, "%g %g %g\n", p.xyzw()[0], p.xyzw()[1], p.xyzw()[2]);
-    }
-    fclose(fp);
-  }
-#endif
+  ToPlyFile(Format("%s_%05d.ply", prefix.c_str(), i), pc_out);
 
 }
 
