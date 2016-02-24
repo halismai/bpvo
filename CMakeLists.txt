@@ -38,7 +38,7 @@ option(WITH_OPENMP    "use OpenMP"  ON)
 
 option(ENABLE_PROFILING "enable profiling" OFF)
 option(ENABLE_FAST_MATH "enable fast math" OFF)
-option(ENABLE_OMIT_FRAME_POINTER "omit frame pointer" OFF)
+option(ENABLE_OMIT_FRAME_POINTER "omit frame pointer" ON)
 
 option(BUILD_TEST "build the testing stuff" OFF)
 

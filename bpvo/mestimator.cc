@@ -26,6 +26,10 @@
 
 #include <algorithm>
 
+#if defined(WITH_SIMD)
+#include <immintrin.h>
+#endif
+
 namespace bpvo {
 
 template <typename T = float>
@@ -180,20 +184,56 @@ static FORCE_INLINE __m128 load_ps(const float* ptr)
   return _mm_load_ps(ptr);
 }
 
+static FORCE_INLINE __m128 loadu_ps(const float* ptr)
+{
+  return _mm_loadu_ps(ptr);
+}
+
 static FORCE_INLINE __m128 mul_ps(__m128 a, __m128 b)
 {
   return _mm_mul_ps(a, b);
 }
 
-static FORCE_INLINE __m128 store_ps(float* ptr, __m128 a)
+static FORCE_INLINE void store_ps(float* ptr, __m128 a)
 {
   _mm_store_ps(ptr, a);
+}
+
+static FORCE_INLINE void storeu_ps(float* ptr, __m128 a)
+{
+  _mm_storeu_ps(ptr, a);
 }
 
 static FORCE_INLINE __m128 max_ps(__m128 a, __m128 b)
 {
   return _mm_max_ps(a, b);
 }
+
+static FORCE_INLINE __m128 set1_ps(float v)
+{
+  return _mm_set1_ps(v);
+}
+
+static FORCE_INLINE __m128 div_ps(__m128 a, __m128 b)
+{
+  return _mm_div_ps(a, b);
+}
+
+static FORCE_INLINE __m128 sub_ps(__m128 a, __m128 b)
+{
+  return _mm_sub_ps(a, b);
+}
+
+static FORCE_INLINE __m128 and_ps(__m128 a, __m128 b)
+{
+  return _mm_and_ps(a, b);
+}
+
+static FORCE_INLINE __m128 cmplt_ps(__m128 a, __m128 b)
+{
+  return _mm_cmplt_ps(a, b);
+}
+
 
 static const int SIMD_VECTOR_UNIT_SIZE = 4;
 

@@ -17,14 +17,16 @@ int main(int argc, char** argv)
 
   std::string conf_fn = options.get<std::string>("config");
   auto data_loader = DataLoader::FromConfig(conf_fn);
-  VisualOdometry vo(data_loader.get(), AlgorithmParameters(conf_fn));
+  auto params = AlgorithmParameters(conf_fn);
+  params.minTranslationMagToKeyFrame = 0.0;
+  VisualOdometry vo(data_loader.get(), params);
 
   std::vector<typename DataLoader::ImageFramePointer> data;
 
   data.push_back( data_loader->getFrame(1) );
-  data.push_back( data_loader->getFrame(5) );
-  data.push_back( data_loader->getFrame(20) );
-  data.push_back( data_loader->getFrame(50) );
+  data.push_back( data_loader->getFrame(2) );
+  data.push_back( data_loader->getFrame(3) );
+  data.push_back( data_loader->getFrame(4) );
 
   int numframes = options.get<int>("numframes");
   double total_time = 0.0;
@@ -48,5 +50,6 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
 
 

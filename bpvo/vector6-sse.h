@@ -81,14 +81,15 @@ inline Vector6 abs(const Vector6& v)
 
 #else
 
-inline constexpr int Vector6::ImplementationType() { return SSE: }
+inline constexpr int Vector6::ImplementationType() { return SSE; }
 
 inline Vector6 floor(const Vector6& v)
 {
 #if defined(__SSE4_1__)
   Vector6 ret;
-  _mm_store_ps( ret.data() + 0, _mm_floor_ps( _mm_load_ps(ret.data() + 0) ) );
-  _mm_store_ps( ret.data() + 4, _mm_floor_ps( _mm_load_ps(ret.data() + 4) ) );
+  _mm_store_ps( ret.data() + 0, _mm_floor_ps( _mm_load_ps(v.data() + 0) ) );
+  _mm_store_ps( ret.data() + 4, _mm_floor_ps( _mm_load_ps(v.data() + 4) ) );
+  return ret;
 #else
   return Vector6(
       std::floor( v[0] ),
@@ -104,8 +105,9 @@ inline Vector6 ceil(const Vector6& v)
 {
 #if defined(__SSE4_1__)
   Vector6 ret;
-  _mm_store_ps( ret.data() + 0, _mm_ceil_ps( _mm_load_ps(ret.data() + 0) ) );
-  _mm_store_ps( ret.data() + 4, _mm_ceil_ps( _mm_load_ps(ret.data() + 4) ) );
+  _mm_store_ps( ret.data() + 0, _mm_ceil_ps( _mm_load_ps(v.data() + 0) ) );
+  _mm_store_ps( ret.data() + 4, _mm_ceil_ps( _mm_load_ps(v.data() + 4) ) );
+  return ret;
 #else
   return Vector6(
       std::ceil( v[0] ),
@@ -117,12 +119,14 @@ inline Vector6 ceil(const Vector6& v)
 #endif
 }
 
+#define ROUNDING_MODE _MM_FROUND_TO_NEAREST_INT
 inline Vector6 round(const Vector6& v)
 {
 #if defined(__SSE4_1__)
   Vector6 ret;
-  _mm_store_ps( ret.data() + 0, _mm_round_ps( _mm_load_ps(ret.data() + 0) ) );
-  _mm_store_ps( ret.data() + 4, _mm_round_ps( _mm_load_ps(ret.data() + 4) ) );
+  _mm_store_ps( ret.data() + 0, _mm_round_ps( _mm_load_ps(v.data() + 0), ROUNDING_MODE ) );
+  _mm_store_ps( ret.data() + 4, _mm_round_ps( _mm_load_ps(v.data() + 4), ROUNDING_MODE ) );
+  return ret;
 #else
   return Vector6(
       std::round( v[0] ),
@@ -133,6 +137,7 @@ inline Vector6 round(const Vector6& v)
       std::round( v[5] ));
 #endif
 }
+#undef ROUNDING_MODE
 
 inline Vector6 abs(const Vector6& v)
 {
@@ -159,7 +164,7 @@ inline Vector6 abs(const Vector6& v)
 #define MAKE_V_OP_E( op ) \
   V_STORE( _data+0, MAKE_OP( op ) ( V_LOAD(_data+0), V_LOAD(other._data+0) ) ); \
   V_STORE( _data+4, MAKE_OP( op ) ( V_LOAD(_data+4), V_LOAD(other._data+4) ) ); \
-  return ret
+  return *this
 
 
 #define MAKE_V_OP_S( op ) \
@@ -173,7 +178,7 @@ inline Vector6 abs(const Vector6& v)
   auto vv = V_SET1( x );  \
   V_STORE( _data+0, MAKE_OP( op ) ( V_LOAD(_data+0), vv) ); \
   V_STORE( _data+4, MAKE_OP( op ) ( V_LOAD(_data+4), vv) ); \
-  return ret
+  return *this
 
 #endif // __AVX__
 

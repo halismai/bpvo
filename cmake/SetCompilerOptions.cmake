@@ -48,7 +48,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
   addExtraCompilerOptions(-ftree-vectorize)
   addExtraCompilerOptions(-pthread)
   addExtraCompilerOptions(-Wabi)
-  addExtraCompilerOptions(-fabi-version=0)
+  addExtraCompilerOptions(-fabi-version=6)
+
+  addExtraCompilerOptions(-msse4.1)
+  addExtraCompilerOptions(-msse2)
+  addExtraCompilerOptions(-msse)
+  addExtraCompilerOptions(-mtune=native)
+  addExtraCompilerOptions(-mfpmath=sse)
 
   #if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   #  if(BUILD_STATIC)
@@ -117,8 +123,11 @@ set(CMAKE_EXE_LINKER_FLAGS         "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_EXE_LINKER_FLAGS_DEBUG   "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
 
-include(cmake/OptimizeForArchitecture.cmake)
-OptimizeForArchitecture()
+# they mess up with the flags too much
+# and there seems to be an issue with AVX with gcc-4.9
+#include(cmake/OptimizeForArchitecture.cmake)
+#set(Vc_AVX_INTRINSICS_BROKEN ON)
+#OptimizeForArchitecture()
 
 #list(APPEND "${CMAKE_CXX_FLAGS}" "${Vc_ARCHITECTURE_FLAGS}")
 #string(REPLACE ";" " " Vc_ARCHITECTURE_FLAGS_STR "${Vc_ARCHITECTURE_FLAGS}");

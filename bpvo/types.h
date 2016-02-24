@@ -373,7 +373,7 @@ struct Result
   PoseCovariance covariance;
 
   /**
-   * optimizer statistics from every iteration. The first element corresponds to
+   * opeimizer statistics from every iteration. The first element corresponds to
    * the `finest' pyramid level (highest resolution)
    */
   std::vector<OptimizerStatistics> optimizerStatistics;

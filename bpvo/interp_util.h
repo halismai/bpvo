@@ -113,9 +113,6 @@ class BilinearInterp
       _inds[i] = yi*cols + xi;
       float xfyf = xf*yf;
       _interp_coeffs[i] = Vector4(xfyf - yf - xf + 1.0f, xf - xfyf, yf - xfyf, xfyf);
-
-      /*std::cout << "point: " << points[i].transpose() << "->" << p.transpose() << " valid: " << _valid[i] << " ";
-      std::cout << " rows: " << rows << " cols " << cols << "\n";*/
     }
   }
 
@@ -170,18 +167,18 @@ class BilinearInterp
                            this->operator()(I1_ptr, i + 6),
                            this->operator()(I1_ptr, i + 7)), _mm256_loadu_ps(I0_ptr + i)));
 #else
-      _mm_store_ps(r_ptr + i,
+      _mm_storeu_ps(r_ptr + i,
                    _mm_sub_ps(_mm_setr_ps(
                            this->operator()(I1_ptr, i + 0),
                            this->operator()(I1_ptr, i + 1),
                            this->operator()(I1_ptr, i + 2),
-                           this->operator()(I1_ptr, i + 3)), _mm_load_ps(I0_ptr + i)));
-      _mm_store_ps(r_ptr + i + 4,
+                           this->operator()(I1_ptr, i + 3)), _mm_loadu_ps(I0_ptr + i)));
+      _mm_storeu_ps(r_ptr + i + 4,
                    _mm_sub_ps(_mm_setr_ps(
                            this->operator()(I1_ptr, i + 4),
                            this->operator()(I1_ptr, i + 5),
                            this->operator()(I1_ptr, i + 6),
-                           this->operator()(I1_ptr, i + 7)), _mm_load_ps(I0_ptr + i)));
+                           this->operator()(I1_ptr, i + 7)), _mm_loadu_ps(I0_ptr + i)));
 
 #endif // __AVX__
 #else // WITH_SIMD

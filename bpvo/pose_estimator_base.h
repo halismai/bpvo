@@ -277,7 +277,7 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
   bool has_converged = false;
 
   do {
-    data.T = data.T * tdata->warp().paramsToPose(-data.dp);
+    data.T *= tdata->warp().paramsToPose(-data.dp);
 
     float dp_norm = data.dp.norm();
     g_norm = data.gradientNorm();
