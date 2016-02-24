@@ -308,7 +308,7 @@ enum PoseEstimationStatus
   kFunctionTolReached,  //< ditto function value
   kGradientTolReached,  //< ditto gradient value (J'*F)
   kMaxIterations,       //< Maximum number of iteration
-  kSolverError         //< !
+  kSolverError          //< !
 }; // PoseEstimationStatus
 
 

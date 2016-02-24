@@ -1,5 +1,4 @@
-#include "utils/data_loader.h"
-#include "utils/bounded_buffer.h"
+#include "utils/dataset_loader_thread.h"
 #include "utils/program_options.h"
 #include "utils/viz.h"
 
@@ -44,10 +43,10 @@ int main(int argc, char** argv)
   auto do_show = !options.hasOption("dontshow");
   auto points_prefix = options.get<std::string>("points");
 
-  auto data_loader = DataLoader::FromConfig(conf_fn);
+  auto dataset = Dataset::Create(conf_fn);
 
   int buffer_size = options.get<int>("buffersize");
-  typename DataLoaderThread::BufferType image_buffer(buffer_size);
+  typename DatasetLoaderThread::BufferType image_buffer(buffer_size);
 
   AlgorithmParameters params(conf_fn);
   std::cout << "------- AlgorithmParameters -------" << std::endl;
@@ -55,31 +54,40 @@ int main(int argc, char** argv)
   std::cout << "-----------------------------------" << std::endl;
 
   auto maxTestLevel = params.maxTestLevel;
-  auto vo = VisualOdometry(data_loader.get(), params);
+  auto vo = VisualOdometry(dataset.get(), params);
 
   Trajectory trajectory;
-  typename DataLoaderThread::BufferType::value_type frame;
+  UniquePointer<DatasetFrame> frame;
 
-  std::cout << data_loader->calibration() << std::endl;
-  DataLoaderThread data_loader_thread(std::move(data_loader), image_buffer);
+  std::cout << dataset->calibration() << std::endl;
+  DatasetLoaderThread data_loader_thread(std::move(dataset), image_buffer);
 
-  float min_weight = 0.9,
-        max_depth = 5.0;
+  float min_weight = 0.9, max_depth = 5.0;
+  int min_disparity = 0, num_disparities = 128; // for colorization purposes
   {
     ConfigFile cf(conf_fn);
+
     min_weight = cf.get<float>("minPointWeight", 0.9);
     max_depth = cf.get<float>("maxDepth", 5.0);
+
+    min_disparity = cf.get<int>("minDisparity", 0);
+    num_disparities = cf.get<int>("numberOfDisparities", 128);
   }
+
+  cv::Mat display_image;
 
   double total_time = 0.0;
   int f_i = 0;
-  while(f_i < max_frames) {
-    if(image_buffer.pop(&frame)) {
-      if(frame->image().empty()) {
-        printf("\n");
-        Warn("could not get data\n");
+  while(f_i < max_frames)
+  {
+    if(image_buffer.pop(&frame, 5))
+    {
+      if(!frame)
+      {
+        printf("no more data\n");
         break;
       }
+
       Timer timer;
       auto result = vo.addFrame(frame->image().ptr<uint8_t>(),
                                 frame->disparity().ptr<float>());
@@ -88,7 +96,6 @@ int main(int argc, char** argv)
 
       if(!points_prefix.empty())
       {
-        //assert( result.pointCloud && "null point cloud?" );
         if(result.pointCloud)
           writePointCloud(points_prefix, f_i, *result.pointCloud, min_weight, max_depth);
       }
@@ -97,7 +104,8 @@ int main(int argc, char** argv)
       trajectory.push_back(result.pose);
 
       int num_iters = result.optimizerStatistics[maxTestLevel].numIterations;
-      if(num_iters == params.maxIterations) {
+      if(num_iters == params.maxIterations)
+      {
         printf("\n");
         Warn("maximum iterations reached %d\n", params.maxIterations);
       }
@@ -107,8 +115,12 @@ int main(int argc, char** argv)
               ToString(result.keyFramingReason).c_str(), 8, vo.numPointsAtLevel());
       fflush(stdout);
 
-      if(do_show) {
-        cv::imshow("image", overlayDisparity(frame.get(), 0.5f));
+      if(do_show)
+      {
+        overlayDisparity(frame->image(), frame->disparity(), display_image,
+                         0.5f, min_disparity, num_disparities);
+
+        cv::imshow("image", display_image);
         int k = 0xff & cv::waitKey(2);
         if(k == ' ') k = cv::waitKey(0);
         if(k == 'q' || k == 27)
@@ -136,9 +148,12 @@ int main(int argc, char** argv)
     ofs.close();
   }
 
+#if 0
+  // will auto shutdown
   data_loader_thread.stop();
   while(data_loader_thread.isRunning())
     Sleep(10);
+#endif
 
   Info("done\n");
 

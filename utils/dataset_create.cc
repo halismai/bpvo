@@ -1,6 +1,7 @@
 #include "utils/dataset.h"
 #include "utils/tunnel_dataset.h"
 #include "utils/kitti_dataset.h"
+#include "utils/tsukuba_dataset.h"
 
 #include "bpvo/config_file.h"
 #include "bpvo/utils.h"
@@ -17,6 +18,10 @@ UniquePointer<Dataset> Dataset::Create(std::string conf_fn)
     return UniquePointer<Dataset>(new TunnelDataset(conf_fn));
   } else if(icompare("kitti", name)) {
     return UniquePointer<Dataset>(new KittiDataset(conf_fn));
+  } else if(icompare("tsukuba_stereo", name)) {
+    return UniquePointer<Dataset>(new TsukubaStereoDataset(conf_fn));
+  } else if(icompare("tsukuba", name) || icompare("tsukuba_synthetic", name)) {
+    return UniquePointer<Dataset>(new TsukubaSyntheticDataset(conf_fn));
   }
 
   THROW_ERROR(Format("unknown dataset '%s'\n", name.c_str()).c_str());

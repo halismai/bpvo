@@ -40,32 +40,27 @@ class DisparitySpaceWarp : public WarpBase<DisparitySpaceWarp>
 
   inline const Matrix33& K() const { return _K; }
 
-  inline void setNormalization(const Matrix44& T)
-  {
-    _T = T;
-    _T_inv = T.inverse();
-  }
-
   inline void jacobian(const Point& p, float Ix, float Iy, float* J) const
   {
-    float u = p[0], v = p[1], d = p[2];
-    float s = _T(0,0), c1 = _T_inv(0,3), c2 = _T_inv(1,3), c3 = _T_inv(2,3);
-    float fx = _K(0,0), fy = _K(1,1);
+    const float x = p[0];
+    const float y = p[1];
+    const float d = p[2];
 
-    float t2 = _fy_i,
-          t3 = _fx_i,
-          t4 = Ix*u,
-          t5 = Iy*v,
-          t6 = t4+t5,
-          t7 = 1.0 / s,
-          t8 = _b_i,
-          t9 = c3 - d;
-    J[0] = -Ix*(c1*c2*s*t2-c1*s*t2*v)-Iy*(fy*t7+(c2*c2)*s*t2-c2*s*t2*v)+t6*(c2*s*t2-s*t2*v);
-    J[1] = Iy*(c1*c2*s*t3-c2*s*t3*u)+Ix*(fx*t7+(c1*c1)*s*t3-c1*s*t3*u)-t6*(c1*s*t3-s*t3*u);
-    J[2] = -Iy*(c1*fy*t3-fy*t3*u)+Ix*(c2*fx*t2-fx*t2*v);
-    J[3] = -Ix*t8*t9;
-    J[4] = -Iy*fy*t3*t8*t9;
-    J[5] = s*t3*t8*t9*(t4+t5-Ix*c1-Iy*c2);
+    float t2 = x*Ix,
+          t3 = y*Iy,
+          t4 = t2+t3,
+          t5 = _fx_i,
+          t6 = _fy_i,
+          t7 = _b_i,
+          fy = _K(1,1),
+          fx = _K(0,0);
+
+    J[0] = -Iy*fy-t4*t6*y;
+    J[1] = Ix*fx+t4*t5*x;
+    J[2] = Iy*fy*t5*x-Ix*fx*t6*y;
+    J[3] = Ix*d*t7;
+    J[4] = Iy*d*fy*t5*t7;
+    J[5] = -d*t4*t5*t7;
   }
 
   inline ImagePoint operator()(const Point& p) const
@@ -80,23 +75,24 @@ class DisparitySpaceWarp : public WarpBase<DisparitySpaceWarp>
     return ImagePoint(p[0] + _K(0,2), p[1] + _K(1,2));
   }
 
-
-  inline Matrix44 scalePose(const Matrix44& T) const { return _T_inv * T * _T; }
-
   template <class EigenType> inline
   Matrix44 paramsToPose(const Eigen::MatrixBase<EigenType>& p) const
   {
-    return scalePose(math::TwistToMatrix(p));
+    return math::TwistToMatrix(p);
   }
 
+
+  // no normalization for dspace, we do not need it
+  inline void setNormalization(const Matrix44&) {}
+  inline void setNormalization(const PointVector&) {}
+  inline Matrix44 scalePose(const Matrix44& T) const { return T; }
 
  protected:
   Matrix33 _K;
   Matrix44 _H;
   Matrix44 _G, _G_inv;
-  Matrix44 _T, _T_inv;
 
-  float _fx_i, _fy_i, _b_i;
+  float _fx_i, _fy_i, _b_i, _bf_i;
 }; // DisparitySpaceWarp
 
 }; // bpvo

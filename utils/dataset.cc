@@ -29,7 +29,10 @@ DisparityDataset::DisparityFrame::DisparityFrame(cv::Mat I_, cv::Mat D_, cv::Mat
 
 DisparityDataset::DisparityDataset(std::string conf_fn)
 {
-  THROW_ERROR_IF( !this->init(conf_fn), "failed to initialize DisparityDataset" );
+  ConfigFile cf(conf_fn);
+  _disparity_scale = cf.get<float>("DisparityScale", 1.0/16.0);
+
+  THROW_ERROR_IF( !this->init(cf), "failed to initialize DisparityDataset" );
 }
 
 DisparityDataset::~DisparityDataset() {}
@@ -47,11 +50,11 @@ UniquePointer<DatasetFrame> DisparityDataset::getFrame(int f_i) const
   THROW_ERROR_IF( D.channels() > 1, "disparity must be a single channel" );
   THROW_ERROR_IF( I.size() != D.size(), "frame size mismatch" );
 
-  THROW_ERROR_IF( D.type() != cv::DataType<uint16_t>::type,
-                 "disparity image must be uint16_t");
+  /*THROW_ERROR_IF( D.type() != cv::DataType<uint16_t>::type,
+                 "disparity image must be uint16_t");*/
 
   if(D.type() != cv::DataType<float>::type)
-    D.convertTo(D, CV_32FC1, 1.0/16.0, 0.0);
+    D.convertTo(D, CV_32FC1, _disparity_scale, 0.0);
 
   cv::Mat I_gray = toGray(I);
   return UniquePointer<DatasetFrame>(new DisparityFrame(I_gray, D, I));
@@ -64,16 +67,21 @@ bool DisparityDataset::init(const ConfigFile& cf)
     auto root_dir = fs::expand_tilde(cf.get<std::string>("DataSetRootDirectory"));
     THROW_ERROR_IF( !fs::exists(root_dir), "DataSetRootDirectory does not exist" );
 
-    auto left_fmt = cf.get<std::string>("LeftImageFormat");
-    auto dmap_fmt = cf.get<std::string>("DisparityMapFormat");
+    auto left_fmt = cf.get<std::string>("LeftImageFormat", "");
+    auto dmap_fmt = cf.get<std::string>("DisparityMapFormat", "");
     auto frame_start = cf.get<int>("FirstFrameNumber", 0);
 
-    _image_filenames = make_unique<FileLoader>(root_dir, left_fmt, frame_start);
-    _disparity_filenames = make_unique<FileLoader>(root_dir, dmap_fmt, frame_start);
+    //
+    // allow children to set this later
+    //
+    if(!left_fmt.empty()) {
+      _image_filenames = make_unique<FileLoader>(root_dir, left_fmt, frame_start);
+      _disparity_filenames = make_unique<FileLoader>(root_dir, dmap_fmt, frame_start);
 
-    auto frame = this->getFrame(0);
-    THROW_ERROR_IF( frame == nullptr, "failed to read frame" );
-    _image_size = Dataset::GetImageSize(frame.get());
+      auto frame = this->getFrame(0);
+      THROW_ERROR_IF( frame == nullptr, "failed to read frame" );
+      _image_size = Dataset::GetImageSize(frame.get());
+    }
   } catch(const std::exception& ex)
   {
     Warn("Error %s\n", ex.what());
@@ -84,8 +92,8 @@ bool DisparityDataset::init(const ConfigFile& cf)
 }
 
 StereoDataset::StereoDataset(std::string conf_fn)
-  : _stereo_alg(new StereoAlgorithm(ConfigFile(conf_fn)))
-  , _scale_by( ConfigFile(conf_fn).get<int>("ScaleBy", 1) )
+: _stereo_alg(new StereoAlgorithm(ConfigFile(conf_fn)))
+    , _scale_by( ConfigFile(conf_fn).get<int>("ScaleBy", 1) )
 {
   THROW_ERROR_IF( !this->init(conf_fn), "failed to initialize StereoDataset" );
 }
@@ -115,6 +123,8 @@ UniquePointer<DatasetFrame> StereoDataset::getFrame(int f_i) const
 
   return UniquePointer<DatasetFrame>(new StereoFrame(frame));
 }
+
+const StereoAlgorithm* StereoDataset::stereo() const { return _stereo_alg.get(); }
 
 bool StereoDataset::init(const ConfigFile& cf)
 {

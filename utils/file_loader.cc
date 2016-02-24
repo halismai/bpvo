@@ -1,24 +1,31 @@
 #include "utils/file_loader.h"
 #include "utils/glob.h"
 #include "bpvo/utils.h"
+#include "bpvo/debug.h"
 
 namespace bpvo {
 
 FileLoader::FileLoader(std::string dname, std::string pattern, int frame_start)
     : _frame_start(frame_start), _frame_counter(0)
 {
-  {
-    auto err_msg = Format("directory '%s' does not exist", dname.c_str());
-    THROW_ERROR_IF( !fs::exists(dname), err_msg.c_str());
-  }
+  auto d = fs::expand_tilde(dname + fs::dirsep(dname));
 
-  dname = fs::expand_tilde(dname + fs::dirsep(dname));
+  {
+    auto err_msg = Format("directory '%s' does not exist", d.c_str());
+    THROW_ERROR_IF( !fs::exists(d), err_msg.c_str());
+  }
 
   if(pattern.find('%') == std::string::npos)
   {
-    auto glob_pattern = dname + pattern;
+    auto glob_pattern = d + pattern;
     _files = glob(glob_pattern);
-    // TODO delete the stuff before frame_start
+
+    if(_files.size() > _frame_start) {
+      _files.erase(_files.begin(), _files.begin() + _frame_start);
+    } else {
+      Warn("frame start exceeds the number of frames [%d/%zu]\n",
+           _frame_start, _files.size());
+    }
   } else
   {
     /*
@@ -33,8 +40,9 @@ FileLoader::FileLoader(std::string dname, std::string pattern, int frame_start)
     }
     */
 
-    // delay reading all the filename for large dataests
-    _fmt = dname + pattern;
+    // delay reading all the filename for large dataests and store only the
+    // printf style format needed to load a number frame
+    _fmt = d + pattern;
   }
 }
 

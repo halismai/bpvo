@@ -113,6 +113,8 @@ class DisparityDataset : public Dataset
   UniquePointer<FileLoader> _disparity_filenames;
 
   bool init(const ConfigFile&);
+
+  float _disparity_scale = 1.0 / 16.0;
 }; // DisparityDataset
 
 class StereoAlgorithm;
@@ -141,6 +143,8 @@ class StereoDataset : public Dataset
   inline ImageSize imageSize() const { return _image_size; }
 
   UniquePointer<DatasetFrame> getFrame(int f_i) const;
+
+  const StereoAlgorithm* stereo() const;
 
  protected:
   UniquePointer<StereoAlgorithm> _stereo_alg;

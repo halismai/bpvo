@@ -113,6 +113,9 @@ class BilinearInterp
       _inds[i] = yi*cols + xi;
       float xfyf = xf*yf;
       _interp_coeffs[i] = Vector4(xfyf - yf - xf + 1.0f, xf - xfyf, yf - xfyf, xfyf);
+
+      /*std::cout << "point: " << points[i].transpose() << "->" << p.transpose() << " valid: " << _valid[i] << " ";
+      std::cout << " rows: " << rows << " cols " << cols << "\n";*/
     }
   }
 
@@ -191,6 +194,11 @@ class BilinearInterp
       r_ptr[i + 6] = this->operator()(I1_ptr, i + 6) - I0_ptr[i + 6];
       r_ptr[i + 7] = this->operator()(I1_ptr, i + 7) - I0_ptr[i + 7];
 #endif
+      /*
+      printf("got %f %f %f %f %f %f %f %f\n",
+             r_ptr[i + 0], r_ptr[i + 1], r_ptr[i + 2], r_ptr[i + 3],
+             r_ptr[i + 4], r_ptr[i + 5], r_ptr[i + 6], r_ptr[i + 7]);
+             */
     }
 
 #if defined(WITH_SIMD) && defined(__AVX__)

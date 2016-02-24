@@ -264,6 +264,9 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
   if(!data.solve())
   {
     Warn("Failed to solve system\n");
+    std::cout << data.H << std::endl;
+    std::cout << data.G << std::endl;
+    Fatal("bye\n");
     ret.status = PoseEstimationStatus::kSolverError;
     return ret;
   }

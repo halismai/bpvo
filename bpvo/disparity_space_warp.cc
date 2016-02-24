@@ -19,19 +19,19 @@
  * Contributor: halismai@cs.cmu.edu
  */
 
-
 #include "bpvo/disparity_space_warp.h"
 
 namespace bpvo {
 
 DisparitySpaceWarp::DisparitySpaceWarp(const Matrix33& K, float b)
-    : _K(K), _H(Matrix44::Identity()), _T(Matrix44::Identity()), _T_inv(Matrix44::Identity())
+    : _K(K), _H(Matrix44::Identity())
 {
   const auto fx = K(0,0), fy = K(1,1);
 
   _fx_i = 1.0f / fx;
   _fy_i = 1.0f / fy;
   _b_i = 1.0f / b;
+  _bf_i = 1.0f / (b*fx);
 
   _G <<
       fx, 0, 0, 0,

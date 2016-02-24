@@ -1,5 +1,10 @@
 #include <utils/dataset.h>
+#include <utils/dataset_loader_thread.h>
 #include <utils/program_options.h>
+#include <utils/viz.h>
+
+#include <bpvo/timer.h>
+#include <bpvo/config_file.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/contrib/contrib.hpp>
@@ -8,50 +13,52 @@
 
 using namespace bpvo;
 
-inline cv::Mat ColorizeDisparity(const cv::Mat& src, int num_d = 128)
-{
-  double scale = 16.0 * (255.0 / (16.0 * num_d));
-
-  cv::Mat ret;
-  src.convertTo(ret, CV_8U, scale);
-  cv::applyColorMap(ret, ret, cv::COLORMAP_JET);
-
-  const auto* src_ptr = src.ptr<float>();
-  for(int y = 0; y < ret.rows; ++y)
-  {
-    for(int x = 0; x < ret.cols; ++x)
-    {
-      if(src_ptr[y*src.cols + x] == 0)
-        ret.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0);
-    }
-  }
-
-  return ret;
-}
-
 int main(int argc, char** argv)
 {
   bpvo::ProgramOptions options(argv[0]);
-  options("config,c", "../conf/dataset.cfg", "config file")
+  options("config,c", "../conf/tsukuba_stereo.cfg", "config file")
+      ("numframes,n", int(256), "number of frames to process")
       .parse(argc, argv);
 
-  auto dataset = Dataset::Create(options.get<std::string>("config"));
-
-  std::cout << dataset->calibration() << std::endl;
+  int numframes = options.get<int>("numframes");
+  auto conf_fn  = options.get<std::string>("config");
+  typename DatasetLoaderThread::BufferType buffer(32);
+  DatasetLoaderThread data_loader(Dataset::Create(conf_fn), buffer);
 
   UniquePointer<DatasetFrame> frame;
 
-  int k = 0, f_i = 0;
-  while( (frame = dataset->getFrame(f_i++)) && 'q' != k && 27 != k)
+  int min_d = 0, num_d = 128;
   {
-    cv::imshow("image", frame->image());
-
-    k = 0xff & cv::waitKey(10);
-    if(k == ' ') k = 0xff & cv::waitKey(0);
-
-    fprintf(stdout, "Frame %06d\r", f_i-1); fflush(stdout);
-
+    ConfigFile cf(conf_fn);
+    min_d = cf.get<int>("minDisparity", 0);
+    num_d = cf.get<int>("numberOfDisparities", 128);
   }
+
+  cv::Mat display_image;
+  Timer timer;
+  int k = 0, f_i = 0;
+  while( 'q' != k && 27 != k && f_i < numframes )
+  {
+    if(buffer.pop(&frame, 5))
+    {
+      if(!frame)
+        break; // nullptr frame is the end of the dataset
+
+      colorizeDisparity(frame->disparity(), display_image, min_d, num_d);
+      overlayDisparity(frame->image(), frame->disparity(), display_image,
+                       0.5, min_d, num_d);
+      cv::imshow("disparity", display_image);
+      cv::imshow("image", frame->image());
+      fprintf(stdout, "Frame %06d\r", f_i); fflush(stdout);
+      f_i += 1;
+    }
+
+    k = 0xff & cv::waitKey(1);
+    if(k == ' ') k = 0xff & cv::waitKey(0);
+  }
+
+  auto tt = timer.stop().count() / 1000.0;
+  printf("\nProcessed %d frames @ %0.2f Hz\n", f_i, f_i / tt);
 
   return 0;
 }

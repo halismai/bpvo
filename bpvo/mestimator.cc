@@ -407,18 +407,22 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
         _buffer.push_back(std::fabs(residuals[i]));
     }
 
-#define DO_APPROX_MEDIAN 0
 
     auto z = 1.4826 * (1.0 + 5.0/(_buffer.size()-6));
 
+#define DO_APPROX_MEDIAN 0
 #if DO_APPROX_MEDIAN
     // TODO fix for AlignedVector
+    // does not seem accurate with real testing
     auto m = approximate_median(_buffer, 0.0f, 255.0f, 0.5f);
 #else
     auto m = median(_buffer.begin(), _buffer.end());
 #endif
 
     auto scale = z * m;
+    if(scale < 1e-6)
+      scale = 1.0; // for the case of zero error
+
     _delta_scale = std::fabs(scale - _scale);
     _scale = scale;
   } else {

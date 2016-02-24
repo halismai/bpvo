@@ -33,6 +33,7 @@
 #include <bpvo/trajectory.h>
 #include <bpvo/point_cloud.h>
 #include <bpvo/rigid_body_warp.h>
+#include <bpvo/disparity_space_warp.h>
 #include <bpvo/image_pyramid.h>
 
 #include <vector>
@@ -48,13 +49,19 @@ class VisualOdometry::Impl
   friend class VisualOdometry;
 
  public:
+
 #if defined(WITH_BITPLANES)
   typedef BitPlanes ChannelsT;
 #else
   typedef RawIntensity ChannelsT;
 #endif
 
+#if defined(WITH_DISPARITY_SPACE_WARP)
+  typedef DisparitySpaceWarp WarpT;
+#else
   typedef RigidBodyWarp WarpT;
+#endif
+
   typedef TemplateData_<ChannelsT, WarpT> TData;
   typedef PoseEstimatorGN<TData> PoseEstimatorT_;
   typedef PoseEstimatorBase<PoseEstimatorT_> PoseEstimatorT;

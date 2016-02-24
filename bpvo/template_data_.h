@@ -78,7 +78,8 @@ class TemplateData_
                        float min_saliency = 0.01f,
                        float min_disparity = 1.0f,
                        float max_disparity = 512.0f,
-                       int nms_radius = 1)
+                       int nms_radius = 1,
+                       bool with_normalization = true)
       : _warp(K, baseline)
         , _pyr_level(pyr_level)
         , _min_pixels_for_nms(min_pixels_for_nms)
@@ -86,6 +87,7 @@ class TemplateData_
         , _min_disparity(min_disparity)
         , _max_disparity(max_disparity)
         , _nms_radius(nms_radius)
+        , _with_normalization(with_normalization)
   {
     assert( _pyr_level >= 0 );
     assert( nms_radius > 0 );
@@ -156,6 +158,7 @@ class TemplateData_
   float _min_disparity;
   float _max_disparity;
   int _nms_radius;
+  bool _with_normalization;
 
   JacobianVector _jacobians;
   PointVector _points;
@@ -260,7 +263,8 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
     }
   }
 
-  _warp.setNormalization(_points);
+  if(_with_normalization)
+    _warp.setNormalization(_points);
 }
 
 namespace {

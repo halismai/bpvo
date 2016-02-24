@@ -43,6 +43,7 @@ option(ENABLE_OMIT_FRAME_POINTER "omit frame pointer" OFF)
 option(BUILD_TEST "build the testing stuff" OFF)
 
 option(WITH_BITPLANES "use bitplanes cost" OFF)
+option(WITH_DISPARITY_SPACE_WARP "use disparity space" OFF)
 
 # auto decide release configuration if not set
 if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -106,6 +107,10 @@ list(APPEND MY_LIBRARIES ${Boost_LIBRARIES})
 
 if(WITH_BITPLANES)
   add_definitions(-DWITH_BITPLANES)
+endif()
+
+if(WITH_DISPARITY_SPACE_WARP)
+  add_definitions(-DWITH_DISPARITY_SPACE_WARP)
 endif()
 
 # optional stuff

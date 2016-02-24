@@ -52,9 +52,15 @@ class BoundedBuffer
   bool pop(value_type* item, int wait_time_ms = 1);
 
   /**
-   * \return true if the buffer is full
+   * \return true if the buffer is full (if possible)
    */
   bool full();
+
+  /**
+   * \return the size of the buffer (number of elements) if we are able to get a
+   * lock. If not, we return -1
+   */
+  int size();
 
  private:
   BoundedBuffer(const BoundedBuffer&) = delete;
@@ -110,6 +116,19 @@ bool BoundedBuffer<T>::full()
 
   return false;
 }
+
+template <typename T> inline
+int BoundedBuffer<T>::size()
+{
+  int ret = -1;
+  if(_mutex.try_lock()) {
+    ret = static_cast<int>(_container.size());
+    _mutex.unlock();
+  }
+
+  return ret;
+}
+
 
 }; // bpvo
 
