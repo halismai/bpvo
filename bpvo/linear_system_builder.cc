@@ -31,7 +31,6 @@
 #include <pmmintrin.h>
 #endif
 
-
 namespace bpvo {
 
 class LinearSystemBuilderReduction

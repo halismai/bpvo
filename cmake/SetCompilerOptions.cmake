@@ -75,10 +75,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
 endif()
 
 if(CMAKE_COMPILER_IS_INTEL)
+  addExtraCompilerOptions(-Wall)
+  addExtraCompilerOptions(-Wextra)
   addExtraCompilerOptions(-qopt-report-phase=vec)
   addExtraCompilerOptions(-qopt-report=4)
   addExtraCompilerOptions(-ipo)
   addExtraCompilerOptions(-finline)
+  addExtraCompilerOptions(-inline-forceinline)
   add_definitions(-DNOALIAS)
 endif()
 

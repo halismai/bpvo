@@ -386,6 +386,7 @@ computeResiduals(const Channels& channels, const Matrix44& pose,
   interp.init(_warp, _points, channels[0].rows, channels[0].cols);
 
   residuals.resize(_pixels.size());
+  valid.resize(_pixels.size());
 
   ComputeResidualsBody<CN> func(channels, interp, numPoints(),
                                 _pixels.data(), residuals.data());

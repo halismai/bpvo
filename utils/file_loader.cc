@@ -20,7 +20,7 @@ FileLoader::FileLoader(std::string dname, std::string pattern, int frame_start)
     auto glob_pattern = d + pattern;
     _files = glob(glob_pattern);
 
-    if(_files.size() > _frame_start) {
+    if((int) _files.size() > _frame_start) {
       _files.erase(_files.begin(), _files.begin() + _frame_start);
     } else {
       Warn("frame start exceeds the number of frames [%d/%zu]\n",

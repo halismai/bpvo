@@ -66,7 +66,7 @@ struct AlignedVector
   typedef std::vector<T, allocator_type> type;
 }; // AlignedVector
 
-typedef typename AlignedVector<uint32_t>::type ValidVector;
+typedef typename AlignedVector<uint8_t>::type ValidVector;
 typedef typename AlignedVector<float>::type   ResidualsVector;
 typedef ResidualsVector      WeightsVector;
 

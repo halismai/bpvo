@@ -25,7 +25,7 @@ static cv::Mat toGray(const cv::Mat& src)
 
 DisparityDataset::DisparityFrame::DisparityFrame() {}
 DisparityDataset::DisparityFrame::DisparityFrame(cv::Mat I_, cv::Mat D_, cv::Mat I_orig_)
-    : I(I_), D(D_), I_orig(I_orig_) {}
+    : I_orig(I_orig_), I(I_), D(D_) {}
 
 DisparityDataset::DisparityDataset(std::string conf_fn)
 {

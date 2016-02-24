@@ -401,9 +401,10 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
   {
     _buffer.clear();
 
-    for(size_t i = 0; i < residuals.size(); ++i)
+    size_t npts = residuals.size();
+    for(size_t i = 0; i < npts; ++i)
     {
-      if(valid[i])
+      if(valid[i] != 0)
         _buffer.push_back(std::fabs(residuals[i]));
     }
 

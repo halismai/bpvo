@@ -33,11 +33,13 @@ int main(int argc, char** argv)
     const auto& frame = data[ i % data.size() ];
 
     Timer timer;
-    vo.addFrame(frame->image().ptr<uint8_t>(), frame->disparity().ptr<float>());
+    auto result = vo.addFrame(frame->image().ptr<uint8_t>(), frame->disparity().ptr<float>());
     auto t = timer.stop().count();
     total_time += t / 1000.0;
 
-    fprintf(stdout, "Frame %03d/%d @ %0.2f Hz\r", i, numframes, i / total_time);
+    int num_iters = result.optimizerStatistics.front().numIterations;
+    fprintf(stdout, "Frame %03d/%d @ %0.2f Hz %04d\r", i, numframes,
+            i / total_time, num_iters);
     fflush(stdout);
   }
 
