@@ -87,6 +87,8 @@ class Vector6
   static inline Vector6 Zero() { return Vector6(0.0f); }
   static inline Vector6 Ones() { return Vector6(1.0f); }
 
+  static void RankUpdate(const Vector6& J, float w, float* buf);
+
  protected:
   alignas(DefaultAlignment) float _data[8];
 }; // Vector6

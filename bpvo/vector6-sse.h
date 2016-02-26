@@ -188,6 +188,19 @@ inline Vector6& Vector6::set(float v)
   return *this;
 }
 
+inline Vector6& Vector6::set(const float* p)
+{
+#if defined(__AVX__)
+  _mm256_store_ps(_data, _mm256_loadu_ps(p));
+#else
+  _mm_store_ps(_data + 0, _mm_loadu_ps(p));
+  _data[4] = p[4];
+  _data[5] = p[5];
+#endif
+
+  return *this;
+}
+
 inline Vector6& Vector6::set(float a0, float a1, float a2, float a3, float a4, float a5)
 {
 #if defined(__AVX__)
@@ -224,6 +237,31 @@ inline Vector6 operator-(const Vector6& v)
 {
   static const auto sign_mask = Vector6(-0.0f);
   return sign_mask ^ v;
+}
+
+inline void Vector6::RankUpdate(const Vector6& J, float w, float* data)
+{
+  __m128 wwww = _mm_set1_ps(w);
+  __m128 v1234 = _mm_load_ps(J.data());
+  __m128 v56xx = _mm_load_ps(J.data() + 4);
+
+  __m128 v1212 = _mm_movelh_ps(v1234, v1234);
+  __m128 v3434 = _mm_movehl_ps(v1234, v1234);
+  __m128 v5656 = _mm_movelh_ps(v56xx, v56xx);
+
+  __m128 v1122 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v1212, v1212));
+
+  _mm_store_ps(data + 0, _mm_add_ps(_mm_load_ps(data + 0), _mm_mul_ps(v1122, v1212)));
+  _mm_store_ps(data + 4, _mm_add_ps(_mm_load_ps(data + 4), _mm_mul_ps(v1122, v3434)));
+  _mm_store_ps(data + 8, _mm_add_ps(_mm_load_ps(data + 8), _mm_mul_ps(v1122, v5656)));
+
+  __m128 v3344 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v3434, v3434));
+
+  _mm_store_ps(data + 12, _mm_add_ps(_mm_load_ps(data + 12), _mm_mul_ps(v3344, v3434)));
+  _mm_store_ps(data + 16, _mm_add_ps(_mm_load_ps(data + 16), _mm_mul_ps(v3344, v5656)));
+
+  __m128 v5566 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v5656, v5656));
+  _mm_store_ps(data + 20, _mm_add_ps(_mm_load_ps(data + 20), _mm_mul_ps(v5566, v5656)));
 }
 
 
