@@ -59,7 +59,7 @@ class LinearSystemBuilderReduction
                    const ResidualsVector& W, const ValidVector& V,
                    Hessian* H = nullptr, Gradient* G = nullptr);
 
-  FORCE_INLINE void rankUpdatePoint(int i, float* H_data, Gradient& G, float& res_norm);
+  FORCE_INLINE void rankUpdatePoint(int i, float* H_data, float* G_data, float& res_norm);
 
  protected:
   const JacobianVector& _J;
@@ -132,9 +132,10 @@ void LinearSystemBuilderReduction::setZero()
 }
 
 FORCE_INLINE void LinearSystemBuilderReduction::
-rankUpdatePoint(int i, float* data, Gradient& G, float& res_norm)
+rankUpdatePoint(int i, float* data, float* G, float& res_norm)
 {
   float w = _W[i] * static_cast<float>( _valid[i] );
+  float wR = w *_R[i];
 
 #if defined(WITH_SIMD)
   __m128 wwww = _mm_set1_ps(w);
@@ -158,14 +159,23 @@ rankUpdatePoint(int i, float* data, Gradient& G, float& res_norm)
 
   __m128 v5566 = _mm_mul_ps(wwww, _mm_unpacklo_ps(v5656, v5656));
   _mm_store_ps(data + 20, _mm_add_ps(_mm_load_ps(data + 20), _mm_mul_ps(v5566, v5656)));
+
+  __m128 g1 = _mm_load_ps(G);
+  __m128 g2 = _mm_load_ps(G + 4);
+  __m128 wr = _mm_mul_ps(wwww, _mm_set1_ps(_R[i]));
+
+  _mm_store_ps(G, _mm_add_ps(g1, _mm_mul_ps(wr, v1234)));
+  _mm_store_ps(G+4, _mm_add_ps(g2, _mm_mul_ps(wr, v56xx)));
+
 #else
   typedef Eigen::Map<Hessian, Eigen::Aligned> HessianMap;
+  typedef Eigen::Map<Gradient, Eigen::Aligned> GradientMap;
   HessianMap(data).noalias() += _W[i] * _J[i].transpose() * _J[i];
+  GradientMap(G).noalias() += wR[i] * _J[i].transpose();
 #endif
 
-  float wR = w *_R[i];
-  G.noalias() += wR * _J[i].transpose(); // bottleneck here
   res_norm += wR * _R[i];
+
 }
 
 auto LinearSystemBuilderReduction::toEigen(const float* data) -> Hessian
@@ -214,13 +224,18 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
     h_data = H->data();
 #endif
 
+    alignas(16) float G_data[8];
+    std::fill_n(G_data, 8, 0.0f);
+
     for(size_t i = 0; i < R.size(); ++i) {
-      reduction.rankUpdatePoint(i, h_data, *G, ret);
+      reduction.rankUpdatePoint(i, h_data, G_data, ret);
     }
 
 #if defined(WITH_SIMD)
     *H = LinearSystemBuilderReduction::toEigen(h_data);
 #endif
+
+    memcpy(G->data(), G_data, 6 * sizeof(float));
 
     return ret;
 #endif
