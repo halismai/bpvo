@@ -52,7 +52,7 @@ class RigidBodyWarp : public WarpBase<RigidBodyWarp>
           cy = _K(1,2);
     float Bf = _b * fx;
 
-    float Z = Bf / d;
+    float Z = Bf * (1.0 / d);
     float X = (x - cx) * Z * (1.0f / fx);
     float Y = (y - cy) * Z * (1.0f / fy);
 
@@ -138,6 +138,10 @@ class RigidBodyWarp : public WarpBase<RigidBodyWarp>
   }
 
   ImagePointVector warpPoints(const PointVector&) const;
+
+  /**
+   */
+  int computeJacobian(const PointVector&, const float* IxIy, float* ret) const;
 
  protected:
   Matrix33 _K;

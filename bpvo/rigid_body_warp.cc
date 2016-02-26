@@ -44,4 +44,99 @@ auto RigidBodyWarp::warpPoints(const PointVector& points) const -> ImagePointVec
   return ret;
 }
 
+int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy, float* ret) const
+{
+  int N = points.size();
+  Eigen::Matrix<float, Eigen::Dynamic, 6> J(N, 6);
+
+  float fx = _K(0,0), fy = _K(1,1);
+  float s = _T(0,0), c1 = _T_inv(0,3), c2 = _T_inv(1,3), c3 = _T_inv(2,3);
+
+  {
+    {
+      float* p = &J(0,0);
+      for(int i = 0; i < N; ++i)
+      {
+        float X = points[i].x(),
+              Y = points[i].y(),
+              Z = points[i].z(),
+              Ix = IxIy[2*i + 0],
+              Iy = IxIy[2*i + 1];
+
+        p[i] = -1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(Y-c2)-(Iy*fy*(Z-c3))/Z;
+      }
+    }
+
+    {
+      float* p = &J(0,1);
+      for(int i = 0; i < N; ++i)
+      {
+        float X = points[i].x(),
+              Y = points[i].y(),
+              Z = points[i].z(),
+              Ix = IxIy[2*i + 0],
+              Iy = IxIy[2*i + 1];
+        p[i] = 1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy)*(X-c1)+(Ix*fx*(Z-c3))/Z;
+      }
+    }
+
+    {
+      float* p = &J(0,2);
+      for(int i = 0; i < N; ++i)
+      {
+        float X = points[i].x(),
+              Y = points[i].y(),
+              Z = points[i].z(),
+              Ix = IxIy[2*i + 0],
+              Iy = IxIy[2*i + 1];
+        p[i] = (Iy*fy*(X-c1))/Z-(Ix*fx*(Y-c2))/Z;
+      }
+    }
+
+    {
+      float* p = &J(0,3);
+      for(int i = 0; i < N; ++i)
+      {
+        float X = points[i].x(),
+              Y = points[i].y(),
+              Z = points[i].z(),
+              Ix = IxIy[2*i + 0],
+              Iy = IxIy[2*i + 1];
+        p[i] = (Ix*fx)/(Z*s);
+      }
+    }
+
+    {
+      float* p = &J(0,4);
+      for(int i = 0; i < N; ++i)
+      {
+        float X = points[i].x(),
+              Y = points[i].y(),
+              Z = points[i].z(),
+              Ix = IxIy[2*i + 0],
+              Iy = IxIy[2*i + 1];
+        p[i] = (Iy*fy)/(Z*s);
+      }
+    }
+
+    {
+      float* p = &J(0,5);
+      for(int i = 0; i < N; ++i)
+      {
+        float X = points[i].x(),
+              Y = points[i].y(),
+              Z = points[i].z(),
+              Ix = IxIy[2*i + 0],
+              Iy = IxIy[2*i + 1];
+        p[i] = -(1.0f/(Z*Z)*(Ix*X*fx+Iy*Y*fy))/s;
+      }
+    }
+  }
+
+  Eigen::Matrix<float,6,Eigen::Dynamic> Jt = J.transpose();
+  memcpy(ret, Jt.data(), 6*N*sizeof(float));
+
+  return N;
+}
+
 } // bpvo

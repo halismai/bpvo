@@ -56,6 +56,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
   addExtraCompilerOptions(-mtune=native)
   addExtraCompilerOptions(-mfpmath=sse)
 
+  addExtraCompilerOptions(-falign-functions=16)
+  addExtraCompilerOptions(-falign-loops=16)
+
   #if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
   #  if(BUILD_STATIC)
   #    addExtraCompilerOptions(-fwhole-program)

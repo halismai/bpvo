@@ -103,6 +103,10 @@ void gradientAbsoluteMagnitude(const cv::Mat_<float>& src, cv::Mat_<float>& dst)
   auto src_ptr = src.ptr<const float>();
   auto dst_ptr = dst.ptr<float>();
 
+#if defined(__AVX__)
+  _mm256_zeroupper();
+#endif
+
   if(simd::isAligned<16>(src_ptr) && simd::isAligned<16>(dst_ptr) && simd::isAligned<16>(cols))
   {
     gradientAbsoluteMagnitude<true>(src_ptr, rows, cols, dst_ptr);

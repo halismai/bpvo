@@ -38,8 +38,8 @@ StereoFrame MakeSynthetic(const StereoCalibration& calib, const Matrix44& T,
       float xf = Xw[0] / Xw[2];
       float yf = Xw[1] / Xw[2];
 
-      int xi = static_cast<int>( xf + 0.5 );
-      int yi = static_cast<int>( yf + 0.5 );
+      int xi = static_cast<int>( xf );
+      int yi = static_cast<int>( yf );
 
       if(xi >= 0 && xi < I0.cols-1 && yi >= 0 && yi < I0.rows-1)
       {
@@ -86,7 +86,9 @@ int main()
   cv::waitKey(10);
 
   vo.addFrame(f0.image().ptr<uint8_t>(), f0.disparity().ptr<float>());
-  auto result = vo.addFrame(f1->image().ptr<uint8_t>(), f1->disparity().ptr<float>());
+  auto result = vo.addFrame(f0.image().ptr<uint8_t>(), f0.disparity().ptr<float>());
+
+  result = vo.addFrame(f1->image().ptr<uint8_t>(), f1->disparity().ptr<float>());
 
   auto pose_error = (math::MatrixToTwist(result.pose.inverse() * T));
 

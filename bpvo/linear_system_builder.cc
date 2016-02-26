@@ -194,7 +194,7 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
   if(H && G) {
     LinearSystemBuilderReduction reduction(J, R, W, V);
 
-#if (defined(WITH_BITPLANES) && defined(WITH_TBB))
+#if (defined(WITH_TBB))
     tbb::parallel_reduce(tbb::blocked_range<int>(0, (int) R.size()), reduction);
     *H = reduction.hessian();
     *G = reduction.gradient();
@@ -299,6 +299,10 @@ float LinearSystemBuilder::Run(const JacobianVector& J, const ResidualsVector& r
 
   auto valid2 = residuals.size() != valid.size() ? makeValidFlags(valid, nc) : valid;
   assert( valid2.size() == residuals.size() );
+
+#if defined(__AVX__)
+  _mm256_zeroupper();
+#endif
 
   float res_sq_norm = LinearSystemBuilderReduction::Run(J, residuals, weights, valid, A, b);
   return std::sqrt(res_sq_norm);

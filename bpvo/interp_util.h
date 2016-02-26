@@ -33,6 +33,7 @@ class BilinearInterp
 {
  public:
   typedef Eigen::Matrix<T,4,1> Vector4;
+  typedef typename EigenAlignedContainer<Vector4>::type CoeffsVector;
 
  public:
   /**
@@ -102,9 +103,18 @@ class BilinearInterp
     _stride = cols;
     resize(points.size());
 
+#if defined(__AVX__)
+    _mm256_zeroupper();
+#endif
+
     for(size_t i = 0; i < points.size(); ++i)
     {
       auto p = warp(points[i]);
+
+      /*if(i == 72) {
+        std::cout << "GOT : " << p.transpose() << std::endl;
+      }*/
+
       float xf = p.x(), yf = p.y();
       int xi = static_cast<int>(xf), yi = static_cast<int>(yf);
       xf -= xi;
@@ -127,8 +137,11 @@ class BilinearInterp
                   "matrix must be in ColMajor");
 
     resize(points.size());
+    /*
     imwarp_precomp(ImageSize(rows, cols), pose.data(), points[0].data(),
-                   points.size(), _inds.data(), _valid.data(), _interp_coeffs[0].data());
+                   points.size(), _inds.data(), _valid.data(), _interp_coeffs[0].data());*/
+    imwarp_init_sse4(ImageSize(rows, cols), pose.data(), points[0].data(), points.size(),
+                     _inds.data(), _valid.data(), _interp_coeffs[0].data());
   }
 
   /**
@@ -209,9 +222,16 @@ class BilinearInterp
   inline const ValidVector& valid() const { return _valid; }
   inline       ValidVector& valid()       { return _valid; }
 
+  inline const std::vector<int>& indices() const { return _inds; }
+
+  inline const CoeffsVector& getInterpCoeffs() const
+  {
+    return _interp_coeffs;
+  }
+
  protected:
   // [(1-yf)*(1-xf), (1-yf)*xf, yf*(1-xf), xf]
-  typename EigenAlignedContainer<Vector4>::type _interp_coeffs;
+  CoeffsVector _interp_coeffs;
   std::vector<int> _inds;       //< yi*cols + xi
   ValidVector     _valid; //< valid flags
   int _stride;

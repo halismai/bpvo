@@ -29,9 +29,11 @@ int main()
   float b = 0.1;
 
 
-  T(0,3) = 0.001;
+  /*T(0,3) = 0.001;
   T(1,3) = 0.002;
   T(2,3) = 0.003;
+  */
+
   RigidBodyWarp warp(K, b);
   warp.setPose(T);
 
@@ -51,6 +53,12 @@ int main()
     Iw.push_back( interp(I_ptr, i) );
   }
 
+  auto C1_ = interp.getInterpCoeffs();
+  decltype(C1_) C1(C1_.size());
+  for(size_t i = 0; i < C1_.size(); ++i)
+    C1[i] = C1_[i];
+
+
   float f = std::count(interp.valid().begin(), interp.valid().end(), 1) /
       (float) interp.valid().size();
   printf("got %f\n", f);
@@ -61,6 +69,11 @@ int main()
     Iw2.push_back( interp(I_ptr, i) );
   }
 
+  auto C2_ = interp.getInterpCoeffs();
+  decltype(C2_) C2(C2_.size());
+  for(size_t i = 0; i < C2_.size(); ++i)
+    C2[i] = C2_[i];
+
   f = std::count(interp.valid().begin(), interp.valid().end(), 1) /
       (float) interp.valid().size();
   printf("got %f\n", f);
@@ -70,10 +83,24 @@ int main()
   for(size_t i = 0; i < Iw.size(); ++i) {
     diff.push_back(std::abs(Iw[i] - Iw2[i]));
     if(diff.back() > 1e-3) {
-      printf("%zu %f %f %f\n", i, Iw[i], Iw2[i], diff.back());
+      //printf("%zu %f %f %f\n", i, Iw[i], Iw2[i], diff.back());
       ++n_bad;
     }
   }
+
+  for(size_t i = 0 ; i < C1.size(); ++i)
+  {
+    auto d = (C1[i] - C2[i]).norm();
+    if(d > 1e-3)
+    {
+      printf("c diff %f at point %zu [%f,%f,%f]\n", d, i,
+             points[i].x(), points[i].y(), points[i].z());
+      std::cout << C1[i].transpose() << std::endl;
+      std::cout << C2[i].transpose() << std::endl;
+      exit(0);
+    }
+  }
+
 
 
   for(size_t i = Iw.size()-3; i < Iw.size(); ++i) {
@@ -82,6 +109,10 @@ int main()
 
   printf("diff %f\n", Eigen::VectorXf::Map(diff.data(), diff.size()).norm());
   printf("percent off %0.2f%%\n", 100.0f*n_bad/(float) diff.size());
+
+  printf("n_bad %d\n", n_bad);
+
+  return 0;
 
 
   {

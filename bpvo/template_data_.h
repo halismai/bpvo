@@ -28,7 +28,9 @@
 #include <bpvo/imgproc.h>
 #include <bpvo/math_utils.h>
 #include <bpvo/interp_util.h>
+#include <bpvo/interp_util_cv.h>
 #include <bpvo/parallel.h>
+#include <bpvo/photo_error.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -180,6 +182,7 @@ class TemplateData_
 
   cv::Mat_<float> _buffer; // buffer to compute saliency maps
   std::vector<int> _inds;  // linear indices into valid points
+  PhotoError _photo_error;
 
   /**
    */
@@ -300,14 +303,21 @@ struct SetTemplateDataBody : public ParallelForBody
       auto P_ptr = _pixels.data() + c*n;
       auto J_ptr = _jacobians.data() + c*n;
 
+      std::vector<float> IxIy(2*n);
       for(int i = 0; i < n; ++i)
       {
         auto ii = _inds[i];
         P_ptr[i] = c_ptr[ii];
         float Ix = 0.5f * (c_ptr[ii+1] - c_ptr[ii-1]),
               Iy = 0.5f * (c_ptr[ii+stride] - c_ptr[ii-stride]);
-        _warp.jacobian(_points[i], Ix, Iy, J_ptr[i].data());
+        //_warp.jacobian(_points[i], Ix, Iy, J_ptr[i].data());
+        IxIy[2*i + 0] = Ix;
+        IxIy[2*i + 1] = Iy;
       }
+
+      int i = _warp.computeJacobian(_points, IxIy.data(), J_ptr->data());
+      for( ; i < n; ++i)
+        _warp.jacobian(_points[i], IxIy[2*i + 0], IxIy[2*i + 1], J_ptr[i].data());
     }
   }
 
@@ -347,10 +357,11 @@ template <class Channels>
 class ComputeResidualsBody : public ParallelForBody
 {
  public:
-  ComputeResidualsBody(const Channels& cn, const BilinearInterp<float>& interp,
+  ComputeResidualsBody(const Channels& cn, const PhotoError& photo_error,
                        int num_points, const float* pixels, float* residuals)
-      : _channels(cn)
-      , _interp(interp)
+      : ParallelForBody()
+      , _channels(cn)
+      , _photo_error(photo_error)
       , _num_points(num_points)
       , _pixels(pixels)
       , _residuals(residuals) {}
@@ -360,16 +371,13 @@ class ComputeResidualsBody : public ParallelForBody
     for(int c = range.begin(); c != range.end(); ++c)
     {
       int off = c * _num_points;
-      auto I0_ptr = _pixels + off;
-      auto I1_ptr = _channels.channelData(c);
-      auto r_ptr = _residuals + off;
-      _interp.run(I0_ptr, I1_ptr, r_ptr);
+      _photo_error.run(_pixels + off, _channels[c], _residuals + off);
     }
   }
 
  protected:
   const Channels& _channels;
-  const BilinearInterp<float>& _interp;
+  const PhotoError& _photo_error;
   int _num_points;
   const float* _pixels;
   float* _residuals;
@@ -381,18 +389,14 @@ computeResiduals(const Channels& channels, const Matrix44& pose,
                  ResidualsVector& residuals, ValidVector& valid)
 {
   _warp.setPose(pose);
-
-  BilinearInterp<float> interp;
-  interp.init(_warp, _points, channels[0].rows, channels[0].cols);
+  valid.resize(_points.size());
+  _photo_error.init(_warp.P(), _points, valid, channels[0].rows, channels[0].cols);
 
   residuals.resize(_pixels.size());
-  valid.resize(_pixels.size());
-
-  ComputeResidualsBody<CN> func(channels, interp, numPoints(),
+  ComputeResidualsBody<CN> func(channels, _photo_error, numPoints(),
                                 _pixels.data(), residuals.data());
-  parallel_for(Range(0, NumChannels), func);
 
-  valid.swap(interp.valid());
+  parallel_for(Range(0, NumChannels), func);
 }
 
 }; // bpvo

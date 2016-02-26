@@ -9,6 +9,7 @@ T = [...
   0 0 s -s*c3; ...
   0 0 0 1];
 
+%T = eye(4);
 V = se3_generators;
 P = [X; Y; Z; 1];
 

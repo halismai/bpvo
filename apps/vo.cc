@@ -80,7 +80,7 @@ int main(int argc, char** argv)
   int f_i = 0;
   while(f_i < max_frames)
   {
-    if(image_buffer.pop(&frame, 5))
+    if(image_buffer.pop(&frame, 2))
     {
       if(!frame)
       {
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
                          0.5f, min_disparity, num_disparities);
 
         cv::imshow("image", display_image);
-        int k = 0xff & cv::waitKey(2);
+        int k = 0xff & cv::waitKey(1);
         if(k == ' ') k = cv::waitKey(0);
         if(k == 'q' || k == 27)
           break;

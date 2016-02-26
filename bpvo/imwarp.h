@@ -21,6 +21,22 @@ void imwarp_precomp(const ImageSize&, const float* T, const float* xyzw,
                     int N, int* inds, typename ValidVector::value_type* valid,
                     float* coeffs);
 
+void imwarp_init_sse4(const ImageSize&, const float* P, const float* xyzw,
+                      int N, int* inds, typename ValidVector::value_type* valid,
+                      float* coeffs);
+
+/**
+ * P 4x4
+ * xyzw [4xN]
+ *
+ * \return number of points processed
+ */
+int warpPoints(const float* P, const float* xyzw, int N, float* uv);
+
+int computeInterpCoeffs(const float* uv, int N, float* c);
+int computeInterpCoeffs(const float* uv, int N, float* c, int* inds,
+                        typename ValidVector::value_type* valid);
+
 }; // bpvo
 
 #endif // BPVO_IMWARP_H

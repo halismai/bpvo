@@ -65,7 +65,8 @@ __m128 tform_point(__m128 p, const __m128& p0, const __m128& p1,
 static inline __m128i Floor(__m128 x)
 {
 #if USE_FLOOR && defined(__SSE4_1__)
-  return _mm_cvtps_epi32( _mm_floor_ps(x) );
+  //return _mm_cvtps_epi32( _mm_floor_ps(x) );
+  return _mm_cvtps_epi32( _mm_add_ps(x, _mm_set1_ps(0.5f) ) );
 #else
   return _mm_castps_si128( x );
 #endif
@@ -195,11 +196,10 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
     xf -= static_cast<float>( xi );
     yf -= static_cast<float>( yi );
 
-    Eigen::Map<Eigen::Vector4f,Eigen::Aligned>(coeffs + 4*i) = Eigen::Vector4f(
-        (1.0 - yf) * (1.0 - xf),
-        (1.0 - yf) * xf,
-        yf * (1.0 - xf),
-        yf * xf);
+    float xfyf = xf*yf;
+
+    Eigen::Map<Eigen::Vector4f,Eigen::Aligned>(coeffs + 4*i) =
+        Eigen::Vector4f(xfyf - yf - xf + 1.0f, xf - xfyf, yf - xfyf, xfyf);
 
     valid[i] = (xi >= 0) && (xi < w-1) && (yi >= 0) && (yi < h-1);
   }
