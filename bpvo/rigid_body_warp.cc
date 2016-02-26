@@ -55,6 +55,35 @@ FORCE_INLINE __m128 div_ps(__m128 a, __m128 b)
 #undef USE_RCP
 }
 
+static inline
+void swizzlePoints(const float* xyzw, int N, float* xp, float* yp, float* zp)
+{
+  __m128 x, y, z, a, b, x1, x2, x3, x4;
+  for(int i = 0;  i <= N-4; i += 4, xyzw += 16, xp += 4, yp += 4, zp += 4)
+  {
+    x1 = _mm_load_ps(xyzw + 0);
+    x2 = _mm_load_ps(xyzw + 4);
+    x3 = _mm_load_ps(xyzw + 8);
+    x4 = _mm_load_ps(xyzw + 12);
+
+    a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(0,0,0,0));
+    b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(0,0,0,0));
+    x = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+
+    a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(1,1,1,1));
+    b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(1,1,1,1));
+    y = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+
+    a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(2,2,2,2));
+    b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(2,2,2,2));
+    z = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+
+    _mm_store_ps(xp, x);
+    _mm_store_ps(yp, y);
+    _mm_store_ps(zp, z);
+  }
+}
+
 int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy, float* ret) const
 {
   int N = points.size();
@@ -72,32 +101,26 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
 
   static const __m128 SIGN_MASK = _mm_set1_ps(-0.0);
 
+  _x_data.resize(N);
+  _y_data.resize(N);
+  _z_data.resize(N);
+
+  swizzlePoints(points[0].data(), N, _x_data.data(), _y_data.data(), _z_data.data());
 
   {
     {
       float* p = &J(0,0);
-      const float* xyzw = points[0].data();
       const float* IxIy_p = IxIy;
+      const float* xp = _x_data.data();
+      const float* yp = _y_data.data();
+      const float* zp = _z_data.data();
 
-      __m128 x, y, z, a, b, Ix, Iy, G1, G2;
-      for(int i = 0; i <= N-4; i += 4, xyzw += 16, IxIy_p += 8, p += 4)
+      __m128 x, y, z, Ix, Iy, G1, G2;
+      for(int i = 0; i <= N-4; i += 4, IxIy_p += 8, p += 4, xp += 4, yp += 4, zp += 4)
       {
-        auto x1 = _mm_load_ps(xyzw +  0),
-             x2 = _mm_load_ps(xyzw +  4),
-             x3 = _mm_load_ps(xyzw +  8),
-             x4 = _mm_load_ps(xyzw +  12);
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(0,0,0,0));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(0,0,0,0));
-        x = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(1,1,1,1));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(1,1,1,1));
-        y = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(2,2,2,2));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(2,2,2,2));
-        z = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+        x = _mm_load_ps(xp);
+        y = _mm_load_ps(yp);
+        z = _mm_load_ps(zp);
 
         G1 = _mm_load_ps(IxIy_p + 0);
         G2 = _mm_load_ps(IxIy_p + 4);
@@ -125,27 +148,17 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
 
     {
       float* p = &J(0,1);
-      const float* xyzw = points[0].data();
       const float* IxIy_p = IxIy;
-      __m128 x, y, z, a, b, Ix, Iy, G1, G2;
-      for(int i = 0; i <= N-4; i += 4, xyzw += 16, IxIy_p += 8, p += 4)
+      const float* xp = _x_data.data();
+      const float* yp = _y_data.data();
+      const float* zp = _z_data.data();
+
+      __m128 x, y, z, Ix, Iy, G1, G2;
+      for(int i = 0; i <= N-4; i += 4, IxIy_p += 8, p += 4, xp += 4, yp += 4, zp += 4)
       {
-        auto x1 = _mm_load_ps(xyzw +  0),
-             x2 = _mm_load_ps(xyzw +  4),
-             x3 = _mm_load_ps(xyzw +  8),
-             x4 = _mm_load_ps(xyzw +  12);
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(0,0,0,0));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(0,0,0,0));
-        x = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(1,1,1,1));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(1,1,1,1));
-        y = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(2,2,2,2));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(2,2,2,2));
-        z = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+        x = _mm_load_ps(xp);
+        y = _mm_load_ps(yp);
+        z = _mm_load_ps(zp);
 
         G1 = _mm_load_ps(IxIy_p + 0);
         G2 = _mm_load_ps(IxIy_p + 4);
@@ -166,27 +179,18 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
 
     {
       float* p = &J(0,2);
-      const float* xyzw = points[0].data();
       const float* IxIy_p = IxIy;
-      __m128 x, y, z, a, b, Ix, Iy, G1, G2;
-      for(int i = 0; i <= N-4; i += 4, xyzw += 16, IxIy_p += 8, p += 4)
+      const float* xp = _x_data.data();
+      const float* yp = _y_data.data();
+      const float* zp = _z_data.data();
+
+      __m128 x, y, z, Ix, Iy, G1, G2;
+      for(int i = 0; i <= N-4; i += 4,  IxIy_p += 8, p += 4, xp += 4, yp += 4, zp += 4)
       {
-        auto x1 = _mm_load_ps(xyzw +  0),
-             x2 = _mm_load_ps(xyzw +  4),
-             x3 = _mm_load_ps(xyzw +  8),
-             x4 = _mm_load_ps(xyzw +  12);
 
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(0,0,0,0));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(0,0,0,0));
-        x = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(1,1,1,1));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(1,1,1,1));
-        y = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(2,2,2,2));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(2,2,2,2));
-        z = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+        x = _mm_load_ps(xp);
+        y = _mm_load_ps(yp);
+        z = _mm_load_ps(zp);
 
         G1 = _mm_load_ps(IxIy_p + 0);
         G2 = _mm_load_ps(IxIy_p + 4);
@@ -206,19 +210,13 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
 
     {
       float* p = &J(0,3);
-      const float* xyzw = points[0].data();
       const float* IxIy_p = IxIy;
-      __m128 z, a, b, Ix, G1, G2;
-      for(int i = 0; i <= N-4; i += 4, xyzw += 16, IxIy_p += 8, p += 4)
-      {
-        auto x1 = _mm_load_ps(xyzw +  0),
-             x2 = _mm_load_ps(xyzw +  4),
-             x3 = _mm_load_ps(xyzw +  8),
-             x4 = _mm_load_ps(xyzw +  12);
+      const float* zp = _z_data.data();
 
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(2,2,2,2));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(2,2,2,2));
-        z = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+      __m128 z, Ix, G1, G2;
+      for(int i = 0; i <= N-4; i += 4, IxIy_p += 8, p += 4, zp += 4)
+      {
+        z = _mm_load_ps(zp);
 
         G1 = _mm_load_ps(IxIy_p + 0);
         G2 = _mm_load_ps(IxIy_p + 4);
@@ -233,19 +231,12 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
 
     {
       float* p = &J(0,4);
-      const float* xyzw = points[0].data();
       const float* IxIy_p = IxIy;
-      __m128 z, a, b, Iy, G1, G2;
-      for(int i = 0; i <= N-4; i += 4, xyzw += 16, IxIy_p += 8, p += 4)
+      const float* zp = _z_data.data();
+      __m128 z, Iy, G1, G2;
+      for(int i = 0; i <= N-4; i += 4, IxIy_p += 8, p += 4, zp += 4)
       {
-        auto x1 = _mm_load_ps(xyzw +  0),
-             x2 = _mm_load_ps(xyzw +  4),
-             x3 = _mm_load_ps(xyzw +  8),
-             x4 = _mm_load_ps(xyzw +  12);
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(2,2,2,2));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(2,2,2,2));
-        z = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+        z = _mm_load_ps(zp);
 
         G1 = _mm_load_ps(IxIy_p + 0);
         G2 = _mm_load_ps(IxIy_p + 4);
@@ -260,28 +251,18 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
 
     {
       float* p = &J(0,5);
-      const float* xyzw = points[0].data();
       const float* IxIy_p = IxIy;
-      __m128 x, y, z, a, b, Ix, Iy, G1, G2;
+      const float* xp = _x_data.data();
+      const float* yp = _y_data.data();
+      const float* zp = _z_data.data();
+
+      __m128 x, y, z, Ix, Iy, G1, G2;
       __m128 s_i = _mm_set1_ps(1.0 / s);
-      for(int i = 0; i <= N-4; i += 4, xyzw += 16, IxIy_p += 8, p += 4)
+      for(int i = 0; i <= N-4; i += 4, IxIy_p += 8, p += 4, xp += 4, yp += 4, zp += 4)
       {
-        auto x1 = _mm_load_ps(xyzw +  0),
-             x2 = _mm_load_ps(xyzw +  4),
-             x3 = _mm_load_ps(xyzw +  8),
-             x4 = _mm_load_ps(xyzw +  12);
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(0,0,0,0));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(0,0,0,0));
-        x = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(1,1,1,1));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(1,1,1,1));
-        y = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
-
-        a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(2,2,2,2));
-        b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(2,2,2,2));
-        z = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
+        x = _mm_load_ps(xp);
+        y = _mm_load_ps(yp);
+        z = _mm_load_ps(zp);
 
         G1 = _mm_load_ps(IxIy_p + 0);
         G2 = _mm_load_ps(IxIy_p + 4);

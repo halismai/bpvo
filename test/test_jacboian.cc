@@ -23,7 +23,7 @@ int main()
   K << 615.0, 0.0, 320.0, 0.0, 615.0, 240.0, 0.0, 0.0, 1.0;
   RigidBodyWarp warp(K, 0.1);
 
-  auto points = GetPoints();
+  auto points = GetPoints(1<<14);
   std::vector<float> IxIy(points.size()*2);
   for(size_t i = 0; i < IxIy.size(); ++i)
     IxIy[i] = rand() / (float) RAND_MAX;

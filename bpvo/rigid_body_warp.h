@@ -152,6 +152,9 @@ class RigidBodyWarp : public WarpBase<RigidBodyWarp>
   // normalization
   Matrix44 _T;
   Matrix44 _T_inv;
+
+ private:
+  mutable AlignedVector<float>::type _x_data, _y_data, _z_data;
 }; // RigidBodyWarp
 
 
