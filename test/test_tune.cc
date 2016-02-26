@@ -29,6 +29,7 @@ int main(int argc, char** argv)
   data.push_back( data_loader->getFrame(4) );
 
   int numframes = options.get<int>("numframes");
+  int numiters = 0;
   double total_time = 0.0;
   for(int i = 0; i < numframes; ++i)
   {
@@ -38,6 +39,8 @@ int main(int argc, char** argv)
     auto result = vo.addFrame(frame->image().ptr<uint8_t>(), frame->disparity().ptr<float>());
     auto t = timer.stop().count();
     total_time += t / 1000.0;
+    for(auto o : result.optimizerStatistics)
+      numiters += o.numIterations;
 
     int num_iters = result.optimizerStatistics.front().numIterations;
     fprintf(stdout, "Frame %03d/%d @ %0.2f Hz %04d\r", i, numframes,
@@ -46,7 +49,7 @@ int main(int argc, char** argv)
   }
 
   fprintf(stdout, "\n");
-  Info("done @ %0.2f Hz\n", numframes / total_time);
+  Info("done @ %0.2f Hz %f iters\n", numframes / total_time, numiters / (float) numframes);
 
   return 0;
 }
