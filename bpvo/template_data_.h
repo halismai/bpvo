@@ -266,6 +266,12 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
     }
   }
 
+  int extra = _points.size() % 16;
+  if(extra) {
+    _points.erase( _points.end() - extra, _points.end() );
+    _inds.erase( _inds.end() - extra, _inds.end());
+  }
+
   if(_with_normalization)
     _warp.setNormalization(_points);
 }
@@ -303,16 +309,13 @@ struct SetTemplateDataBody : public ParallelForBody
       auto P_ptr = _pixels.data() + c*n;
       auto J_ptr = _jacobians.data() + c*n;
 
-      std::vector<float> IxIy(2*n);
+      typename AlignedVector<float>::type IxIy(2*n);
       for(int i = 0; i < n; ++i)
       {
         auto ii = _inds[i];
         P_ptr[i] = c_ptr[ii];
-        float Ix = 0.5f * (c_ptr[ii+1] - c_ptr[ii-1]),
-              Iy = 0.5f * (c_ptr[ii+stride] - c_ptr[ii-stride]);
-        //_warp.jacobian(_points[i], Ix, Iy, J_ptr[i].data());
-        IxIy[2*i + 0] = Ix;
-        IxIy[2*i + 1] = Iy;
+        IxIy[2*i + 0] = (c_ptr[ii+1] - c_ptr[ii-1]);           // Ix
+        IxIy[2*i + 1] = (c_ptr[ii+stride] - c_ptr[ii-stride]); // Iy
       }
 
       int i = _warp.computeJacobian(_points, IxIy.data(), J_ptr->data());

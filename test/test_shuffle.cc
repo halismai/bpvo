@@ -61,16 +61,29 @@ int main()
          x3 = A[2],
          x4 = A[3];
 
-    printf("%x\n", _MM_SHUFFLE(1,1,1,1));
-    printf("%x\n", _MM_SHUFFLE(2,2,2,2));
-    printf("%x\n", _MM_SHUFFLE(0,0,0,0));
-    print("", _mm_shuffle_ps(x2, _mm_shuffle_ps(x3, x4, 0), _MM_SHUFFLE(3,2,1,0)));
-    print("", _mm_shuffle_ps(x3, x4, 0));
-    auto X = _mm_shuffle_ps(x2, _mm_shuffle_ps(x3, x4, 0), _MM_SHUFFLE(3,2,0,0));
-    print("X", X);
-    //print("Y", Y);
-    //print("Z", Z);
+    auto a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(0,0,0,0));
+    auto b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(0,0,0,0));
+    auto X = _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0));
 
+    print("x", X);
+
+    a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(1,1,1,1));
+    b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(1,1,1,1));
+    print("Y", _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0)));
+
+    a = _mm_shuffle_ps(x1, x2, _MM_SHUFFLE(2,2,2,2));
+    b = _mm_shuffle_ps(x3, x4, _MM_SHUFFLE(2,2,2,2));
+    print("Z", _mm_shuffle_ps(a, b, _MM_SHUFFLE(2,0,2,0)));
   }
+
+  // [ix iy ix iy]
+  __m128 G1 = _mm_setr_ps(1, 3, 2, 4);
+  __m128 G2 = _mm_setr_ps(10, 30, 20, 40);
+
+  // [1, 2, 10, 20]
+  print("ix", _mm_shuffle_ps(G1, G2, _MM_SHUFFLE(2,0,2,0)));
+  // [3, 4, 30, 40]
+  print("iy", _mm_shuffle_ps(G1, G2, _MM_SHUFFLE(3,1,3,1)));
+
 
 }

@@ -14,7 +14,6 @@ namespace bpvo {
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-
 struct PhotoError::Impl
 {
   typedef Eigen::Map<const Point, Eigen::Aligned> PointMap;
@@ -155,8 +154,8 @@ struct PhotoError::Impl
   inline float operator()(const float* ptr, int i) const
   {
 #if defined(WITH_SIMD)
-    return _valid_ptr[i] ? dot_( _mm_load_ps(_interp_coeffs[i].data()),
-                                 load_data_simd(ptr + _inds[i]) ) : 0.0f;
+    return _valid_ptr[i] ? simd::dot(simd::load<true>(_interp_coeffs[i].data()),
+                                     load_data_simd(ptr + _inds[i]) ) : 0.0f;
 #else
     return _valid_ptr[i] ? dot_(_interp_coeffs[i], load_data(ptr, i)) : 0.0f;
 #endif
@@ -169,32 +168,15 @@ struct PhotoError::Impl
     // NOTE this might segfault for points near the boundary, we should adjust
     // the border/valid mask when selecting points
     //
-    return _mm_shuffle_ps(_mm_loadu_ps(p), _mm_loadu_ps(p +  _stride),
+    return _mm_shuffle_ps(simd::load<false>(p), simd::load<false>(p +  _stride),
                           _MM_SHUFFLE(1,0,1,0));
   }
-
-  inline float dot_(__m128 a, __m128 b) const
-  {
-    float ret = 0.0f;
-#if defined(__SSE4_1__)
-    _mm_store_ss(&ret, _mm_dp_ps(a, b, 0xff));
-#else
-    auto t0 = _mm_mul_ps(a, b),
-         t1 = _mm_hadd_ps(t0, t0),
-         t2 = _mm_hadd_ps(t1, t1);
-    _mm_store_ss(&ret, t2);
-#endif
-    return ret;
-  }
-
 #endif
 
   inline float dot_(const Vector4& a, const Vector4& b) const
   {
 #if defined(__SSE4_1__)
-    float ret;
-    _mm_store_ss(&ret, _mm_dp_ps(_mm_load_ps(a.data()), _mm_load_ps(b.data()), 0xff));
-    return ret;
+    return simd::dot(_mm_load_ps(a.data()), _mm_load_ps(b.data()));
 #else
     // EIGEN uses 2 applications of hadd after mul, dp seems faster if we have sse4
     return a.dot(b);

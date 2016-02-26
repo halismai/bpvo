@@ -19,8 +19,8 @@
  * Contributor: halismai@cs.cmu.edu
  */
 
-#ifndef INTERP_UTIL_H
-#define INTERP_UTIL_H
+#ifndef BPVO_INTERP_UTIL_H
+#define BPVO_INTERP_UTIL_H
 
 #include <bpvo/types.h>
 #include <bpvo/imwarp.h>

@@ -70,6 +70,11 @@ struct DisparityPyramidLevel
 template <class T>
 struct IsLocalMax
 {
+
+#if defined(WITH_SIMD)
+  static_assert(std::is_same<T,float>::value, "T must be float for this to work");
+#endif
+
   inline IsLocalMax() {}
 
   inline IsLocalMax(const T* ptr, int stride, int radius)
@@ -95,15 +100,25 @@ struct IsLocalMax
     {
       case 1: // 3x3
         {
+#if defined(WITH_SIMD)
+          // this does 4x4, but faster!
+          const float* p = _ptr + row*_stride + col;
+          auto v = _mm_set1_ps(*p);
+          return
+            13 == _mm_movemask_ps(_mm_cmpgt_ps(v, _mm_loadu_ps(p - 1       ))) &&
+            15 == _mm_movemask_ps(_mm_cmpgt_ps(v, _mm_loadu_ps(p - 1 - _stride))) &&
+            15 == _mm_movemask_ps(_mm_cmpgt_ps(v, _mm_loadu_ps(p - 1 + _stride)));
+#else
           const T* p0 = _ptr + row*_stride + col;
           const T* p1 = p0 - _stride;
           const T* p2 = p0 + _stride;
           auto v = *p0;
 
           return
-              (v > p0[-1]) &                (v > p0[1]) &
-              (v > p1[-1]) & (v > p1[0]) & (v > p1[1]) &
-              (v > p2[-1]) & (v > p2[0]) & (v > p2[1]);
+              (v > p0[-1]) &&                (v > p0[1]) &&
+              (v > p1[-1]) && (v > p1[0]) && (v > p1[1]) &&
+              (v > p2[-1]) && (v > p2[0]) && (v > p2[1]);
+#endif
         } break;
 
         // TODO case 2

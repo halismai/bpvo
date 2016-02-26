@@ -164,7 +164,7 @@ rankUpdatePoint(int i, float* data, Gradient& G, float& res_norm)
 #endif
 
   float wR = w *_R[i];
-  G.noalias() += wR * _J[i].transpose();
+  G.noalias() += wR * _J[i].transpose(); // bottleneck here
   res_norm += wR * _R[i];
 }
 

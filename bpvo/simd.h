@@ -25,6 +25,8 @@
 #include <immintrin.h>
 #include <bpvo/debug.h>
 
+#if defined(WITH_SIMD)
+
 namespace bpvo {
 namespace simd {
 
@@ -64,7 +66,22 @@ static const __m128 SIGN_MASK = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
  */
 FORCE_INLINE __m128 abs(const __m128 v) { return _mm_andnot_ps(SIGN_MASK, v); }
 
+static inline float dot(__m128 a, __m128 b)
+{
+  float ret = 0.0f;
+#if defined(__SSE4_1__)
+  _mm_store_ss(&ret, _mm_dp_ps(a, b, 0xff));
+#else
+  auto t0 = _mm_mul_ps(a, b),
+       t1 = _mm_hadd_ps(t0, t0);
+  _mm_store_ss(&ret, _mm_hadd_ps(t1, t1));
+#endif
+
+  return ret;
+}
+
 }; // simd
 }; // bpvo
 
+#endif
 #endif // BPVO_SIMD_H

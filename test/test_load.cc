@@ -29,7 +29,6 @@ int main()
   print("b", b);
   print("", _mm_shuffle_ps(a, b, _MM_SHUFFLE(1,0,1,0)));
 
-
   printf("should have %g %g %g %g\n", *(p + i), *(p + i + 1), *(p + i + cols), *(p + i + cols + 1));
 
   return 0;
