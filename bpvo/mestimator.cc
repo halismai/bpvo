@@ -439,7 +439,7 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
 
   if(_delta_scale > _tol)
   {
-    _buffer.clear();
+    _buffer.resize(0);
 
     size_t npts = residuals.size();
     for(size_t i = 0; i < npts; ++i)

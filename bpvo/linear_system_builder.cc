@@ -109,17 +109,19 @@ void LinearSystemBuilderReduction::operator()(const tbb::blocked_range<int>& ran
   h_data = h_tmp.data();
 #endif
 
-  Gradient g_tmp(Gradient::Zero());
+  alignas(16) float G_data[8];
+  std::fill_n(G_data, 8, 0.0f);
+
   float res_sq_norm = 0.0f;
   for(int i = range.begin(); i != range.end(); ++i)
-      rankUpdatePoint(i, h_data, g_tmp, res_sq_norm);
+      rankUpdatePoint(i, h_data, G_data, res_sq_norm);
 
 #if defined(WITH_SIMD)
   _H.noalias() += LinearSystemBuilderReduction::toEigen(h_data);
 #else
   _H.noalias() += h_tmp;
 #endif
-  _G.noalias() += g_tmp;
+  _G.noalias() += Eigen::Map<Gradient, Eigen::Aligned>(G_data);
   _res_sq_norm += res_sq_norm;
 }
 #endif
