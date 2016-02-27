@@ -35,6 +35,7 @@ option(WITH_TCMALLOC  "With Google TCMalloc"   OFF)
 option(WITH_SIMD      "Use SIMD instructions"  ON)
 option(WITH_BOOST     "Use boost program_options & circular_buffer"  ON)
 option(WITH_OPENMP    "use OpenMP"  ON)
+option(WITH_DMV       "multi-view"  ON)
 
 option(ENABLE_PROFILING "enable profiling" OFF)
 option(ENABLE_FAST_MATH "enable fast math" OFF)
@@ -151,6 +152,31 @@ endif()
 
 if(WITH_SIMD)
   add_definitions(-DWITH_SIMD)
+endif()
+
+set(WITH_DMV_POSSIBLE False)
+if(WITH_DMV)
+  include(ExternalProject)
+  find_package(Ceres)
+  if(CERES_FOUND)
+    include_directories(${CERES_INCLUDE_DIRS})
+    add_definitions(-DWITH_CERES)
+
+    # get sophus
+    # there test stuff takes for every to build, we'll just copy the headers
+    # ExternalProject_Add(sophus
+    #  GIT_REPOSITORY https://github.com/strasdat/Sophus.git
+    #  INSTALL_DIR ${CMAKE_BINARY_DIR}
+    #  CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    #  PREFIX ${CMAKE_BINARY_DIR}/sophus
+    #  BUILD_IN_SOURCE 0
+    #  BUILD_COMMAND make -j4
+    #  INSTALL_COMMAND make install)
+
+    add_definitions(-DWITH_SOPHUS)
+    set(WITH_DMV_POSSIBLE True)
+    add_definitions(-DWITH_DMV)
+  endif()
 endif()
 
 configure_file(

@@ -112,7 +112,7 @@ void LinearSystemBuilderReduction::operator()(const tbb::blocked_range<int>& ran
   Gradient g_tmp(Gradient::Zero());
   float res_sq_norm = 0.0f;
   for(int i = range.begin(); i != range.end(); ++i)
-      rankUpdatePoint(i, h_data, g_tmp, res_sq_norm);
+      rankUpdatePoint(i, h_data, g_tmp.data(), res_sq_norm);
 
 #if defined(WITH_SIMD)
   _H.noalias() += LinearSystemBuilderReduction::toEigen(h_data);
