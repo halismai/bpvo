@@ -1,0 +1,8 @@
+
+{
+   _gtk_accessibility_init() in gail.c
+   Memcheck:Leak
+   ...
+   fun:atk_add_focus_tracker
+   fun:_gtk_accessibility_init
+}

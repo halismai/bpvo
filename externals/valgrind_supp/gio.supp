@@ -1,0 +1,48 @@
+
+{
+   _g_dbus_initialize() in gio/gdbusprivate.c
+   Memcheck:Leak
+   ...
+   fun:_g_dbus_initialize
+}
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:g_bus_get
+   fun:g_bus_own_name
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:g_hash_table_new
+   fun:g_bus_own_name
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:g_main_context_ref_thread_default
+   fun:g_bus_own_name
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:g_hash_table_new
+   fun:g_bus_own_name_on_connection
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:g_variant_new
+   fun:g_bus_unown_name
+}

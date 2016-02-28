@@ -1,0 +1,30 @@
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:gtk_clipboard_get_for_display
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:gtk_clipboard_request_contents
+}
+
+{
+   gtk_im_module_initialize() in gtkimmodule.c
+   Memcheck:Leak
+   ...
+   fun:gtk_im_module_initialize
+}
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:gtk_widget_get_style_context
+}

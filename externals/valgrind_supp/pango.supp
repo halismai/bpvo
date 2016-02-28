@@ -1,0 +1,8 @@
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:FcConfigSubstitute*
+   fun:pango_cairo_fc_font_map_fontset_key_substitute
+}

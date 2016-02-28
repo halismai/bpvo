@@ -1,0 +1,23 @@
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:gdk_display_get_default
+}
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:gdk_display_manager_get
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:gdk_display_manager_get_default_display
+}

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+  echo "usage: $0 binary_file"
+  exit
+fi
+
+bin_file="$1"
+supp_path=`pwd`"/../externals/valgrind_supp/"
+echo $supp_path
+
+valgrind --suppressions=$supp_path/glib.supp --leak-check=full $bin_file
+

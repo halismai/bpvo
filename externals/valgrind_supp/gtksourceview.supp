@@ -1,0 +1,16 @@
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:gtk_source_style_scheme_get_style
+}
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   ...
+   fun:gtk_source_style_scheme_manager_get_default
+}
