@@ -26,8 +26,7 @@ class VoData
   template <class Archive> inline
   void serialize(Archive& ar)
   {
-    ar(_image);
-    ar(_point_cloud);
+    ar(_image, _point_cloud);
   }
 
  protected:
