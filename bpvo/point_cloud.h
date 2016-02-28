@@ -123,6 +123,9 @@ class PointCloud
  protected:
   PointWithInfoVector _points;
   Transform _pose;
+
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 }; // PointCloud
 
 /**

@@ -13,11 +13,11 @@ namespace dmv {
 template <typename TSrc, typename TDst> inline
 void extractPatch(const TSrc* ptr, int stride, int row, int col, int radius, TDst* dst)
 {
-  for(int r = -radius; r <= radius; ++r)
+  for(int r = -radius, i = 0; r <= radius; ++r)
   {
     auto* p = ptr + (row+r)*stride;
-    for(int c = -radius; c <= radius; ++c)
-      *dst++ = p[col + c];
+    for(int c = -radius; c <= radius; ++c, ++i)
+      dst[i] = p[col + c];
   }
 }
 

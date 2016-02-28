@@ -1,3 +1,5 @@
+#include <bpvo/vo_output.h>
+
 #include <dmv/photo_bundle.h>
 #include <dmv/image_data.h>
 #include <dmv/scene_point.h>
@@ -40,7 +42,8 @@ struct PhotoBundle::Impl
   Impl(const Matrix33& K, const PhotoBundleConfig& config)
       : _K(K.cast<double>()), _config(config), _image_data(_config.bundleWindowSize) {}
 
-  void addData(const cv::Mat&, const Matrix44&, const PointVector&, const WeightsVector&);
+  void addData(const cv::Mat& image, const PointCloud& pc);
+
   Result startOptimization();
 
 
@@ -54,8 +57,10 @@ struct PhotoBundle::Impl
   Trajectory _trajectory;
 
  protected:
-  void addNewPoints(const cv::Mat&, const PointVector&, const WeightsVector&);
-  void removeOldPoints();
+  void addNewPoints(const cv::Mat& image, const PointCloud& pc);
+
+  /** \return number of old points removed */
+  int removeOldPoints();
 }; // PhotoBundle::Impl
 
 PhotoBundle::PhotoBundle(const Matrix33& K, const PhotoBundleConfig& config)
@@ -63,76 +68,94 @@ PhotoBundle::PhotoBundle(const Matrix33& K, const PhotoBundleConfig& config)
 
 PhotoBundle::~PhotoBundle() {}
 
-void PhotoBundle::addData(const cv::Mat& I, const Matrix44& pose, const PointVector& points,
-                          const WeightsVector& weights)
+void PhotoBundle::addData(const VoOutput* frame)
 {
-  _impl->addData(I, pose, points, weights);
+  // we load the image here, so we won't have to load it multiple times in case
+  // it is read from disk
+  if(frame) {
+    auto image = frame->image();
+    _impl->addData(image, frame->pointCloud());
+  }
 }
 
 auto PhotoBundle::optimize() -> Result { return _impl->startOptimization(); }
 
-void PhotoBundle::Impl::
-addData(const cv::Mat& image, const Matrix44& pose, const PointVector& points,
-        const WeightsVector& weights)
-{
-  _trajectory.push_back(pose);
 
-  ImageData data;
-  std::thread t1([&] () { data.set(_frame_counter, image);} );
-  std::thread t2(&Impl::addNewPoints, this, std::ref(image), std::ref(points), std::ref(weights));
+void PhotoBundle::Impl::addData(const cv::Mat& image, const PointCloud& pc)
+{
+  _trajectory.push_back(pc.pose());
+
+  ImageData image_data;
+#define ADD_DATA_THREADED 0
+
+#if ADD_DATA_THREADED
+  std::thread t1([&]() { image_data.set(_frame_counter, image); });
+  std::thread t2(&Impl::addNewPoints, this, std::ref(image), std::ref(pc));
 
   t1.join();
   t2.join();
+#else
+  image_data.set(_frame_counter, image);
+  addNewPoints(image, pc);
+#endif
 
-  _image_data.push_back(std::move(data));
   _frame_counter++;
+  _image_data.push_back(image_data);
 }
 
 void PhotoBundle::Impl::
-addNewPoints(const cv::Mat& image, const PointVector& points, const WeightsVector& weights)
+addNewPoints(const cv::Mat& image, const PointCloud& pc)
 {
-  THROW_ERROR_IF( points.size() != weights.size(), "size mismatch" );
+  int nremoved = removeOldPoints();
+  printf("removed %d\n", nremoved);
 
-  removeOldPoints();
+  int npts = pc.size();
 
-  PointVector tmp_points;
-  const PointVector* point_ptr = nullptr;
-  if((int) points.size() > _config.maxPointsPerImage)
+  PointVector points;
+  if(npts > _config.maxPointsPerImage)
   {
-    typedef std::pair<typename WeightsVector::value_type, size_t> WeightWithIndex;
-    std::vector<WeightWithIndex> tmp(weights.size());
-    for(size_t i = 0; i < weights.size(); ++i)
-      tmp[i] = WeightWithIndex(weights[i], i);
+    //
+    // keep only the n-th highest weighted points
+    //
+    typedef std::pair<float, int> WeightWithIndex;
+    std::vector<WeightWithIndex> tmp(npts);
+    for(int i = 0; i < npts; ++i)
+      tmp[i] = WeightWithIndex(pc[i].weight(), i);
 
     std::nth_element(tmp.begin(), tmp.begin() + _config.maxPointsPerImage, tmp.end(),
                      [](const WeightWithIndex& a, const WeightWithIndex& b) {
-                        return a.first < b.first; });
+                       return a.first > b.first; });
 
-    tmp_points.resize( _config.maxPointsPerImage );
+    points.resize(  _config.maxPointsPerImage );
     for(int i = 0; i < _config.maxPointsPerImage; ++i)
-      tmp_points[i] = points[tmp[i].second];
-
-    point_ptr = &tmp_points;
+      points[i] = pc[ tmp[i].second ].xyzw();
   } else
   {
-    point_ptr = &points;
+    points.resize(npts);
+    for(int i = 0; i < npts; ++i)
+      points[i] = pc[i].xyzw();
   }
 
-  const auto& pose = _trajectory.back();
-  for(const auto p : *point_ptr)
+  auto fx = _K(0,0), fy = _K(1,1), cx = _K(0,2), cy = _K(1,2);
+  for(size_t i = 0; i < points.size(); ++i)
   {
-    float u = (_K(0,0) * p.x()) / p.z() + _K(0,2),
-          v = (_K(1,1) * p.x()) / p.z() + _K(1,2);
+    const auto& p = points[i];
+    float u = (fx * p.x()) / p.z() + cx,
+          v = (fy * p.y()) / p.z() + cy;
 
-    Descriptor desc;
+    DescType desc;
     desc.setFromImage(image, ImagePoint(u,v));
-    _points.push_back( ScenePointType(_frame_counter, pose * p, std::move(desc)) );
-  }
 
+    Point Xw = pc.pose() * p;
+    _points.push_back(ScenePointType(_frame_counter, Xw, std::move(desc)));
+  }
 }
 
-void PhotoBundle::Impl::removeOldPoints()
+
+int PhotoBundle::Impl::removeOldPoints()
 {
+  int old_size = _points.size();
+
   auto is_point_old = [=](const ScenePointType& p)
   {
     return _frame_counter - p.referenceFrameId() > _config.bundleWindowSize;
@@ -140,6 +163,8 @@ void PhotoBundle::Impl::removeOldPoints()
 
   auto it = std::remove_if(_points.begin(), _points.end(), is_point_old);
   _points.erase(it, _points.end());
+
+  return old_size - _points.size();
 }
 
 auto PhotoBundle::Impl::startOptimization() -> Result
@@ -149,4 +174,5 @@ auto PhotoBundle::Impl::startOptimization() -> Result
 
 } // dmv
 } // bpvo
+
 

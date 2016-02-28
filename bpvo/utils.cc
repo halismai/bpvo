@@ -104,6 +104,33 @@ vector<string> splitstr(const std::string& str, char delim)
   return ret;
 }
 
+static int parse_vm_line(char* line)
+{
+  int i = strnlen(line, 128);
+  while(*line < '0' || *line > '9') ++line;
+  line[i-3] = '\0';
+  return atoi(line);
+}
+
+int procMemUsage()
+{
+  int ret = 0;
+  FILE* fp = fopen("/proc/self/status", "r");
+  if(fp) {
+    char line[128];
+    while(fgets(line, sizeof(line), fp)) {
+      if(0 == strncmp(line, "VmSize:", 7)) {
+        ret = parse_vm_line(line);
+        break;
+      }
+    }
+
+    fclose(fp);
+  }
+
+  return ret;
+}
+
 string datetime()
 {
   auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());

@@ -1,53 +1,28 @@
 #include <cstdio>
-#if defined(WITH_CEREAL)
 
-#include <bpvo/utils.h>
+#include <bpvo/vo_output_reader.h>
 #include <bpvo/vo_output.h>
-#include <utils/file_loader.h>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
 
-#include <fstream>
-#include <cereal/archives/binary.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace bpvo;
 
 int main()
 {
-  FileLoader file_loader(".", "vo_%05d.voout", 1);
+  bpvo::VoOutputReader vo_output_reader(".", "vo_%05d.voout", 1);
 
   cv::namedWindow("image");
-
   for(int i = 0; ; ++i)
   {
-    auto fn = file_loader[i];
-    if(!fs::exists(fn))
+    auto frame = vo_output_reader[i];
+
+    if(!frame)
       break;
-    {
-      std::ifstream ifs(fn, std::ios::binary);
-      if(!ifs.is_open())
-      {
-        printf("failed to open %s\n", fn.c_str());
-        break;
-      }
 
-      {
-        UniquePointer<VoOutput> frame;
-        cereal::BinaryInputArchive ar(ifs);
-        ar(frame);
-
-        cv::imshow("image", frame->image());
-        int k = cv::waitKey(5) & 0xff;
-        if(k == 'q')
-          break;
-      }
-    }
-
+    cv::imshow("image", frame->image());
+    int k = 0xff & cv::waitKey(5);
+    if(k == 'q') break;
   }
-
-  return 0;
 }
 
-#else
-int main() { printf("compile WITH_CEREAL\n"); }
-#endif
+

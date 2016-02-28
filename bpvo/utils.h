@@ -102,6 +102,11 @@ const char* Format_(const char* fmt, Args&&... args)
 }
 
 /**
+ * \return the memory used by the curreent process in KB
+ */
+int procMemUsage();
+
+/**
  * return the date & time as a string
  */
 std::string datetime();

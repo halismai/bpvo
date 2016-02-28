@@ -11,6 +11,8 @@ namespace cv { class Mat; }; // cv
 
 namespace bpvo {
 
+class VoOutput;
+
 namespace dmv {
 
 class PhotoBundle
@@ -40,16 +42,7 @@ class PhotoBundle
   PhotoBundle(const Matrix33& K, const PhotoBundleConfig& config);
   ~PhotoBundle();
 
-  /**
-   * Adds data from VO
-   *
-   * \param I the image
-   * \param points the point you get from VO (X,Y,Z) triangulated with Identity pose
-   * \param pose the relative pose estimate you get from vo
-   * \param weights for each point from VO
-   */
-  void addData(const cv::Mat& I, const Matrix44& pose, const PointVector& points,
-               const WeightsVector& weights);
+  void addData(const VoOutput* vo_output);
 
   /**
    * Runs the optimization

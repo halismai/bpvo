@@ -53,12 +53,12 @@ class ScenePoint
   }
 
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
  private:
   Point _X;
   Descriptor _desc;
   IdList _frame_ids;
-
 }; // ScenePoint
 
 }; // dmv
