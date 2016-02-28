@@ -104,7 +104,8 @@ addNewPoints(const cv::Mat& image, const PointVector& points, const WeightsVecto
       tmp[i] = WeightWithIndex(weights[i], i);
 
     std::nth_element(tmp.begin(), tmp.begin() + _config.maxPointsPerImage, tmp.end(),
-                     [](const WeightWithIndex& a, const WeightWithIndex& b) { return a.first < b.first; });
+                     [](const WeightWithIndex& a, const WeightWithIndex& b) {
+                        return a.first < b.first; });
 
     tmp_points.resize( _config.maxPointsPerImage );
     for(int i = 0; i < _config.maxPointsPerImage; ++i)
@@ -116,13 +117,15 @@ addNewPoints(const cv::Mat& image, const PointVector& points, const WeightsVecto
     point_ptr = &points;
   }
 
+  const auto& pose = _trajectory.back();
   for(const auto p : *point_ptr)
   {
-    ImagePoint uv(0,0); // TODO
+    float u = (_K(0,0) * p.x()) / p.z() + _K(0,2),
+          v = (_K(1,1) * p.x()) / p.z() + _K(1,2);
 
     Descriptor desc;
-    desc.setFromImage(image, uv);
-    _points.push_back( ScenePointType(_frame_counter, p, std::move(desc)) );
+    desc.setFromImage(image, ImagePoint(u,v));
+    _points.push_back( ScenePointType(_frame_counter, pose * p, std::move(desc)) );
   }
 
 }
