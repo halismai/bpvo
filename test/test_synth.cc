@@ -1,4 +1,4 @@
-#include "utils/data_loader.h"
+#include "utils/tsukuba_dataset.h"
 #include "bpvo/types.h"
 #include "bpvo/vo.h"
 #include "bpvo/math_utils.h"
@@ -10,9 +10,8 @@
 
 using namespace bpvo;
 
-
-StereoFrame MakeSynthetic(const StereoCalibration& calib, const Matrix44& T,
-                          const StereoFrame& frame)
+UniquePointer<DatasetFrame>
+MakeSynthetic(const StereoCalibration& calib, const Matrix44& T, UniquePointer<DatasetFrame>& frame)
 {
   float fx = calib.K(0,0),
         fy = calib.K(1,1),
@@ -21,8 +20,8 @@ StereoFrame MakeSynthetic(const StereoCalibration& calib, const Matrix44& T,
         b = calib.baseline,
         bf = b * fx;
 
-  const cv::Mat& I0 = frame.image();
-  const cv::Mat& D = frame.disparity();
+  const cv::Mat& I0 = frame->image();
+  const cv::Mat& D = frame->disparity();
   Matrix34 P = calib.K * T.block<3,4>(0,0);
 
   cv::Mat I(I0.size(), CV_8U);
@@ -59,10 +58,7 @@ StereoFrame MakeSynthetic(const StereoCalibration& calib, const Matrix44& T,
     }
   }
 
-  StereoFrame ret;
-  ret.setLeft(I);
-  ret.setDisparity(D);
-  return ret;
+  return UniquePointer<DatasetFrame>(new DisparityDataset::DisparityFrame(I, D));
 }
 
 
@@ -71,23 +67,22 @@ int main()
   Matrix44 T(Matrix44::Identity());
   T.block<3,1>(0,3) = Eigen::Vector3f(0.01, 0.01, 0.01);
   std::cout << T << std::endl;
-  TsukubaDataLoader data_loader;
+  TsukubaSyntheticDataset data_loader("../conf/tsukuba.cfg");
   auto calib = data_loader.calibration();
-  auto f1 = data_loader.getFrame(1);
+  auto f1 = data_loader.getFrame(0);
 
   std::cout << "making frame:\n";
-  auto f0 = MakeSynthetic(calib, T, *(StereoFrame*)f1.get());
+  auto f0 = MakeSynthetic(calib, T, f1);
 
   AlgorithmParameters params("../conf/tsukuba.cfg");
   std::cout << params << std::endl;
   VisualOdometry vo(calib.K, calib.baseline, data_loader.imageSize(), params);
 
-  cv::imshow("image", f0.image());
+  cv::imshow("image", f0->image());
   cv::waitKey(10);
 
-  vo.addFrame(f0.image().ptr<uint8_t>(), f0.disparity().ptr<float>());
-  auto result = vo.addFrame(f0.image().ptr<uint8_t>(), f0.disparity().ptr<float>());
-
+  vo.addFrame(f0->image().ptr<uint8_t>(), f0->disparity().ptr<float>());
+  auto result = vo.addFrame(f0->image().ptr<uint8_t>(), f0->disparity().ptr<float>());
   result = vo.addFrame(f1->image().ptr<uint8_t>(), f1->disparity().ptr<float>());
 
   auto pose_error = (math::MatrixToTwist(result.pose.inverse() * T));

@@ -1,4 +1,4 @@
-#include "utils/data_loader.h"
+#include "utils/dataset_loader_thread.h"
 #include "utils/bounded_buffer.h"
 #include "utils/program_options.h"
 
@@ -30,16 +30,17 @@ int main(int argc, char** argv)
   // configure dataset and VO
   //
   auto conf_fn = options.get<std::string>("config");
-  auto data_loader = DataLoader::FromConfig(conf_fn);
+  auto data_loader = Dataset::Create(conf_fn);
   VisualOdometry vo(data_loader.get(), AlgorithmParameters(conf_fn));
 
   //
   // load the data into the buffer
   //
   int numframes = options.get<int>("numframes");
-  typename DataLoaderThread::BufferType buffer(numframes);
+  typename DatasetLoaderThread::BufferType buffer(numframes);
 
-  for(int i = data_loader->firstFrameNumber(); i < data_loader->firstFrameNumber() + numframes; ++i) {
+  for(int i =0; i < numframes; ++i)
+  {
     fprintf(stdout, "loading %d\r", i);
     fflush(stdout);
 
@@ -54,7 +55,7 @@ int main(int argc, char** argv)
   fprintf(stdout, "\nRunning\n");
 
   Trajectory trajectory;
-  typename DataLoaderThread::BufferType::value_type frame;
+  typename DatasetLoaderThread::BufferType::value_type frame;
 
 #if defined(WITH_PROFILER)
   ProfilerStart("/tmp/prof");
