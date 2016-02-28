@@ -18,7 +18,7 @@ class ScenePoint
   typedef std::vector<IdType> IdList;
 
  public:
-  inline ScenePoint(IdList frame_id, const Point& X, const Descriptor& d)
+  inline ScenePoint(IdType frame_id, const Point& X, const Descriptor& d)
       : _X(X), _desc(d)
   {
     _frame_ids.reserve(8);
@@ -39,11 +39,13 @@ class ScenePoint
 
   inline IdType referenceFrameId() const { return _frame_ids.front(); }
 
-  inline bool hasFrameId(IdType id) const {
+  inline bool hasFrameId(IdType id) const
+  {
     return std::find(_frame_ids.begin(), _frame_ids.end(), id) != _frame_ids.end();
   }
 
-  inline void addFrameId(IdType id) const {
+  inline void addFrameId(IdType id)
+  {
     THROW_ERROR_IF(hasFrameId(id),
                  Format("frame id %d exists in frame id list", id).c_str());
 

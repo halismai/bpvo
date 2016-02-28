@@ -69,6 +69,9 @@ PhotoBundleConfig::PhotoBundleConfig(std::string conf_fn)
   gradientTolerance = cf.get<double>("gradientTolerance", 1e-6);
   solverType = SolverTypeFromString(cf.get<std::string>("solverType", "SparseSchur"));
   minZncc = cf.get<double>("minZncc", 0.8);
+  descriptorType = DescriptorTypeFromString(cf.get<std::string>("DescriptorType", "Patch"));
+  bundleWindowSize = cf.get<int>("bundleWindowSize", 3);
+  maxPointsPerImage = cf.get<int>("maxPointsPerImage", 5000);
 }
 
 std::ostream& operator<<(std::ostream& os, const PhotoBundleConfig& c)
@@ -80,7 +83,9 @@ std::ostream& operator<<(std::ostream& os, const PhotoBundleConfig& c)
   os << "gradientTolerance = " << c.gradientTolerance << "\n";
   os << "SolverType = " << ToString(c.solverType) << "\n";
   os << "DescriptorType = " << ToString(c.descriptorType) << "\n";
-  os << "minZncc = " << c.minZncc;
+  os << "minZncc = " << c.minZncc << "\n";
+  os << "bundleWindowSize = " << c.bundleWindowSize << "\n";
+  os << "maxPointsPerImage = " << c.maxPointsPerImage;
 
   return os;
 }

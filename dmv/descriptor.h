@@ -39,6 +39,14 @@ class DescriptorBase
     derived()->set(I, p);
   }
 
+  template <typename T> inline
+  void cost(const DescriptorBase<Derived>& other, T* c) const
+  {
+    const auto* d0 = this->data(), d1 = other.data();
+    for(size_t i = 0; i < Dimension; ++i)
+      c[i] = T(d0[i]) - T(d1[i]);
+  }
+
  protected:
 
   inline const Derived* derived() const { return static_cast<const Derived*>(this); }

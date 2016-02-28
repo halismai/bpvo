@@ -32,11 +32,10 @@ class Patch3x3 : public DescriptorBase<Patch3x3>
   inline Patch3x3() {}
   inline ~Patch3x3() {}
 
- protected:
-
   void set(const cv::Mat& I, const ImagePoint&);
   inline const DataType* data() const { return _data; }
 
+ protected:
   alignas(16) DataType _data[16]; // padded to 16
 }; // Patch3x3
 

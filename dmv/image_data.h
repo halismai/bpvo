@@ -3,7 +3,6 @@
 
 #include <opencv2/core/core.hpp>
 
-
 namespace bpvo {
 namespace dmv {
 
@@ -16,6 +15,8 @@ class ImageData
   const ImageData& set(int frame_id, const cv::Mat& I);
 
   inline int id() const { return _frame_id; }
+  inline const cv::Mat& Ix() const { return _Ix; }
+  inline const cv::Mat& Iy() const { return _Iy; }
 
  protected:
   int _frame_id;
