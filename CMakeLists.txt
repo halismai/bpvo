@@ -160,6 +160,8 @@ if(WITH_DMV)
   find_package(Ceres)
   if(CERES_FOUND)
     include_directories(${CERES_INCLUDE_DIRS})
+    list(APPEND MY_LIBRARIES ${CERES_LIBRARIES})
+
     add_definitions(-DWITH_CERES)
 
     # get sophus
@@ -173,6 +175,7 @@ if(WITH_DMV)
     #  BUILD_COMMAND make -j4
     #  INSTALL_COMMAND make install)
 
+    include_directories(${CMAKE_SOURCE_DIR}/externals/Sophus/)
     add_definitions(-DWITH_SOPHUS)
     set(WITH_DMV_POSSIBLE True)
     add_definitions(-DWITH_DMV)
@@ -187,6 +190,10 @@ configure_file(
 add_subdirectory(bpvo)
 add_subdirectory(utils)
 add_subdirectory(apps)
+
+if(WITH_DMV_POSSIBLE)
+  add_subdirectory(dmv)
+endif()
 
 if(BUILD_TEST)
   add_subdirectory(test)

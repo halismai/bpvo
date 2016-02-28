@@ -41,6 +41,17 @@ void gradientAbsoluteMagnitudeAcc(const cv::Mat_<float>& src, float* dst);
 
 
 /**
+ * indicates the direction of the image gradient to compute
+ */
+enum class ImageGradientDirection { X, Y };
+
+/**
+ * compute the the image gradient
+ */
+void imgradient(const cv::Mat&, cv::Mat& dst, ImageGradientDirection);
+
+
+/**
  * allows to subsample the disparities using a pyramid level
  */
 struct DisparityPyramidLevel
@@ -140,6 +151,7 @@ struct IsLocalMax
   const T* _ptr;
   int _stride, _radius;
 }; // IsLocalMax
+
 }; // bpvo
 
 #endif // BPVO_IMGPROC_H
