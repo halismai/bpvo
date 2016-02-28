@@ -25,6 +25,11 @@
 #include <bpvo/types.h>
 #include <iosfwd>
 
+#if defined(WITH_CEREAL)
+#include <utils/eigen_cereal.h>
+#include <cereal/types/vector.hpp>
+#endif
+
 namespace bpvo {
 
 class PointWithInfo
@@ -46,6 +51,14 @@ class PointWithInfo
 
   void setZero();
 
+#if defined(WITH_CEREAL)
+  template <class Archive> inline
+  void serialize(Archive& ar)
+  {
+    ar(_xyzw, _rgba, _w, cereal::binary_data(_pad, sizeof(_pad)));
+  }
+#endif
+
  protected:
   Point _xyzw;  // xyz coordinates, w is always 1                   [16 bytes]
   Color _rgba;  // rgba color will be set to zero if not available  [4 bytes]
@@ -61,7 +74,6 @@ class PointWithInfo
 }; // PointWithInfo
 
 typedef typename EigenAlignedContainer<PointWithInfo>::type PointWithInfoVector;
-
 
 class PointCloud
 {
@@ -99,6 +111,15 @@ class PointCloud
   inline iterator end() { return _points.end(); }
   inline const_iterator end() const { return _points.end(); }
 
+#if defined(WITH_CEREAL)
+  template <class Archive> inline
+  void serialize(Archive& ar)
+  {
+    ar(CEREAL_NVP(_points));
+    ar(_pose);
+  }
+#endif
+
  protected:
   PointWithInfoVector _points;
   Transform _pose;
@@ -115,8 +136,6 @@ inline bool ToPlyFile(std::string filename, const PointCloud& pc, std::string co
 {
   return ToPlyFile(filename, pc.points(), comment);
 }
-
-
 
 
 }; // bpvo

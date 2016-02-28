@@ -176,16 +176,19 @@ if(WITH_DMV)
     #  INSTALL_COMMAND make install)
 
     include_directories(${CMAKE_SOURCE_DIR}/externals/Sophus/)
+    include_directories(${CMAKE_SOURCE_DIR}/externals/cereal/include/)
+
     add_definitions(-DWITH_SOPHUS)
-    set(WITH_DMV_POSSIBLE True)
     add_definitions(-DWITH_DMV)
+    add_definitions(-DWITH_CEREAL)
+
+    set(WITH_DMV_POSSIBLE True)
   endif()
 endif()
 
 configure_file(
   "${PROJECT_SOURCE_DIR}/bpvo_config.h.in"
   "${PROJECT_SOURCE_DIR}/bpvo/config.h")
-
 
 add_subdirectory(bpvo)
 add_subdirectory(utils)

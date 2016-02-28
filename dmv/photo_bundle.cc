@@ -4,14 +4,13 @@
 #include <dmv/descriptor.h>
 #include <dmv/patch.h>
 
-#include <utils/bounded_buffer.h>
-
 #include <opencv2/core/core.hpp>
 
 #include <algorithm>
 #include <iostream>
 #include <thread>
 #include <utility>
+#include <deque>
 
 namespace bpvo {
 namespace dmv {
@@ -35,7 +34,7 @@ struct PhotoBundle::Impl
   typedef Patch3x3 DescType;
   typedef DescriptorBase<DescType> Descriptor;
   typedef ScenePoint<Descriptor> ScenePointType;
-  typedef BoundedBuffer<ImageData> ImageDataBuffer;
+  typedef std::deque<ImageData> ImageDataBuffer;
 
  public:
   Impl(const Matrix33& K, const PhotoBundleConfig& config)
@@ -78,12 +77,14 @@ addData(const cv::Mat& image, const Matrix44& pose, const PointVector& points,
 {
   _trajectory.push_back(pose);
 
-  std::thread t1([&] () { _image_data.push(ImageData(_frame_counter, image));} );
+  ImageData data;
+  std::thread t1([&] () { data.set(_frame_counter, image);} );
   std::thread t2(&Impl::addNewPoints, this, std::ref(image), std::ref(points), std::ref(weights));
 
   t1.join();
   t2.join();
 
+  _image_data.push_back(std::move(data));
   _frame_counter++;
 }
 

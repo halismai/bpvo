@@ -1,3 +1,6 @@
 [submodule "externals/Sophus"]
 	path = externals/Sophus
 	url = https://github.com/strasdat/Sophus.git
+[submodule "externals/cereal"]
+	path = externals/cereal
+	url = https://github.com/USCiLab/cereal.git
