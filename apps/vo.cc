@@ -11,58 +11,17 @@
 #include "bpvo/point_cloud.h"
 #include "bpvo/config_file.h"
 #include "bpvo/parallel.h"
+#include "bpvo/vo_output_writer.h"
 
 #include <iostream>
 #include <fstream>
 
 #include <opencv2/highgui/highgui.hpp>
 
-#if defined(WITH_DMV)
-#include <dmv/vo_data.h>
-#include <utils/cv_cereal.h>
-#include <cereal/archives/binary.hpp>
-#endif
-
 using namespace bpvo;
 
 void writePointCloud(std::string prefix, int i, const PointCloud& pc,
                      float min_weight = 0.9f, float max_depth = 5.0f);
-
-#if defined(WITH_DMV)
-class DataWriterThread
-{
-  typedef std::pair<std::string, UniquePointer<dmv::VoData>> Data;
-  typedef BoundedBuffer<Data> BufferType;
-
- public:
-  DataWriterThread(std::string prefix, size_t capacity = 256)
-      : _buffer(capacity), _prefix(prefix) {}
-
-  ~DataWriterThread()
-  {
-    _stop = true;
-    if(_thread && _thread->joinable())
-      _thread->join();
-  }
-
-  void start()
-  {
-    _thread = make_unique<std::thread>(&DataWriterThread::start_, this);
-  }
-
-  void add(const cv::Mat& I, const PointCloud& pc);
-
- protected:
-  int _counter = 0;
-  BufferType _buffer;
-
-  std::string _prefix;
-  UniquePointer<std::thread> _thread;
-  std::atomic<bool> _stop{false};
-
-  void start_();
-}; // DataWriterThread
-#endif
 
 int main(int argc, char** argv)
 {
@@ -87,12 +46,12 @@ int main(int argc, char** argv)
   auto conf_fn = options.get<std::string>("config");
   auto do_show = !options.hasOption("dontshow");
   auto points_prefix = options.get<std::string>("points");
+
 #if defined(WITH_DMV)
   auto data_prefix = options.get<std::string>("dmv");
-  UniquePointer<DataWriterThread> data_writer_thread;
+  UniquePointer<VoOutputWriter> vo_output_writer_thread;
   if(!data_prefix.empty()) {
-    data_writer_thread = make_unique<DataWriterThread>(data_prefix);
-    data_writer_thread->start();
+    vo_output_writer_thread = make_unique<VoOutputWriter>(64);
   }
 #endif
 
@@ -152,8 +111,10 @@ int main(int argc, char** argv)
         if(!points_prefix.empty())
           writePointCloud(points_prefix, f_i, *result.pointCloud, min_weight, max_depth);
 
-        if(data_writer_thread)
-          data_writer_thread->add(frame->image(), *result.pointCloud);
+        if(vo_output_writer_thread)
+        {
+          //data_writer_thread->add(frame->image(), *result.pointCloud);
+        }
       }
 
       f_i += 1;
@@ -234,45 +195,4 @@ void writePointCloud(std::string prefix, int i, const PointCloud& pc,
 
   ToPlyFile(Format("%s_%05d.ply", prefix.c_str(), i), pc_out);
 }
-
-#if defined(WITH_DMV)
-
-void DataWriterThread::add(const cv::Mat& I, const PointCloud& pc)
-{
-  auto p = UniquePointer<dmv::VoData>(new dmv::VoData(I, pc));
-  auto fn = Format("%s_%04d.bin", _prefix.c_str(), _counter);
-
-  //Timer timer;
-  _buffer.push(Data(fn, std::move(p)));
-  //double t = timer.stop().count();
-  //printf("\npush time %f\n", t);
-
-  _counter++;
-}
-
-void DataWriterThread::start_()
-{
-  Data d;
-
-  try {
-    while(!_stop) {
-      if(_buffer.pop(&d, 5)) {
-        //Timer timer;
-        std::ofstream ofs(d.first, std::ios::binary);
-
-        if(!ofs.is_open()) {
-          Warn("failed to open %s\n", d.first.c_str());
-        } else {
-          cereal::BinaryOutputArchive ar(ofs);
-          ar(*d.second);
-        }
-
-        //double t = timer.stop().count();
-        //printf("write time %f\n\n", t);
-      }
-    }
-  } catch(const std::exception& ex) {  }
-}
-
-#endif
 

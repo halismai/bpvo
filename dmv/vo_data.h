@@ -6,7 +6,6 @@
 #include <bpvo/point_cloud.h>
 
 #include <opencv2/core/core.hpp>
-#include <vector>
 
 #include <utils/eigen_cereal.h>
 #include <utils/cv_cereal.h>
@@ -14,14 +13,16 @@
 namespace bpvo {
 namespace dmv {
 
-/**
- * the raw data we get from vo
- */
-class VoData
+class VoDataLive : public VoDataAbstract
 {
  public:
-  inline VoData(const cv::Mat& I, const PointCloud& pc)
+  inline VoDataLive(const cv::Mat& I, const PointCloud& pc)
       : _image(I), _point_cloud(pc) {}
+
+  virtual ~VoDataLive() {}
+
+  inline cv::Mat image() const { return _image; }
+  inline const PointCloud& pointCloud() const { return _point_cloud; }
 
   template <class Archive> inline
   void serialize(Archive& ar)
@@ -32,7 +33,30 @@ class VoData
  protected:
   cv::Mat _image;
   PointCloud _point_cloud;
-}; // VoData
+}; // VoDataLive
+
+class VoDataFromDisk : public VoDataAbstract
+{
+ public:
+  VoDataFromDisk(std::string filename, const PointCloud& pc)
+      : _filename(filename), _point_cloud(pc) {}
+
+  virtual ~VoDataFromDisk() {}
+
+  cv::Mat image() const;
+  inline const PointCloud& pointCloud() const { return _point_cloud;  }
+
+  template <class Archive> inline
+  void serialize(Archive& ar)
+  {
+    ar(_filename, _point_cloud);
+  }
+
+ protected:
+  std::string _filename;
+  PointCloud _point_cloud;
+}; // VoDataFromDisk
+
 
 }; // dmv
 }; // bpvo

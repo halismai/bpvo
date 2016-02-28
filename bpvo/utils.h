@@ -95,6 +95,12 @@ int roundUpTo(int n, int m);
 /** vsprintf like */
 std::string Format(const char* fmt, ...);
 
+template <class ... Args>
+const char* Format_(const char* fmt, Args&&... args)
+{
+  return Format(fmt, std::forward<Args>(args)...).c_str();
+}
+
 /**
  * return the date & time as a string
  */

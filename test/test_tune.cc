@@ -1,5 +1,5 @@
-#include "utils/data_loader.h"
 #include "utils/program_options.h"
+#include "utils/dataset_loader_thread.h"
 
 #include "bpvo/vo.h"
 #include "bpvo/timer.h"
@@ -16,17 +16,20 @@ int main(int argc, char** argv)
       .parse(argc, argv);
 
   std::string conf_fn = options.get<std::string>("config");
-  auto data_loader = DataLoader::FromConfig(conf_fn);
+
+  auto dataset = Dataset::Create(conf_fn);
   auto params = AlgorithmParameters(conf_fn);
   params.minTranslationMagToKeyFrame = 0.0;
-  VisualOdometry vo(data_loader.get(), params);
 
-  std::vector<typename DataLoader::ImageFramePointer> data;
+  VisualOdometry vo(dataset.get(), params);
 
-  data.push_back( data_loader->getFrame(1) );
-  data.push_back( data_loader->getFrame(2) );
-  data.push_back( data_loader->getFrame(3) );
-  data.push_back( data_loader->getFrame(4) );
+  std::vector<UniquePointer<DatasetFrame>> data;
+
+  data.push_back( dataset->getFrame(1) );
+  data.push_back( dataset->getFrame(2) );
+  data.push_back( dataset->getFrame(3) );
+  data.push_back( dataset->getFrame(4) );
+  data.push_back( dataset->getFrame(5) );
 
   int numframes = options.get<int>("numframes");
   int numiters = 0;
