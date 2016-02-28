@@ -4,6 +4,7 @@
 #if defined(WITH_CEREAL)
 #include <fstream>
 #include <cereal/archives/binary.hpp>
+#include <cereal/types/memory.hpp>
 #endif
 
 namespace bpvo {
@@ -25,7 +26,7 @@ void VoOutputWriter::run()
         if(ofs.is_open())
         {
           cereal::BinaryOutputArchive ar(ofs);
-          ar(*frame.second);
+          ar(frame.second);
         } else
         {
           Warn("Failed to open %s\n", frame.first.c_str());

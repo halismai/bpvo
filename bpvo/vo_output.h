@@ -1,8 +1,11 @@
-#ifndef BPVO_VO_DATA_H
-#define BPVO_VO_DATA_H
+#ifndef BPVO_VO_OUTPUT_H
+#define BPVO_VO_OUTPUT_H
 
 #include <bpvo/point_cloud.h>
+#include <bpvo/utils.h>
+
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #if defined(WITH_CEREAL)
 #include <utils/eigen_cereal.h>
@@ -19,6 +22,8 @@ namespace bpvo {
 class VoOutput
 {
  public:
+  inline VoOutput() {}
+
   inline VoOutput(const PointCloud& pc)
       : _point_cloud(pc) {}
 
@@ -48,6 +53,8 @@ class VoOutput
 class VoOutputLive : public VoOutput
 {
  public:
+  inline VoOutputLive() {}
+
   inline VoOutputLive(const PointCloud& pc, const cv::Mat& image)
       : VoOutput(pc), _image(image) {}
 
@@ -73,12 +80,19 @@ class VoOutputLive : public VoOutput
 class VoOutputFromDisk : public VoOutput
 {
  public:
-  inline VoOutputFromDisk(const PointCloud& pc, std::string filename)
+  inline VoOutputFromDisk() {}
+
+  inline VoOutputFromDisk(const PointCloud& pc, const std::string& filename)
       : VoOutput(pc), _filename(filename) {}
 
   virtual ~VoOutputFromDisk() {}
 
-  virtual cv::Mat image() const;
+  virtual cv::Mat image() const
+  {
+    cv::Mat ret = cv::imread(_filename, cv::IMREAD_GRAYSCALE);
+    THROW_ERROR_IF( ret.empty(), Format_("failed to read %s\n", _filename.c_str()));
+    return ret;
+  }
 
 #if defined(WITH_CEREAL)
   template <class Archive> inline
@@ -94,4 +108,13 @@ class VoOutputFromDisk : public VoOutput
 
 }; // bpvo
 
+#if defined(WITH_CEREAL)
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/polymorphic.hpp>
+//CEREAL_REGISTER_TYPE(bpvo::VoOutput);
+CEREAL_REGISTER_TYPE(bpvo::VoOutputLive);
+CEREAL_REGISTER_TYPE(bpvo::VoOutputFromDisk);
+#endif
+
 #endif // BPVO_VO_DATA_H
+

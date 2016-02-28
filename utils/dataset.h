@@ -23,6 +23,8 @@ struct DatasetFrame
 {
   virtual const cv::Mat& image() const = 0;
   virtual const cv::Mat& disparity() const = 0;
+
+  virtual std::string filename() const { return ""; }
 };
 
 class Dataset
@@ -87,12 +89,17 @@ class DisparityDataset : public Dataset
     cv::Mat I_orig; //< the original image
     cv::Mat I;      //< grayscale image
     cv::Mat D;      //< disparity as float
+    std::string fn; //< filename if read from disk
 
     DisparityFrame();
-    DisparityFrame(cv::Mat I_, cv::Mat D_, cv::Mat I_orig_ = cv::Mat());
+    DisparityFrame(cv::Mat I_, cv::Mat D_, cv::Mat I_orig_ = cv::Mat(),
+                   std::string image_filename = "");
 
     inline const cv::Mat& image() const { return I; }
     inline const cv::Mat& disparity() const { return D; }
+    inline std::string filename() const { return fn; }
+
+    virtual ~DisparityFrame() {}
   }; // DisparityFrame
 
  public:
@@ -124,12 +131,16 @@ class StereoDataset : public Dataset
  public:
   struct StereoFrame : DatasetFrame
   {
+    std::string fn;
     cv::Mat I_orig[2]; //< original stereo images  {left, right}
     cv::Mat I[2];      //< grayscale {left, right}
     cv::Mat D;         //< disparity as float
 
     inline const cv::Mat& image() const { return I[0]; }
     inline const cv::Mat& disparity() const { return D; }
+    inline std::string filename() const { return fn; }
+
+    virtual ~StereoFrame() {}
   }; // StereoFrame
 
  public:

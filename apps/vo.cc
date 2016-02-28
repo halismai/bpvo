@@ -113,7 +113,9 @@ int main(int argc, char** argv)
 
         if(vo_output_writer_thread)
         {
-          //data_writer_thread->add(frame->image(), *result.pointCloud);
+          auto vo_out_fn = Format("%s_%05d.voout", data_prefix.c_str(), f_i);
+          UniquePointer<VoOutput> out_ptr(new VoOutputFromDisk(*result.pointCloud, frame->filename()));
+          vo_output_writer_thread->add(vo_out_fn, std::move(out_ptr));
         }
       }
 

@@ -33,6 +33,11 @@ class VoOutputWriter
 
   inline bool isRunning() const { return !_stop; }
 
+  inline void add(std::string output_fn, VoOutputPointer ptr)
+  {
+    _buffer.push({output_fn, std::move(ptr)});
+  }
+
  protected:
   BoundedBuffer<ElementType> _buffer;
   std::thread _thread;
