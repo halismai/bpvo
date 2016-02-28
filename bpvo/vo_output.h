@@ -111,7 +111,6 @@ class VoOutputFromDisk : public VoOutput
 #if defined(WITH_CEREAL)
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/polymorphic.hpp>
-//CEREAL_REGISTER_TYPE(bpvo::VoOutput);
 CEREAL_REGISTER_TYPE(bpvo::VoOutputLive);
 CEREAL_REGISTER_TYPE(bpvo::VoOutputFromDisk);
 #endif

@@ -35,6 +35,11 @@ int main()
         UniquePointer<VoOutput> frame;
         cereal::BinaryInputArchive ar(ifs);
         ar(frame);
+
+        cv::imshow("image", frame->image());
+        int k = cv::waitKey(5) & 0xff;
+        if(k == 'q')
+          break;
       }
     }
 
