@@ -36,7 +36,7 @@ struct PhotoBundleConfig
   SolverType solverType = SolverType::SparseSchur;
   DescriptorType descriptorType = DescriptorType::Patch;
 
-  double minZncc = 0.8;
+  double minZncc = 0.75;
 
   int bundleWindowSize = 3;
   int maxFrameDistance = 3;

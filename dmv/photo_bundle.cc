@@ -1,4 +1,5 @@
 #include <bpvo/vo_output.h>
+#include <bpvo/debug.h>
 
 #include <dmv/photo_bundle.h>
 #include <dmv/image_data.h>
@@ -17,6 +18,12 @@
 #include <list>
 
 #include <boost/circular_buffer.hpp>
+
+#if defined(WITH_DMV)
+#include <ceres/problem.h>
+#include <ceres/solver.h>
+#include <dmv/se3.h>
+#endif
 
 namespace bpvo {
 namespace dmv {
@@ -60,7 +67,7 @@ struct PhotoBundle::Impl
   Trajectory _trajectory;
 
  protected:
-  void addNewPoints(const cv::Mat& image, const PointCloud& pc);
+  void addNewPoints(const cv::Mat& image, const PointCloud& pc, const Matrix44& pose);
   void updateTrackVisibility(const ImageData& image_data, const Matrix44& pose);
 
   /** \return number of old points removed */
@@ -91,7 +98,7 @@ void PhotoBundle::Impl::addData(const cv::Mat& image, const PointCloud& pc)
 
   _image_data.push_back( ImageData(_frame_counter, image) );
   updateTrackVisibility(_image_data.back(), _trajectory.back().inverse());
-  addNewPoints(image, pc);
+  addNewPoints(image, pc, _trajectory.back());
 
   _frame_counter++;
   int nremoved = removeOldPoints();
@@ -99,7 +106,7 @@ void PhotoBundle::Impl::addData(const cv::Mat& image, const PointCloud& pc)
 }
 
 void PhotoBundle::Impl::
-addNewPoints(const cv::Mat& image, const PointCloud& pc)
+addNewPoints(const cv::Mat& image, const PointCloud& pc, const Matrix44& pose)
 {
   int npts = pc.size();
 
@@ -140,7 +147,7 @@ addNewPoints(const cv::Mat& image, const PointCloud& pc)
     DescType desc;
     desc.setFromImage(image, uv);
 
-    Point Xw = pc.pose() * p;
+    Point Xw = pose * p;
     ScenePointType scene_point(_frame_counter, Xw, std::move(desc),
                                typename ScenePointType::ZnccPatchType(image, uv));
 
@@ -173,7 +180,7 @@ void PhotoBundle::Impl::updateTrackVisibility(const ImageData& image_data, const
     auto& p = _points[i];
     if(image_data.id() - p.referenceFrameId() < _config.maxFrameDistance)
     {
-      ImagePoint uv = projectPoint(P, p.X());
+      ImagePoint uv = p.project(P);
 
       if(uv[0] >= R && uv[0] < max_cols && uv[1] >= R && uv[1] < max_rows)
       {
@@ -207,10 +214,23 @@ int PhotoBundle::Impl::removeOldPoints()
 
 auto PhotoBundle::Impl::startOptimization() -> Result
 {
-  return Result();
+#if !defined(WITH_DMV)
+  Fatal("compile WITH_DMV\n");
+#else
+  if(_image_data.size() < 3)
+  {
+    Warn("number of images is too small");
+    return Result();
+  }
+
+  const auto id_start = _image_data.front().id();
+
+  //
+  // conver the trajectory to poses
+  //
+#endif
 }
 
 } // dmv
 } // bpvo
-
 

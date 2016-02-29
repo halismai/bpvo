@@ -22,8 +22,9 @@ int main()
   K << 615.0, 0.0, 320.0, 0.0, 615.0, 240.0, 0.0, 0.0, 1.0;
 
   PhotoBundleConfig config;
-  config.minZncc = 0.75;
+  config.minZncc = 0.5;
   config.bundleWindowSize = 10;
+  config.maxFrameDistance = 10;
 
   PhotoBundle photo_bundle(K, config);
 
@@ -33,6 +34,7 @@ int main()
   int i= 0;
   for(i = 0; i < 50*config.bundleWindowSize; ++i)
   {
+    printf("\nFrame: %d\n", i);
     auto frame = vo_output_reader[i];
     if(frame) {
       Timer timer;

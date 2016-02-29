@@ -13,6 +13,18 @@
 namespace bpvo {
 namespace dmv {
 
+template <class Derived> static inline
+Eigen::Matrix<typename Derived::Scalar, Derived::RowsAtCompileTime - 1, 1>
+normHomog(const Eigen::MatrixBase<Derived>& p)
+{
+  static_assert( Derived::RowsAtCompileTime != Eigen::Dynamic,
+                "matrix size must be known at compile time" );
+
+  auto w_i = 1.0f / p[Derived::RowsAtCompileTime-1];
+  return Eigen::Matrix<typename Derived::Scalar, Derived::RowsAtCompileTime-1,1>(
+      w_i * p.template head<Derived::RowsAtCompileTime-1>());
+}
+
 template <class Descriptor>
 class ScenePoint
 {
@@ -61,6 +73,10 @@ class ScenePoint
 
   inline const ZnccPatchType& znccPatch() const { return _zncc_patch; }
 
+  inline ImagePoint project(const Matrix34& P) const
+  {
+    return normHomog( P * _X );
+  }
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

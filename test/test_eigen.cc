@@ -3,8 +3,23 @@
 
 using namespace bpvo;
 
+template <class Derived> static inline
+Eigen::Matrix<typename Derived::Scalar, Derived::RowsAtCompileTime - 1, 1>
+normHomog(const Eigen::MatrixBase<Derived>& p)
+{
+  auto w_i = 1.0f / p[Derived::RowsAtCompileTime-1];
+  return Eigen::Matrix<typename Derived::Scalar, Derived::RowsAtCompileTime-1,1>(
+      w_i * p.template head<Derived::RowsAtCompileTime-1>());
+}
+
+
 int main()
 {
+
+  Eigen::Matrix<float,3,1> X(1,2,3);
+  std::cout << X.transpose() << std::endl;
+  std::cout << normHomog(X).transpose() << std::endl;
+
   typedef Eigen::Matrix<float,1,6> Jacobian;
   typedef typename EigenAlignedContainer<Jacobian>::type JacobianVector;
 
