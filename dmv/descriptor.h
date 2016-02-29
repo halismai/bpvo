@@ -6,16 +6,25 @@
 namespace bpvo {
 namespace dmv {
 
-class Patch3x3;
-namespace detail {
+template <size_t> class Patch;
+//class Patch3x3;
 
+namespace detail {
 template <class> struct descriptor_traits;
 
+#if 0
 template <> struct descriptor_traits<Patch3x3>
 {
   static constexpr std::size_t Dimension = 9;
   typedef double  DataType;
 }; // Patch3x3
+#endif
+
+template <> template<size_t R> struct descriptor_traits< Patch<R> >
+{
+  static constexpr std::size_t Dimension = (2*R + 1) * (2*R + 1);
+  typedef double DataType;
+}; // descriptor_traits<Patch<R>>
 
 }; // detail
 

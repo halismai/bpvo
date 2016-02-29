@@ -5,6 +5,7 @@
 namespace bpvo {
 namespace dmv {
 
+/*
 void Patch3x3::set(const cv::Mat& I, const ImagePoint& p)
 {
   int stride = I.step / I.elemSize1();
@@ -16,6 +17,7 @@ void Patch3x3::set(const cv::Mat& I, const ImagePoint& p)
 
   extractPatch(I.ptr<uint8_t>(), stride, p.y(), p.x(), radius, _data);
 }
+*/
 
 } // dmv
 } // bpvo

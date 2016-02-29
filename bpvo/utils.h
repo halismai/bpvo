@@ -92,6 +92,12 @@ template <class ...T> inline void UNUSED(const T&...) {}
  */
 int roundUpTo(int n, int m);
 
+template <int N, int Mul> inline constexpr int RoundUpTo()
+{
+  return Mul ? (( N % Mul ) ? N + Mul - (N % Mul) : N) : N;
+}
+
+
 /** vsprintf like */
 std::string Format(const char* fmt, ...);
 
