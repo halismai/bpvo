@@ -14,8 +14,7 @@ namespace dmv {
 template <size_t R, typename T = float>
 class ZnccPatch
 {
-
-  typedef Eigen::Matrix<T, GetPatchLength<R>(), 1> EigenType;
+  typedef Eigen::Matrix<T, RoundUpTo<GetPatchLength<R>(),16>(), 1> EigenType;
   typedef Eigen::Map<const EigenType, Eigen::Aligned> EigenMap;
 
  public:
@@ -30,8 +29,15 @@ class ZnccPatch
     auto N = GetPatchLength<Radius>();
     cv::Size siz(N, N);
 
-    cv::Mat _buffer;
+    cv::Mat _buffer(siz, cv::DataType<DataType>::type);
+
+#define ZNCC_PATCH_SUB_PIX 0
+
+#if ZNCC_PATCH_SUB_PIX
     cv::getRectSubPix(I, siz, cv::Point2f(p.x(), p.y()), _buffer, cv::DataType<DataType>::type);
+#else
+    extractPatch<Radius>(I.ptr<uint8_t>(), I.step/I.elemSize1(), I.rows, I.cols, p, _data, true);
+#endif
 
     auto m = cv::sum(_buffer)[0] / (float) (_buffer.rows * _buffer.cols);
 
@@ -39,10 +45,11 @@ class ZnccPatch
     for(size_t i = 0; i < N; ++i)
       _data[i] = cv::saturate_cast<DataType>(ptr[i] - m);
 
-    _norm = std::sqrt(static_cast<double>(EigenMap(_data).dot(EigenMap(_data))));
-
     for(size_t i = N; i < sizeof(_data) / sizeof(DataType); ++i)
       _data[i] = DataType(0);
+
+    double d = static_cast<double>( EigenMap(_data).dot( EigenMap(_data) ) );
+    _norm = d;
 
     return *this;
   }

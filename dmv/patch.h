@@ -53,7 +53,6 @@ bool extractPatch(const TSrc* ptr, int stride, int rows, int cols, const ImagePo
       for(int c = -Radius; c <= Radius; ++c, ++i)
       {
         int col = std::min(max_cols, std::max((int) Radius, x + c));
-
         dst[i] = static_cast<TDst>( *(p + col) );
       }
     }

@@ -27,11 +27,13 @@ int main()
     patches[i].set(I, p);
   }
 
+
   for(int i = 0; i < N; ++i)
   {
     auto score = patches[i].zncc(patches[i]);
     THROW_ERROR_IF( score == -1.0 || std::fabs(score - 1.0f) > 1e-6, "bandess" );
   }
+
 
   auto t = bpvo::TimeCode(
       5, [&]() {
