@@ -30,3 +30,4 @@ class Se3LocalParameterization : public ceres::LocalParameterization
 
 #endif // WITH_CERES
 #endif // BPVO_DMV_SE3_H
+
