@@ -18,6 +18,8 @@ bool Se3LocalParameterization::Plus(const double* x, const double* delta,
 
   Map<Se3_<double>> T_ret(x_plus_delta);
   T_ret = T * Se3_<double>::exp(theta);
+
+  return true;
 }
 
 bool Se3LocalParameterization::ComputeJacobian(const double* x,
@@ -37,7 +39,7 @@ void Se3LocalParameterization::PoseToParams(const double* T, double* p)
          NUM_PARAMS * sizeof(double));
 }
 
-void Se3LocalParameterization::ParamsToPose(const double* p, double* T)
+void Se3LocalParameterization::ParamsToPose(const double* /*p*/, double* /*T*/)
 {
   // TODO
 }
