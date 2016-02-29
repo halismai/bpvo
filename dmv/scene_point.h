@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <vector>
 
+#include <dmv/zncc_patch.h>
+#include <iostream>
+
 namespace bpvo {
 namespace dmv {
 
@@ -16,10 +19,12 @@ class ScenePoint
  public:
   typedef uint16_t IdType;
   typedef std::vector<IdType> IdList;
+  typedef ZnccPatch<2,float> ZnccPatchType;
 
  public:
-  inline ScenePoint(IdType frame_id, const Point& X, const Descriptor& d)
-      : _X(X), _desc(d)
+  inline ScenePoint(IdType frame_id, const Point& X, const Descriptor& d,
+                    const ZnccPatchType& p)
+      : _id(GetUniqueId()), _X(X), _desc(d), _zncc_patch(p)
   {
     _frame_ids.reserve(8);
     _frame_ids.push_back(frame_id);
@@ -52,13 +57,33 @@ class ScenePoint
     _frame_ids.push_back(id);
   }
 
+  inline void setZnccPatch(const ZnccPatchType& p) { _zncc_patch = p; }
+
+  inline const ZnccPatchType& znccPatch() const { return _zncc_patch; }
+
+
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
  private:
+  uint64_t _id;
   Point _X;
   Descriptor _desc;
   IdList _frame_ids;
+
+  ZnccPatchType _zncc_patch; // 5x5 patch for visibility checks
+
+  friend std::ostream& operator<<(std::ostream& os, const ScenePoint& p)
+  {
+    os << p._id << ": " << (p._X.template head<3>()).transpose() << "\n";
+    os << "frames = [";
+    for(size_t i = 0; i < p._frame_ids.size(); ++i)
+      os << p._frame_ids[i] << ((i != p._frame_ids.size()-1) ? "," : "");
+    os << "]";
+
+    return os;
+  }
+
 }; // ScenePoint
 
 }; // dmv

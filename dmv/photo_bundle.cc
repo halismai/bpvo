@@ -12,7 +12,11 @@
 #include <iostream>
 #include <thread>
 #include <utility>
+
 #include <deque>
+#include <list>
+
+#include <boost/circular_buffer.hpp>
 
 namespace bpvo {
 namespace dmv {
@@ -36,7 +40,7 @@ struct PhotoBundle::Impl
   typedef Patch3x3 DescType;
   typedef DescriptorBase<DescType> Descriptor;
   typedef ScenePoint<Descriptor> ScenePointType;
-  typedef std::deque<ImageData> ImageDataBuffer;
+  typedef boost::circular_buffer<ImageData> ImageDataBuffer;
 
  public:
   Impl(const Matrix33& K, const PhotoBundleConfig& config)
@@ -45,7 +49,6 @@ struct PhotoBundle::Impl
   void addData(const cv::Mat& image, const PointCloud& pc);
 
   Result startOptimization();
-
 
   int _frame_counter = 0;
   Eigen::Matrix<double,3,3> _K; //< the camera calibration
@@ -58,6 +61,7 @@ struct PhotoBundle::Impl
 
  protected:
   void addNewPoints(const cv::Mat& image, const PointCloud& pc);
+  void updateTrackVisibility(const ImageData& image_data, const Matrix44& pose);
 
   /** \return number of old points removed */
   int removeOldPoints();
@@ -85,30 +89,18 @@ void PhotoBundle::Impl::addData(const cv::Mat& image, const PointCloud& pc)
 {
   _trajectory.push_back(pc.pose());
 
-  ImageData image_data;
-#define ADD_DATA_THREADED 0
-
-#if ADD_DATA_THREADED
-  std::thread t1([&]() { image_data.set(_frame_counter, image); });
-  std::thread t2(&Impl::addNewPoints, this, std::ref(image), std::ref(pc));
-
-  t1.join();
-  t2.join();
-#else
-  image_data.set(_frame_counter, image);
+  _image_data.push_back( ImageData(_frame_counter, image) );
+  updateTrackVisibility(_image_data.back(), _trajectory.back().inverse());
   addNewPoints(image, pc);
-#endif
 
   _frame_counter++;
-  _image_data.push_back(image_data);
+  int nremoved = removeOldPoints();
+  printf("removed %d\n", nremoved);
 }
 
 void PhotoBundle::Impl::
 addNewPoints(const cv::Mat& image, const PointCloud& pc)
 {
-  int nremoved = removeOldPoints();
-  printf("removed %d\n", nremoved);
-
   int npts = pc.size();
 
   PointVector points;
@@ -143,14 +135,60 @@ addNewPoints(const cv::Mat& image, const PointCloud& pc)
     float u = (fx * p.x()) / p.z() + cx,
           v = (fy * p.y()) / p.z() + cy;
 
+    ImagePoint uv(u, v);
+
     DescType desc;
-    desc.setFromImage(image, ImagePoint(u,v));
+    desc.setFromImage(image, uv);
 
     Point Xw = pc.pose() * p;
-    _points.push_back(ScenePointType(_frame_counter, Xw, std::move(desc)));
+    ScenePointType scene_point(_frame_counter, Xw, std::move(desc),
+                               typename ScenePointType::ZnccPatchType(image, uv));
+
+    _points.push_back(scene_point);
   }
 }
 
+static inline ImagePoint projectPoint(const Matrix34& P, const Point& X)
+{
+  Eigen::Matrix<typename Point::Scalar,3,1> x = P * X;
+  float z_i = 1.0f / x[2];
+  return ImagePoint(x[0]*z_i, x[1]*z_i);
+}
+
+void PhotoBundle::Impl::updateTrackVisibility(const ImageData& image_data, const Matrix44& pose)
+{
+  typedef typename ScenePointType::ZnccPatchType ZnccPatchType;
+  constexpr int R = ZnccPatchType::Radius;
+
+  const auto& I = image_data.I();
+
+  int max_rows = I.rows - R - 1,
+      max_cols = I.cols - R - 1;
+
+  int num_updated = 0;
+  const Matrix34 P = _K.cast<float>() * pose.block<3,4>(0,0);
+
+  for(size_t i = 0; i < _points.size(); ++i)
+  {
+    auto& p = _points[i];
+    if(image_data.id() - p.referenceFrameId() < _config.maxFrameDistance)
+    {
+      ImagePoint uv = projectPoint(P, p.X());
+
+      if(uv[0] >= R && uv[0] < max_cols && uv[1] >= R && uv[1] < max_rows)
+      {
+        auto score = ZnccPatchType(I, uv).zncc(p.znccPatch());
+        if(score > _config.minZncc)
+        {
+          p.addFrameId(image_data.id());
+          ++num_updated;
+        }
+      }
+    }
+  }
+
+  printf("updated %d/%d\n", num_updated, (int) _points.size());
+}
 
 int PhotoBundle::Impl::removeOldPoints()
 {

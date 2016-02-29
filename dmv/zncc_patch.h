@@ -1,12 +1,17 @@
 #ifndef DMV_ZNCC_PATCH_H
 #define DMV_ZNCC_PATCH_H
 
-#include <dmv/patch.h>
+#include <bpvo/utils.h>
+#include <bpvo/types.h>
+
+#include <dmv/patch_util.h>
+
 #include <Eigen/Core>
 
-#include <opencv2/imgproc/imgproc.hpp>
-
 #include <iostream>
+#include <algorithm>
+
+#include <opencv2/core/core.hpp>
 
 namespace bpvo {
 namespace dmv {
@@ -14,52 +19,45 @@ namespace dmv {
 template <size_t R, typename T = float>
 class ZnccPatch
 {
-  typedef Eigen::Matrix<T, RoundUpTo<GetPatchLength<R>(),16>(), 1> EigenType;
-  typedef Eigen::Map<const EigenType, Eigen::Aligned> EigenMap;
-
  public:
   typedef T DataType;
   static constexpr int Radius = R;
+  static constexpr int Length = GetPatchLength<R>();
+  static constexpr int NumBytes = RoundUpTo<Length,16>();
+
+  typedef Eigen::Matrix<T, Length, 1> EigenType;
+  typedef Eigen::Map<const EigenType, Eigen::Aligned> EigenMap;
 
  public:
-  ZnccPatch() {}
+  inline ZnccPatch() {}
+
+  inline explicit ZnccPatch(const cv::Mat& I, const ImagePoint& p) { set(I, p); }
 
   inline const ZnccPatch& set(const cv::Mat& I, const ImagePoint& p)
   {
-    auto N = GetPatchLength<Radius>();
-    cv::Size siz(N, N);
+    assert( I.type() == cv::DataType<uint8_t>::type && "image must be uint8_t" );
 
-    cv::Mat _buffer(siz, cv::DataType<DataType>::type);
+    extractPatch(I.ptr<uint8_t>(), I.step/I.elemSize1(), I.rows, I.cols,
+                 p.y(), p.x(), Radius, _data);
 
-#define ZNCC_PATCH_SUB_PIX 0
+    double m = std::accumulate(_data, _data + Length, 0.0) * (1.0 / Length);
+    double dp = 0.0;
+    for(int i = 0; i < Length; ++i)
+    {
+      _data[i] = _data[i] - m;
+      dp += (_data[i] * _data[i]);
+    }
 
-#if ZNCC_PATCH_SUB_PIX
-    cv::getRectSubPix(I, siz, cv::Point2f(p.x(), p.y()), _buffer, cv::DataType<DataType>::type);
-#else
-    extractPatch<Radius>(I.ptr<uint8_t>(), I.step/I.elemSize1(), I.rows, I.cols, p, _data, true);
-#endif
-
-    auto m = cv::sum(_buffer)[0] / (float) (_buffer.rows * _buffer.cols);
-
-    const auto ptr = _buffer.template ptr<DataType>();
-    for(size_t i = 0; i < N; ++i)
-      _data[i] = cv::saturate_cast<DataType>(ptr[i] - m);
-
-    for(size_t i = N; i < sizeof(_data) / sizeof(DataType); ++i)
-      _data[i] = DataType(0);
-
-    double d = static_cast<double>( EigenMap(_data).dot( EigenMap(_data) ) );
-    _norm = d;
+    _norm = std::sqrt(dp);
 
     return *this;
   }
 
   inline double zncc(const ZnccPatch& other) const
   {
-    constexpr double eps = 1e-3;
+    constexpr double eps = 1e-6;
     return _norm > eps && other._norm > eps ?
-        (EigenMap(_data).dot(EigenMap(other._data))) /
-        static_cast<double>(_norm * other._norm) : -1.0;
+        (EigenMap(_data).dot(EigenMap(other._data))) / (_norm * other._norm) : -1.0;
   }
 
   inline const DataType* data() const { return _data; }

@@ -39,6 +39,7 @@ struct PhotoBundleConfig
   double minZncc = 0.8;
 
   int bundleWindowSize = 3;
+  int maxFrameDistance = 3;
   int maxPointsPerImage = 5000;
 
   friend std::ostream& operator<<(std::ostream, const PhotoBundleConfig&);

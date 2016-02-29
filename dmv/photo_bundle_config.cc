@@ -71,6 +71,7 @@ PhotoBundleConfig::PhotoBundleConfig(std::string conf_fn)
   minZncc = cf.get<double>("minZncc", 0.8);
   descriptorType = DescriptorTypeFromString(cf.get<std::string>("DescriptorType", "Patch"));
   bundleWindowSize = cf.get<int>("bundleWindowSize", 3);
+  maxFrameDistance = cf.get<int>("maxFrameDistance", 3);
   maxPointsPerImage = cf.get<int>("maxPointsPerImage", 5000);
 }
 
@@ -85,6 +86,7 @@ std::ostream& operator<<(std::ostream& os, const PhotoBundleConfig& c)
   os << "DescriptorType = " << ToString(c.descriptorType) << "\n";
   os << "minZncc = " << c.minZncc << "\n";
   os << "bundleWindowSize = " << c.bundleWindowSize << "\n";
+  os << "maxFrameDistance = " << c.maxFrameDistance << "\n";
   os << "maxPointsPerImage = " << c.maxPointsPerImage;
 
   return os;

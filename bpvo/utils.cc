@@ -28,6 +28,7 @@
 #include <execinfo.h>
 #include <errno.h>
 
+#include <atomic>
 #include <algorithm>
 #include <chrono>
 #include <ctime>
@@ -35,6 +36,7 @@
 #include <thread>
 #include <cstdarg>
 #include <functional>
+#include <random>
 
 #include "bpvo/utils.h"
 #include "bpvo/debug.h"
@@ -89,6 +91,42 @@ int roundUpTo(int n, int m)
 {
   return m ? ( (n % m) ? n + m - (n % m) : n) : n;
 }
+
+uint64_t GetUniqueId()
+{
+  static std::atomic<uint64_t> id(0);
+  return ++id;
+}
+
+template<> double randrange(double min_val, double max_val)
+{
+  static thread_local std::mt19937 Gen;
+  std::uniform_real_distribution<double> dist(min_val, max_val);
+  return dist(Gen);
+}
+
+template<> float randrange(float min_val, float max_val)
+{
+  static thread_local std::mt19937 Gen;
+  std::uniform_real_distribution<float> dist(min_val, max_val);
+  return dist(Gen);
+}
+
+#define INST_RANDRANGE_INT(Type)                              \
+template<> Type randrange(Type min_val, Type max_val) {       \
+  static thread_local std::mt19937 Gen;                       \
+  std::uniform_int_distribution<Type> dist(min_val, max_val); \
+  return dist(Gen); }
+
+INST_RANDRANGE_INT(int8_t);
+INST_RANDRANGE_INT(int16_t);
+INST_RANDRANGE_INT(int32_t);
+
+INST_RANDRANGE_INT(uint8_t);
+INST_RANDRANGE_INT(uint16_t);
+INST_RANDRANGE_INT(uint32_t);
+
+#undef INST_RANDRANGE_INT
 
 using std::string;
 using std::vector;

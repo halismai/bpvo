@@ -97,6 +97,9 @@ template <int N, int Mul> inline constexpr int RoundUpTo()
   return Mul ? (( N % Mul ) ? N + Mul - (N % Mul) : N) : N;
 }
 
+uint64_t GetUniqueId();
+
+template <typename T> T randrange(T min_val, T max_val);
 
 /** vsprintf like */
 std::string Format(const char* fmt, ...);
