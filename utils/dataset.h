@@ -25,6 +25,8 @@ struct DatasetFrame
   virtual const cv::Mat& disparity() const = 0;
 
   virtual std::string filename() const { return ""; }
+
+  virtual ~DatasetFrame() {}
 };
 
 class Dataset

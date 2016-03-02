@@ -52,26 +52,35 @@ class PhotoVoBase
   struct Result
   {
     Mat_<double,4,4> T; // estimated pose
-    std::vector<double> refinedDepth; //
+    std::vector<double> refinedDepth;
+
+    Result() : T(Mat_<double,4,4>::Identity()), refinedDepth() {}
+    Result(const Mat_<double,4,4>& T_) : T(T_), refinedDepth() {}
   }; // Result
 
  public:
   /**
    */
-  PhotoVoBase(const Mat_<double,3,3>& K, double b, Config& config);
+  PhotoVoBase(const Mat_<double,3,3>& K, double b, Config config);
 
-  ~PhotoVoBase() {}
+  virtual ~PhotoVoBase() {}
 
   void setTemplate(const cv::Mat& image, const cv::Mat& disparity);
 
   /**
    */
-  virtual Result estimatePose(const cv::Mat& image) = 0;
+  virtual Result estimatePose(const cv::Mat& image, const Mat_<double,4,4>& T_init =
+                                  Mat_<double,4,4>::Identity()) = 0;
+
+  inline size_t numPoints() const { return _points.size(); }
 
  protected:
   Mat_<double,3,3> _K, _K_inv;
   double _baseline;
   Config _config;
+
+ protected:
+  virtual void setImageData(const cv::Mat& I, const cv::Mat& D) = 0;
 
  protected:
   typename EigenAlignedContainer<WorldPoint>::type _points;

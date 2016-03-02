@@ -26,25 +26,32 @@ int main()
       new TsukubaSyntheticDataset("../conf/tsukuba.cfg"));
 
   Eigen::Matrix<double,3,3> K = dataset->calibration().getIntrinsics().cast<double>();
-  dmv::PhotoVo vo(K, 0.1);
+
+  dmv::PhotoVoBase::Config config;
+  config.nonMaxSuppRadius = 1;
+  UniquePointer<dmv::PhotoVoBase> vo = UniquePointer<dmv::PhotoVoBase>(
+      new dmv::PhotoVo(K, 0.1, config));
 
   Trajectory trajectory;
   auto f1 = dataset->getFrame(0);
-  vo.setTemplate(f1->image(), f1->disparity());
-  for(int i = 1; i < 800; ++i)
+  vo->setTemplate(f1->image(), f1->disparity());
+
+  for(int i = 1; i < 10; ++i)
   {
     Info("Frame %d\n", i);
+
     f1 = dataset->getFrame(i);
-    auto result = vo.estimatePose(f1->image());
-    vo.setTemplate(f1->image(), f1->disparity());
+    auto result = vo->estimatePose(f1->image());
+    vo->setTemplate(f1->image(), f1->disparity());
 
-    trajectory.push_back(result.pose);
+    trajectory.push_back(result.T.cast<float>());
 
+    /*
     cv::imshow("image", f1->image());
     int k = 0xff & cv::waitKey(1);
     if(k == 'q') break;
+    */
   }
-
 
   std::string output_fn("output.txt");
   if(!trajectory.writeCameraPath(output_fn)) {

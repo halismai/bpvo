@@ -8,7 +8,7 @@
 namespace bpvo {
 namespace dmv {
 
-PhotoVoBase::PhotoVoBase(const Mat_<double,3,3>& K, double b, Config& config)
+PhotoVoBase::PhotoVoBase(const Mat_<double,3,3>& K, double b, Config config)
     : _K(K), _K_inv(_K.inverse()), _baseline(b), _config(config) {}
 
 void PhotoVoBase::setTemplate(const cv::Mat& I_, const cv::Mat& D_)
@@ -71,9 +71,9 @@ void PhotoVoBase::setTemplate(const cv::Mat& I_, const cv::Mat& D_)
         const int radius = _config.nonMaxSuppRadius;
         THROW_ERROR_IF(radius < 1, "nonMaxSuppRadius must be > 0");
 
-        for(int y = 1; y < I.rows - 2; ++y)
+        for(int y = radius; y < I.rows - radius - 1; ++y)
         {
-          for(int x = 1; x < I.cols - 2; ++x)
+          for(int x = radius; x < I.cols - radius - 1; ++x)
           {
             if(D(y,x) > 0.0f)
             {
@@ -99,6 +99,8 @@ void PhotoVoBase::setTemplate(const cv::Mat& I_, const cv::Mat& D_)
 
       } break;
   }
+
+  this->setImageData(I, D);
 }
 
 } // dmv

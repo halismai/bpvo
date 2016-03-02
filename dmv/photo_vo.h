@@ -1,7 +1,7 @@
 #ifndef BPVO_DMV_PHOTO_VO
 #define BPVO_DMV_PHOTO_VO
 
-#include <bpvo/types.h>
+#include <dmv/photo_vo_base.h>
 
 namespace cv {
 class Mat;
@@ -10,48 +10,36 @@ class Mat;
 namespace bpvo {
 namespace dmv {
 
-class PhotoVo
+/**
+ * Pixel based
+ */
+class PhotoVo : public PhotoVoBase
 {
  public:
-
-  struct Config
-  {
-    int nonMaxSuppRadius = 1;
-    int maxIterations = 200;
-    short minSaliency = 1;
-
-    bool withRobust = true;
-
-    Config() {}
-  }; // Config
-
-  struct Result
-  {
-    Matrix44 pose;
-    int numIterations;
-  }; // Result
-
+  /**
+   * Apply this scaling to image intensities
+   */
   static constexpr double PixelScale = 1.0 / 255.0;
 
+  using PhotoVoBase::Config;
+  using PhotoVoBase::Result;
+
  public:
-  PhotoVo(const Eigen::Matrix<double,3,3>& K, double b, Config = Config());
+  /**
+   */
+  PhotoVo(const Mat_<double,3,3>& K, double b, Config);
 
-  void setTemplate(const cv::Mat& I, const cv::Mat& D);
+  virtual ~PhotoVo();
 
-  Result estimatePose(const cv::Mat& I, const Matrix44& T_init = Matrix44::Identity()) const;
+  Result estimatePose(const cv::Mat& image, const Mat_<double,4,4>& T_init =
+                      Mat_<double,4,4>::Identity());
 
-  inline size_t numPoints() const
-  {
-    return _X0.size();
-  }
 
  private:
-  Eigen::Matrix<double,3,3> _K;
-  double _baseline;
-  Config _config;
-
   typename AlignedVector<double>::type _I0;
-  typename EigenAlignedContainer<Eigen::Matrix<double,3,1>>::type _X0;
+
+ protected:
+  virtual void setImageData(const cv::Mat&, const cv::Mat&);
 }; // PhotoVo
 
 }; // dmv

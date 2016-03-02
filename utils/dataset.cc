@@ -9,9 +9,8 @@
 
 namespace bpvo {
 
-static cv::Mat toGray(const cv::Mat& src)
+static void toGray(const cv::Mat& src, cv::Mat& ret)
 {
-  cv::Mat ret;
   switch( src.type() )
   {
     case CV_8UC1: ret = src; break;
@@ -19,8 +18,6 @@ static cv::Mat toGray(const cv::Mat& src)
     case CV_8UC4: { cv::cvtColor(src, ret, CV_BGRA2GRAY); } break;
     default: THROW_ERROR("unsupported image format");
   }
-
-  return ret;
 }
 
 DisparityDataset::DisparityFrame::DisparityFrame() {}
@@ -57,7 +54,8 @@ UniquePointer<DatasetFrame> DisparityDataset::getFrame(int f_i) const
   if(D.type() != cv::DataType<float>::type)
     D.convertTo(D, CV_32FC1, _disparity_scale, 0.0);
 
-  cv::Mat I_gray = toGray(I);
+  cv::Mat I_gray;
+  toGray(I, I_gray);
   return UniquePointer<DatasetFrame>(new DisparityFrame(I_gray, D, I, image_fn));
 }
 
@@ -118,8 +116,8 @@ UniquePointer<DatasetFrame> StereoDataset::getFrame(int f_i) const
     return nullptr;
   }
 
-  frame.I[0] = toGray(frame.I_orig[0]);
-  frame.I[1] = toGray(frame.I_orig[1]);
+  toGray(frame.I_orig[0], frame.I[0]);
+  toGray(frame.I_orig[1], frame.I[1]);
 
   frame.fn = image_fn;
 
