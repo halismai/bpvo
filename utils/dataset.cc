@@ -9,9 +9,8 @@
 
 namespace bpvo {
 
-static cv::Mat toGray(const cv::Mat& src)
+static void toGray(const cv::Mat& src, cv::Mat& ret)
 {
-  cv::Mat ret;
   switch( src.type() )
   {
     case CV_8UC1: ret = src; break;
@@ -19,13 +18,11 @@ static cv::Mat toGray(const cv::Mat& src)
     case CV_8UC4: { cv::cvtColor(src, ret, CV_BGRA2GRAY); } break;
     default: THROW_ERROR("unsupported image format");
   }
-
-  return ret;
 }
 
 DisparityDataset::DisparityFrame::DisparityFrame() {}
-DisparityDataset::DisparityFrame::DisparityFrame(cv::Mat I_, cv::Mat D_, cv::Mat I_orig_)
-    : I_orig(I_orig_), I(I_), D(D_) {}
+DisparityDataset::DisparityFrame::DisparityFrame(cv::Mat I_, cv::Mat D_, cv::Mat I_orig_, std::string fn_)
+    : I_orig(I_orig_), I(I_), D(D_), fn(fn_) {}
 
 DisparityDataset::DisparityDataset(std::string conf_fn)
 {
@@ -41,7 +38,8 @@ UniquePointer<DatasetFrame> DisparityDataset::getFrame(int f_i) const
 {
   THROW_ERROR_IF( _image_filenames == nullptr, "dataset is not initialized" );
 
-  cv::Mat I = cv::imread(_image_filenames->operator[](f_i), cv::IMREAD_UNCHANGED);
+  auto image_fn = _image_filenames->operator[](f_i);
+  cv::Mat I = cv::imread(image_fn, cv::IMREAD_UNCHANGED);
   cv::Mat D = cv::imread(_disparity_filenames->operator[](f_i), cv::IMREAD_UNCHANGED);
 
   if(I.empty() || D.empty())
@@ -56,8 +54,9 @@ UniquePointer<DatasetFrame> DisparityDataset::getFrame(int f_i) const
   if(D.type() != cv::DataType<float>::type)
     D.convertTo(D, CV_32FC1, _disparity_scale, 0.0);
 
-  cv::Mat I_gray = toGray(I);
-  return UniquePointer<DatasetFrame>(new DisparityFrame(I_gray, D, I));
+  cv::Mat I_gray;
+  toGray(I, I_gray);
+  return UniquePointer<DatasetFrame>(new DisparityFrame(I_gray, D, I, image_fn));
 }
 
 bool DisparityDataset::init(const ConfigFile& cf)
@@ -105,8 +104,9 @@ UniquePointer<DatasetFrame> StereoDataset::getFrame(int f_i) const
   THROW_ERROR_IF( _left_filenames == nullptr || _right_filenames == nullptr,
                  "has not been initialized" );
 
+  auto image_fn = _left_filenames->operator[](f_i);
   StereoFrame frame;
-  frame.I_orig[0] = cv::imread(_left_filenames->operator[](f_i), cv::IMREAD_UNCHANGED);
+  frame.I_orig[0] = cv::imread(image_fn, cv::IMREAD_UNCHANGED);
   frame.I_orig[1] = cv::imread(_right_filenames->operator[](f_i), cv::IMREAD_UNCHANGED);
 
   if(frame.I_orig[0].empty() || frame.I_orig[1].empty())
@@ -116,8 +116,10 @@ UniquePointer<DatasetFrame> StereoDataset::getFrame(int f_i) const
     return nullptr;
   }
 
-  frame.I[0] = toGray(frame.I_orig[0]);
-  frame.I[1] = toGray(frame.I_orig[1]);
+  toGray(frame.I_orig[0], frame.I[0]);
+  toGray(frame.I_orig[1], frame.I[1]);
+
+  frame.fn = image_fn;
 
   _stereo_alg->run(frame.I[0], frame.I[1], frame.D);
 
