@@ -24,8 +24,8 @@ class VoOutput
  public:
   inline VoOutput() {}
 
-  inline VoOutput(const PointCloud& pc)
-      : _point_cloud(pc) {}
+  inline VoOutput(const PointCloud& pc, const Matrix44& T_rel)
+      : _point_cloud(pc), _T_rel(T_rel) {}
 
   virtual ~VoOutput() {}
 
@@ -40,11 +40,14 @@ class VoOutput
 
 #if defined(WITH_CEREAL)
   template <class Archive> inline
-  void serialize(Archive& ar) { ar(_point_cloud); }
+  void serialize(Archive& ar) { ar(_point_cloud, _T_rel); }
 #endif
+
+  inline const Matrix44& pose() const { return _T_rel; }
 
  protected:
   PointCloud _point_cloud;
+  Matrix44 _T_rel; // relative vo pose
 }; // VoDataAbstract
 
 /**
@@ -55,8 +58,8 @@ class VoOutputLive : public VoOutput
  public:
   inline VoOutputLive() {}
 
-  inline VoOutputLive(const PointCloud& pc, const cv::Mat& image)
-      : VoOutput(pc), _image(image) {}
+  inline VoOutputLive(const PointCloud& pc, const Matrix44& T, const cv::Mat& image)
+      : VoOutput(pc, T), _image(image) {}
 
   virtual ~VoOutputLive() {}
 
@@ -82,8 +85,8 @@ class VoOutputFromDisk : public VoOutput
  public:
   inline VoOutputFromDisk() {}
 
-  inline VoOutputFromDisk(const PointCloud& pc, const std::string& filename)
-      : VoOutput(pc), _filename(filename) {}
+  inline VoOutputFromDisk(const PointCloud& pc, const Matrix44& T, const std::string& filename)
+      : VoOutput(pc, T), _filename(filename) {}
 
   virtual ~VoOutputFromDisk() {}
 
