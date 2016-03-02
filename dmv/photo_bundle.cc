@@ -6,6 +6,7 @@
 #include <dmv/scene_point.h>
 #include <dmv/descriptor.h>
 #include <dmv/patch.h>
+#include <dmv/trajectory_with_id.h>
 
 #include <opencv2/core/core.hpp>
 
@@ -13,6 +14,7 @@
 #include <iostream>
 #include <thread>
 #include <utility>
+#include <map>
 
 #include <deque>
 #include <list>
@@ -23,6 +25,7 @@
 #include <ceres/problem.h>
 #include <ceres/solver.h>
 #include <dmv/se3.h>
+#include <dmv/se3_ceres.h>
 #endif
 
 namespace bpvo {
@@ -48,6 +51,7 @@ struct PhotoBundle::Impl
   typedef DescriptorBase<DescType> Descriptor;
   typedef ScenePoint<Descriptor> ScenePointType;
   typedef boost::circular_buffer<ImageData> ImageDataBuffer;
+  typedef TrajectoryWithId<PoseTransformInverse> TrajectoryType;
 
  public:
   Impl(const Matrix33& K, const PhotoBundleConfig& config)
@@ -64,7 +68,7 @@ struct PhotoBundle::Impl
   ImageDataBuffer _image_data; //< image data
   std::vector<ScenePointType> _points; //< points
 
-  Trajectory _trajectory;
+  TrajectoryType _trajectory;
 
  protected:
   void addNewPoints(const cv::Mat& image, const PointCloud& pc, const Matrix44& pose);
@@ -94,7 +98,7 @@ auto PhotoBundle::optimize() -> Result { return _impl->startOptimization(); }
 
 void PhotoBundle::Impl::addData(const cv::Mat& image, const PointCloud& pc)
 {
-  _trajectory.push_back(pc.pose());
+  _trajectory.push_back(pc.pose(), _frame_counter);
 
   _image_data.push_back( ImageData(_frame_counter, image) );
   updateTrackVisibility(_image_data.back(), _trajectory.back().inverse());
@@ -197,6 +201,35 @@ void PhotoBundle::Impl::updateTrackVisibility(const ImageData& image_data, const
   printf("updated %d/%d\n", num_updated, (int) _points.size());
 }
 
+#if defined(WITH_DMV)
+
+template <typename DescriptorType>
+class PatchPhotoError
+{
+ public:
+  /**
+   * \param K is the camera calibration
+   * \param desc is the descriptor
+   * \param image_data is the other image we want to search in
+   */
+  explicit PatchPhotoError(const Matrix33& K, const DescriptorType& desc,
+                           const ImageData& image_data)
+      : _K(K), _desc(desc), _image_data(image_data) {}
+
+  template <typename T> inline
+  bool operator()(const T* const camera, const T* const point, T* residuals) const
+  {
+    return true;
+  }
+
+ protected:
+  const Matrix33& _K;
+  const DescriptorType& _desc;
+  const ImageData& _image_data;
+}; // PatchPhotoError
+
+#endif // WITH_DMV
+
 int PhotoBundle::Impl::removeOldPoints()
 {
   int old_size = _points.size();
@@ -217,17 +250,36 @@ auto PhotoBundle::Impl::startOptimization() -> Result
 #if !defined(WITH_DMV)
   Fatal("compile WITH_DMV\n");
 #else
+
   if(_image_data.size() < 3)
   {
     Warn("number of images is too small");
     return Result();
   }
 
+#if 0
+  //
+  // get the poses with the desired id's and store them into a map. The map
+  // allows to keep track of where to put back the optimized pose
+  //
+  constexpr int N = Se3LocalParameterization::NUM_PARAMS;
   const auto id_start = _image_data.front().id();
+  std::map<int, std::array<double,N>> camera_params;
+
+  for(const auto&  f : _image_data) {
+    auto id = f.id();
+    camera_params[id] = std::array<double,N>(
+        Se3LocalParameterization::PoseToParams( _trajectory.atId(id).inverse() ));
+  }
 
   //
-  // conver the trajectory to poses
+  // create an objective per point
   //
+  int num_points = 0;
+  ceres::Problem;
+#endif
+
+  return Result();
 #endif
 }
 

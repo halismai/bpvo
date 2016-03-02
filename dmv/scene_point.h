@@ -20,7 +20,7 @@ normHomog(const Eigen::MatrixBase<Derived>& p)
   static_assert( Derived::RowsAtCompileTime != Eigen::Dynamic,
                 "matrix size must be known at compile time" );
 
-  auto w_i = 1.0f / p[Derived::RowsAtCompileTime-1];
+  auto w_i = typename Derived::Scalar(1.0) / p[Derived::RowsAtCompileTime-1];
   return Eigen::Matrix<typename Derived::Scalar, Derived::RowsAtCompileTime-1,1>(
       w_i * p.template head<Derived::RowsAtCompileTime-1>());
 }

@@ -8,6 +8,7 @@
 
 using namespace Eigen;
 
+namespace bpvo {
 namespace  dmv {
 
 bool Se3LocalParameterization::Plus(const double* x, const double* delta,
@@ -45,6 +46,7 @@ void Se3LocalParameterization::ParamsToPose(const double* /*p*/, double* /*T*/)
 }
 
 }; // dmv
+}; // bpvo
 
 #endif
 

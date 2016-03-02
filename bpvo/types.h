@@ -76,6 +76,11 @@ typedef ResidualsVector      WeightsVector;
 typedef Eigen::Matrix<float, 4, 1> Point;
 
 /**
+ * 3D point
+ */
+typedef Eigen::Matrix<float, 3, 1> Point3;
+
+/**
  * Points in the image are 2D
  */
 typedef Eigen::Matrix<float, 2, 1> ImagePoint;

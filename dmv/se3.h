@@ -4,6 +4,7 @@
 #if defined(WITH_SOPHUS)
 #include <sophus/se3.hpp>
 
+namespace bpvo {
 namespace dmv {
 
 template <typename T> using Se3_ = Sophus::SE3Group<T>;
@@ -14,6 +15,7 @@ template <typename T> using Vec3_ = Eigen::Matrix<T,3,1>;
 template <typename T> using Vec2_ = Eigen::Matrix<T,2,1>;
 
 }; // dmv
+}; // bpvo
 
 #endif
 

@@ -6,10 +6,15 @@ namespace ceres {
 class CostFunction;
 }; // ceres
 
+namespace bpvo {
 namespace dmv {
 
 class ReprojectionErrorSe3
 {
+ public:
+  static constexpr int ResidualSize = 2;
+  static constexpr int ParamSize = 7;
+
  public:
   ReprojectionErrorSe3(const double* K_matrix, const double* x3d,
                        const double* x_observation);
@@ -27,6 +32,7 @@ class ReprojectionErrorSe3
 }; //
 
 }; // dmv
+}; // bpvo
 
 #endif // WITH_CERES
 #endif

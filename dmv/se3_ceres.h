@@ -4,6 +4,7 @@
 
 #include <ceres/local_parameterization.h>
 
+namespace bpvo {
 namespace dmv {
 
 class Se3LocalParameterization : public ceres::LocalParameterization
@@ -27,6 +28,7 @@ class Se3LocalParameterization : public ceres::LocalParameterization
 }; // Se3LocalParameterization
 
 }; // dmv
+}; // bpvo
 
 #endif // WITH_CERES
 #endif // BPVO_DMV_SE3_H

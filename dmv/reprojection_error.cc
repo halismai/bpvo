@@ -7,6 +7,7 @@
 
 using namespace Eigen;
 
+namespace bpvo {
 namespace dmv {
 
 ReprojectionErrorSe3::ReprojectionErrorSe3(const double* K, const double* X,
@@ -42,6 +43,7 @@ ReprojectionErrorSe3::Create(const double* K, const double* X, const double* x)
 }
 
 }; // dmv
+}; // bpvo
 
 
 #endif
