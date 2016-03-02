@@ -199,8 +199,8 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
   //
   // clear the  revious points
   //
-  _points.clear();
-  _inds.clear();
+  _points.resize(0);
+  _inds.resize(0);
 
   const ImageSize image_size(cn.rows(), cn.cols());
   IsLocalMax<float> is_local_max(nullptr, cn.cols(), -1);

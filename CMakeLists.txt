@@ -186,6 +186,8 @@ if(WITH_DMV)
   endif()
 endif()
 
+include_directories(${CMAKE_SOURCE_DIR}/externals)
+
 configure_file(
   "${PROJECT_SOURCE_DIR}/bpvo_config.h.in"
   "${PROJECT_SOURCE_DIR}/bpvo/config.h")

@@ -13,6 +13,11 @@ template <size_t R> static inline constexpr size_t GetPatchLength()
   return Square<2*R + 1>();
 }
 
+static inline size_t GetPatchLength(size_t r)
+{
+  return (2*r + 1) * (2*r + 1);
+}
+
 /**
  * does not check if the (y,x) are within the image bounds
  */
