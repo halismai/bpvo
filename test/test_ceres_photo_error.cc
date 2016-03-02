@@ -36,21 +36,23 @@ int main()
   auto f1 = dataset->getFrame(0);
   vo->setTemplate(f1->image(), f1->disparity());
 
-  for(int i = 1; i < 10; ++i)
+  bool do_show = false;
+
+  for(int i = 1; i < 400; ++i)
   {
     Info("Frame %d\n", i);
+
+    if(do_show) {
+      cv::imshow("image", f1->image());
+      int k = 0xff & cv::waitKey(1);
+      if(k == 'q') break;
+    }
 
     f1 = dataset->getFrame(i);
     auto result = vo->estimatePose(f1->image());
     vo->setTemplate(f1->image(), f1->disparity());
 
     trajectory.push_back(result.T.cast<float>());
-
-    /*
-    cv::imshow("image", f1->image());
-    int k = 0xff & cv::waitKey(1);
-    if(k == 'q') break;
-    */
   }
 
   std::string output_fn("output.txt");
