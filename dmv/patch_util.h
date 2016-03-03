@@ -21,12 +21,12 @@ static inline size_t GetPatchLength(size_t r)
 /**
  * does not check if the (y,x) are within the image bounds
  */
-template <typename TSrc, typename TDst> inline
-void extractPatch(const TSrc* ptr, size_t stride, int y, int x, int radius, TDst* dst)
+template <typename TDst, typename TSrc> inline
+void extractPatch(const TSrc* ptr, size_t stride, int y, int x, int radius, TDst* dst, TDst scale = TDst(1))
 {
   for(int r = -radius; r <= radius; ++r)
     for(int c = -radius; c <= radius; ++c)
-      *dst++ = static_cast<TDst>( *(ptr + (r + y)*stride + (c + x)) );
+      *dst++ = scale * static_cast<TDst>( *(ptr + (r + y)*stride + (c + x)) );
 }
 
 static inline int clip_(int v, int min_val, int max_val)
@@ -37,14 +37,15 @@ static inline int clip_(int v, int min_val, int max_val)
 /**
  * clips the border
  */
-template <typename TSrc, typename TDst> inline
-void extractPatch(const TSrc* ptr, size_t stride, int rows, int cols, int y, int x, int radius, TDst* dst)
+template <typename TDst, typename TSrc> inline
+void extractPatch(const TSrc* ptr, size_t stride, int rows, int cols, int y, int x,
+                  int radius, TDst* dst, TDst scale = TDst(1))
 {
   for(int r = -radius; r <= radius; ++r)
   {
     auto p = ptr + stride*clip_(r + y, 0, rows-1);
     for(int c = -radius; c <= radius; ++c)
-      *dst++ = static_cast<TDst>( *(p + clip_(c + x, 0, cols-1)) );
+      *dst++ = scale * static_cast<TDst>( *(p + clip_(c + x, 0, cols-1)) );
   }
 }
 

@@ -38,6 +38,10 @@ class PhotometricVo
      * refined 3D points
      */
     Point3Vector points;
+
+    /**
+     */
+    Point3Vector pointsRaw;
   }; // Result
 
  public:

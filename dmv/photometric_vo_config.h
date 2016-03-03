@@ -16,7 +16,7 @@ struct PhotometricVoConfig
   //
   // intensity stuff
   //
-  double intensityScale = 1.0 / 255.0; //< scale intensity by this factor
+  double intensityScale = 1.0; //< scale intensity by this factor
   bool withSpatialWeighting = true; //< spatial weithing
   int patchRadius = 1; //< radius of the image patc
 

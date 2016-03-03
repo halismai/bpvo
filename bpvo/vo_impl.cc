@@ -165,6 +165,11 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     ret.keyFramingReason = KeyFramingReason::kFirstFrame;
     ret.isKeyFrame = true;
 
+    for(size_t i = 0; i < _kf_point_cloud.size(); ++i)
+      _kf_point_cloud[i].weight() = 1.0;
+
+    ret.pointCloud = make_unique<PointCloud>(_kf_point_cloud);
+
     _kf_candidate.channels_pyr.resize(_channels_pyr.size()); // so we can swap later
     return ret;
   }
