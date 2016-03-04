@@ -1,11 +1,11 @@
-classdef VoMex < handle
+classdef BpvoMex < handle
 
   properties
     hdle_;
   end
 
   methods
-    function this = VoMex(K, b, image_size, params)
+    function this = BpvoMex(K, b, image_size, params)
       if nargin < 3, params = VoMex.DefaultParameters; end
       this.hdle_ = vo_mex('new', K, b, image_size, params);
     end

@@ -84,7 +84,8 @@ static inline bpvo::AlgorithmParameters ToAlgorithmParameters(const mex::Struct&
 static inline mex::Struct ResultToMex(const bpvo::Result result)
 {
   const std::vector<std::string> fields{
-    "pose", "covariance", "isKeyFrame", "optimizerStatistics", "keyFramingReason"};
+    "pose", "covariance", "isKeyFrame", "optimizerStatistics", "keyFramingReason",
+  "x", "w", "c"};
   mex::Struct ret(fields);
 
   ret.set("pose", mex::Mat<float>(result.pose));
@@ -122,6 +123,7 @@ static inline mex::Struct ResultToMex(const bpvo::Result result)
     mex::Mat<uint8_t> c(3, pc.size());
     for(size_t i = 0; i < pc.size(); ++i)
       memcpy(c.col(i), pc[i].rgba().data(), 3*sizeof(uint8_t));
+    ret.set("c", c.release());
   } else
   {
     ret.set("x", mex::newEmptyMexMatrix<float>());
