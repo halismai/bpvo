@@ -84,6 +84,14 @@ class VisualOdometry
    */
   const PointVector& pointsAtLevel(int level = -1) const;
 
+  /**
+   * \return the weights from the pose estimator. Those will correspond to the
+   * weights at the at 'maxTestLevel'
+   *
+   * This is empty if no pose estimation has been done yet
+   */
+  const WeightsVector& getWeights() const;
+
 
   /**
    * \return the trajectory thus far

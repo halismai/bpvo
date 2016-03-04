@@ -356,6 +356,11 @@ auto VisualOdometry::Impl::pointsAtLevel(int level) const -> const PointVector&
   return _tdata_pyr[level]->points();
 }
 
+const WeightsVector& VisualOdometry::Impl::getWeights() const
+{
+  return _pose_estimator.getWeights();
+}
+
 KeyFramingReason
 VisualOdometry::Impl::shouldKeyFrame(const Matrix44& T, const WeightsVector& weights)
 {

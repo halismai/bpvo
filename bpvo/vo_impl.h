@@ -95,6 +95,10 @@ class VisualOdometry::Impl
 
   /**
    */
+  const WeightsVector& getWeights() const;
+
+  /**
+   */
   inline const Trajectory& trajectory() const { return _trajectory; }
 
  protected:

@@ -44,6 +44,11 @@ auto VisualOdometry::pointsAtLevel(int level) const -> const PointVector&
   return _impl->pointsAtLevel(level);
 }
 
+const WeightsVector& VisualOdometry::getWeights() const
+{
+  return _impl->getWeights();
+}
+
 const Trajectory& VisualOdometry::trajectory() const
 {
   return _impl->trajectory();
