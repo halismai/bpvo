@@ -150,6 +150,11 @@ class VisualOdometry::Impl
    */
   cv::Mat _input_image;
 
+  /**
+   * point and their weights from the last keyframe
+   */
+  PointVector _pts_with_weights;
+
  protected:
   void setAsKeyFrame(const std::vector<ChannelsT>&, const cv::Mat&);
 

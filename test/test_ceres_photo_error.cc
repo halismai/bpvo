@@ -30,7 +30,7 @@ int main()
   dmv::PhotoVoBase::Config config;
   config.nonMaxSuppRadius = 1;
   UniquePointer<dmv::PhotoVoBase> vo = UniquePointer<dmv::PhotoVoBase>(
-      new dmv::PhotoVo(K, 0.1, config));
+      new dmv::PhotoVoPatch(K, 0.1, config));
 
   Trajectory trajectory;
   auto f1 = dataset->getFrame(0);
@@ -38,7 +38,7 @@ int main()
 
   bool do_show = false;
 
-  for(int i = 1; i < 400; ++i)
+  for(int i = 1; i < 200; ++i)
   {
     Info("Frame %d\n", i);
 

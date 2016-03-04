@@ -8,6 +8,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, mxArray const* prhs[])
 #else
 
 #include <bpvo/vo.h>
+#include <bpvo/point_cloud.h>
 #include <bpvo/utils.h>
 
 #include <memory>
@@ -104,6 +105,30 @@ static inline mex::Struct ResultToMex(const bpvo::Result result)
 
   ret.set("optimizerStatistics", stats.release());
 
+  if(result.pointCloud)
+  {
+    const auto& pc = *result.pointCloud;
+
+    mex::Mat<float> x(3, pc.size());
+    for(size_t i = 0; i < pc.size(); ++i)
+      memcpy(x.col(i), pc[i].xyzw().data(), 3*sizeof(float));
+    ret.set("x", x.release());
+
+    mex::Mat<float> w(1, pc.size());
+    for(size_t i = 0; i < pc.size(); ++i)
+      w[i] = pc[i].weight();
+    ret.set("w", w.release());
+
+    mex::Mat<uint8_t> c(3, pc.size());
+    for(size_t i = 0; i < pc.size(); ++i)
+      memcpy(c.col(i), pc[i].rgba().data(), 3*sizeof(uint8_t));
+  } else
+  {
+    ret.set("x", mex::newEmptyMexMatrix<float>());
+    ret.set("w", mex::newEmptyMexMatrix<float>());
+    ret.set("c", mex::newEmptyMexMatrix<uint8_t>());
+  }
+
   return ret;
 }
 
@@ -157,7 +182,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, mxArray const* prhs[])
     mex::nargchk(4, 4, nrhs, USAGE);
     const mex::Mat<uint8_t> I(prhs[2]);
     const mex::Mat<float> D(prhs[3]);
-    plhs[0] = mex::MexToPtr<VisualOdometryWrapper>(prhs[1])->addFrame(I, D).release();
+    auto ptr = mex::MexToPtr<VisualOdometryWrapper>(prhs[1]);
+    plhs[0] = ptr->addFrame(I, D).release();
   }
   else
   {

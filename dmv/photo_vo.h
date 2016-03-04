@@ -2,6 +2,7 @@
 #define BPVO_DMV_PHOTO_VO
 
 #include <dmv/photo_vo_base.h>
+#include <array>
 
 namespace cv {
 class Mat;
@@ -36,6 +37,35 @@ class PhotoVo : public PhotoVoBase
 
  private:
   typename AlignedVector<double>::type _I0;
+
+ protected:
+  virtual void setImageData(const cv::Mat&, const cv::Mat&);
+}; // PhotoVo
+
+class PhotoVoPatch : public PhotoVoBase
+{
+ public:
+  /**
+   * Apply this scaling to image intensities
+   */
+  static constexpr double PixelScale = 1.0 / 255.0;
+
+  using PhotoVoBase::Config;
+  using PhotoVoBase::Result;
+
+ public:
+  /**
+   */
+  PhotoVoPatch(const Mat_<double,3,3>& K, double b, Config);
+
+  virtual ~PhotoVoPatch();
+
+  Result estimatePose(const cv::Mat& image, const Mat_<double,4,4>& T_init =
+                      Mat_<double,4,4>::Identity());
+
+ private:
+  typedef std::array<double,9> PatchType;
+  std::vector<PatchType> _I0;
 
  protected:
   virtual void setImageData(const cv::Mat&, const cv::Mat&);

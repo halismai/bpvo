@@ -176,6 +176,7 @@ struct PatchErrorWithInverseDepth
 
     Map<const Se3_<T>> pose(camera);
 
+
     T u = T( _scene_point.uv().x() );
     T v = T( _scene_point.uv().y() );
     T z = T(1) / inv_depth[0];
@@ -186,11 +187,8 @@ struct PatchErrorWithInverseDepth
     X[2] = z;
 
     Map<const Vec_<T,3>> X_(X);
-    const Vec_<T,2> p = normHomog( _K.cast<T>() * (pose * X_) );
-
-    std::cout << "val: " << _scene_point.uv().transpose() << std::endl;
-    std::cout << "p0:" << p[0] << std::endl;
-    std::cout << "p1:" << p[1] << std::endl;
+    Vec_<T,3> Xw = pose * X_;
+    const Vec_<T,2> p = normHomog( _K.cast<T>() * Xw );
 
 
     T i1;
@@ -202,24 +200,14 @@ struct PatchErrorWithInverseDepth
         T col = p.x() + T(c);
 
         _image.Evaluate(row, col, &i1);
-        residual[i] = T(_scene_point[i]) - T(_pixel_scale)*i1;
-        //residual[i] = residual[i] / T(9);
-
-        if(r == 0 && c == 0 ) {
-          std::cout << "r: " << row << "\n";
-          std::cout << "c: " << col << "\n";
-          std::cout << "residual: " << residual[i] << std::endl;
-          std::cout << "i1: " << i1 << std::endl;
-          std::cout << "scene point: " << _scene_point[i] << "\n" << i1 << "\n\n";
-        }
+        residual[i] = T(_pixel_scale)*i1 - T(_scene_point[i]);
+        residual[i] /= T(9);
 
         if(_with_spatial_weighting) {
           residual[i] = residual[i] * _weight_table[i];
         }
       }
     }
-
-    throw "bye";
 
     return true;
   }
@@ -276,9 +264,10 @@ auto PhotometricVo::Impl::addFrame(const VoOutput* vo_output) -> PhotometricVo::
   const auto pose = vo_output->pose();
 
   ceres::Problem problem;
-  Sophus::SE3d se3(/*Mat_<double,4,4>::Identity()*/ pose.cast<double>());
+  Sophus::SE3d se3(pose.cast<double>());
   problem.AddParameterBlock(se3.data(), 7, new Se3LocalParameterization);
 
+  printf("rows %d cols %d\n", image.rows, image.cols);
   typename PatchErrorWithInverseDepth::GridType grid(
       image.ptr<uint8_t>(), 0, image.rows, 0, image.cols);
   typename PatchErrorWithInverseDepth::InterpType interp(grid);
