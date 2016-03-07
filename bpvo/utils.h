@@ -41,7 +41,7 @@ inline std::string to_string(std::string s) { return s; }
 
 namespace bpvo {
 
-template <typename T> inline constexpr void
+template <typename T> inline void
 assert_is_floating_point()
 {
   static_assert(std::is_floating_point<T>::value, "value must be floating point");

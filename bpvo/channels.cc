@@ -87,6 +87,8 @@ struct BitPlanesComputeBody : public ParallelForBody
                        ChannelsArray& channels)
       : _C(census(I, sigma_ct)), _sigma_bp(sigma_bp), _channels(channels) {}
 
+  virtual ~BitPlanesComputeBody() {}
+
   inline void operator()(const Range& range) const
   {
     for(int c = range.begin(); c != range.end(); ++c)

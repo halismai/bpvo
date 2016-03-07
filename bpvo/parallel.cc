@@ -116,7 +116,7 @@ int getThreadNum()
 #elif defined(WITH_OPENMP)
   return omp_get_thread_num();
 #else
-  0;
+  return 0;
 #endif
 }
 

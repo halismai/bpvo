@@ -25,6 +25,7 @@
 #include <bpvo/types.h>
 #include <opencv2/core/core.hpp>
 #include <vector>
+#include <array>
 
 namespace bpvo {
 
