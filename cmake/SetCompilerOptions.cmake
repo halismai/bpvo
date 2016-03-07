@@ -101,7 +101,12 @@ endif()
 
 if(BUILD_STATIC AND CMAKE_COMPILER_IS_GNUCXX)
   set(EXTRA_FLAGS "-fPIC ${EXTRA_CXX_FLAGS}")
+else()
+  if(BUILD_MATLAB)
+    set(EXTRA_FLAGS "-fPIC ${EXTRA_CXX_FLAGS}")
+  endif()
 endif()
+
 
 set(EXTRA_FLAGS                     "${EXTRA_FLAGS}"                    CACHE INTERNAL "Extra flags")
 set(EXTRA_C_FLAGS                   "${EXTRA_C_FLAGS}"                  CACHE INTERNAL "Extra C flags")
