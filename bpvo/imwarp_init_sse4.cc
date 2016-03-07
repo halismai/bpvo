@@ -220,3 +220,4 @@ void imwarp_init_sse4(const ImageSize& image_size, const float* P_matrix,
 }
 
 } // bpvo
+
