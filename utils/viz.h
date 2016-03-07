@@ -6,7 +6,7 @@
 
 namespace bpvo {
 
-class StereoCalibration;
+struct StereoCalibration;
 
 void colorizeDisparity(const cv::Mat& src, cv::Mat& dst, double min_d = 0, double num_d = -1);
 

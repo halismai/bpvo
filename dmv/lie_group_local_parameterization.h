@@ -43,8 +43,8 @@ class LieGroupLocalParameterization : public ceres::LocalParameterization
     return true;
   }
 
-  virtual constexpr int GlobalSize() const { return NumParameters; }
-  virtual constexpr int LocalSize() const { return DoF; }
+  inline int GlobalSize() const { return NumParameters; }
+  inline int LocalSize() const { return DoF; }
 }; // LieGroupLocalParameterization
 
 }; // dmv
