@@ -79,6 +79,18 @@ struct PoseEstimatorData_
     return (H*dp).isApprox(G);
   }
 
+  inline bool solve2()
+  {
+    Eigen::Matrix<double,N,N> H_ = H.template cast<double>();
+    Eigen::Matrix<double,N,1> G_ = G.template cast<double>();
+
+    Eigen::Matrix<double,N,1> dp_ = H_.solve(G_);
+    bool ret = (H_ * dp_).isApprox(G_);
+
+    dp = dp_.template cast<float>();
+    return ret;
+  }
+
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 }; // PoseEstimatorData
 
@@ -266,9 +278,23 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
     Warn("Failed to solve system\n");
     std::cout << data.H << std::endl;
     std::cout << data.G << std::endl;
-    Fatal("bye\n");
-    ret.status = PoseEstimationStatus::kSolverError;
-    return ret;
+
+    bool ok = false;
+    {
+      Warn("trying to solve it again\n");
+      float u = 0.01 * data.H.diagonal().maxCoeff();
+      data.H.diagonal().array() += u;
+      ok = data.solve();
+      if(!ok) {
+        Warn("failed again\n");
+      }
+    }
+
+    //Fatal("bye\n");
+    if(!ok) {
+      ret.status = PoseEstimationStatus::kSolverError;
+      return ret;
+    }
   }
 
 
