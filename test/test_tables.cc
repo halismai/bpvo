@@ -64,7 +64,7 @@ static void initInterpTable2d(float* tab, short* itab)
         int ks2 = ks/2, Mk1=ks2, Mk2=ks2, mk1=ks2, mk2=ks2;
         for(int k1 = ks2; k1 < ks2+2; ++k1)
         {
-          for(int k2 = k2; k2 < ks2+2; ++k2)
+          for(int k2 = k1; k2 < ks2+2; ++k2)
           {
             if(itab[k1*ks + k2] < itab[mk1*ks + mk2])
             {
