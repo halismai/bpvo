@@ -42,6 +42,7 @@ option(ENABLE_FAST_MATH "enable fast math" OFF)
 option(ENABLE_OMIT_FRAME_POINTER "omit frame pointer" ON)
 
 option(BUILD_TEST "build the testing stuff" OFF)
+option(BUILD_MATLAB "build matlab bindings" OFF)
 
 option(WITH_BITPLANES "use bitplanes cost" OFF)
 option(WITH_DISPARITY_SPACE_WARP "use disparity space" OFF)
@@ -176,16 +177,16 @@ if(WITH_DMV)
     #  INSTALL_COMMAND make install)
 
     include_directories(${CMAKE_SOURCE_DIR}/externals/Sophus/)
-    include_directories(${CMAKE_SOURCE_DIR}/externals/cereal/include/)
 
     add_definitions(-DWITH_SOPHUS)
     add_definitions(-DWITH_DMV)
-    add_definitions(-DWITH_CEREAL)
 
     set(WITH_DMV_POSSIBLE True)
   endif()
 endif()
 
+include_directories(${CMAKE_SOURCE_DIR}/externals/cereal/include/)
+add_definitions(-DWITH_CEREAL)
 include_directories(${CMAKE_SOURCE_DIR}/externals)
 
 configure_file(
@@ -202,5 +203,9 @@ endif()
 
 if(BUILD_TEST)
   add_subdirectory(test)
+endif()
+
+if(BUILD_MATLAB)
+  add_subdirectory(matlab)
 endif()
 

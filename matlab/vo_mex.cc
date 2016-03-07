@@ -76,6 +76,13 @@ static inline bpvo::AlgorithmParameters ToAlgorithmParameters(const mex::Struct&
   ret.maxFractionOfGoodPointsToKeyFrame = GetOption<float>(params, "maxFractionOfGoodPointsToKeyFrame", 0.5);
   ret.goodPointThreshold = GetOption<float>(params, "goodPointThreshold", 0.75);
 
+  ret.minSaliency = GetOption<float>(params, "minSaliency", 0.1);
+  ret.minDisparity = GetOption<float>(params, "minDisparity", 0.1);
+  ret.maxDisparity = GetOption<float>(params, "maxDisparity", 1000);
+
+  ret.minNumPixelsForNonMaximaSuppression = GetOption<int>(params, "minNumPixelsForNonMaximaSuppression", 320*240);
+
+
   ret.maxTestLevel = GetOption<int>(params, "maxTestLevel", 0);
 
   return ret;
