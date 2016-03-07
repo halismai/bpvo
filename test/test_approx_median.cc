@@ -11,10 +11,12 @@ int main()
     data[i] = 255.0 * (rand() / (float) RAND_MAX);
   }
 
-  auto m_true = bpvo::median(data);
+  auto data1(data);
+  auto m_true = bpvo::median(data1);
   printf("median: %f\n", m_true);
 
-  auto m_approx = bpvo::approximate_median(data, 0.0, 255.0, 0.25);
+  auto data2(data);
+  auto m_approx = bpvo::approximate_median(data2, 0.0, 255.0, 0.1);
   printf("approx: %f\n", m_approx);
 
   return 0;

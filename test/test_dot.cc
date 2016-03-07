@@ -2,6 +2,7 @@
 #include <Eigen/Core>
 #include <iostream>
 #include <cstdio>
+#include <vector>
 
 #include "bpvo/timer.h"
 
