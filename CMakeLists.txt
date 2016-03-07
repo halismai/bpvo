@@ -205,7 +205,7 @@ if(BUILD_TEST)
   add_subdirectory(test)
 endif()
 
-if(BUILD_MATLAB)
-  add_subdirectory(matlab)
-endif()
+#if(BUILD_MATLAB)
+#  add_subdirectory(matlab)
+#endif()
 
