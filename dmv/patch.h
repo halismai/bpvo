@@ -45,7 +45,7 @@ class Patch : public DescriptorBase< Patch<R> >
   inline const DataType* data() const { return _data; }
 
  protected:
-  alignas(16) DataType _data[NumBytes];
+  ALIGNED(16) DataType _data[NumBytes];
 }; // Patch
 
 typedef Patch<1> Patch3x3;

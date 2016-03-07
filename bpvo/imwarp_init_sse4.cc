@@ -1,5 +1,6 @@
 #include "bpvo/imwarp.h"
 #include "bpvo/utils.h"
+#include "bpvo/debug.h"
 
 #include <immintrin.h>
 
@@ -123,7 +124,7 @@ void imwarp_init_sse4(const ImageSize& image_size, const float* P_matrix,
     float* c = coeffs + 4*i;
     const float* p = xyzw + 4*i;
 
-    alignas(16) int buf[8];
+    ALIGNED(16) int buf[8];
     __m128 xf0, xf1, xi0, xi1, wx0, wx1, xx0, xx1, yy0, yy1;
 
     xf0 = proj(p);

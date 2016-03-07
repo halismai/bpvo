@@ -29,7 +29,18 @@
 
 #define FORCE_INLINE inline __attribute__((always_inline))
 #define NO_INLINE           __attribute__((noinline))
+
+#if defined(HAS_PROPER_CX11)
+#define ALIGNED(...)        alignas(__VA_ARGS__)
+#else
 #define ALIGNED(...)        __attribute__((aligned(__VA_ARGS__)))
+#endif
+
+#if defined(HAS_PROPER_CX11)
+#define THREAD_LOCAL        thread_local
+#else
+#define THREAD_LOCAL
+#endif
 
 #define likely(expr)        __builtin_expect((expr),true)
 #define unlikey(expr)       __builtin_expect((expr),false)

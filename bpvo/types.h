@@ -54,9 +54,17 @@ SharedPointer<_T> make_shared(Args&& ... args) {
 }
 
 #if defined(__AVX__)
+#if defined(HAS_PROPER_CX11)
 static constexpr int DefaultAlignment = 32;
 #else
+#define DefaultAlignment 32
+#endif
+#else
+#if defined(HAS_PROPER_CX11)
 static constexpr int DefaultAlignment = 16;
+#else
+#define DefaultAlignment 16
+#endif
 #endif
 
 template <typename T>

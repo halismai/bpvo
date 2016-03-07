@@ -3,6 +3,7 @@
 
 #include <bpvo/utils.h>
 #include <bpvo/types.h>
+#include <bpvo/debug.h>
 
 #include <dmv/patch_util.h>
 
@@ -65,7 +66,7 @@ class ZnccPatch
   inline double norm() const { return _norm; }
 
  protected:
-  alignas(16) DataType _data[ RoundUpTo<GetPatchLength<Radius>(),16>() ];
+  ALIGNED(16) DataType _data[ RoundUpTo<GetPatchLength<Radius>(),16>() ];
   double _norm = 0.0;
 }; // ZnccPatch
 

@@ -24,6 +24,7 @@
 
 #include <iosfwd>
 #include <bpvo/types.h>
+#include <bpvo/debug.h>
 
 namespace bpvo {
 
@@ -90,7 +91,7 @@ class Vector6
   static void RankUpdate(const Vector6& J, float w, float* buf);
 
  protected:
-  alignas(DefaultAlignment) float _data[8];
+  ALIGNED(DefaultAlignment) float _data[8];
 }; // Vector6
 
 inline Vector6 operator*(float x, const Vector6& v) { return v * x; }

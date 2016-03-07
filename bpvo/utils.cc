@@ -100,21 +100,21 @@ uint64_t GetUniqueId()
 
 template<> double randrange(double min_val, double max_val)
 {
-  static thread_local std::mt19937 Gen;
+  static THREAD_LOCAL std::mt19937 Gen;
   std::uniform_real_distribution<double> dist(min_val, max_val);
   return dist(Gen);
 }
 
 template<> float randrange(float min_val, float max_val)
 {
-  static thread_local std::mt19937 Gen;
+  static THREAD_LOCAL std::mt19937 Gen;
   std::uniform_real_distribution<float> dist(min_val, max_val);
   return dist(Gen);
 }
 
 #define INST_RANDRANGE_INT(Type)                              \
 template<> Type randrange(Type min_val, Type max_val) {       \
-  static thread_local std::mt19937 Gen;                       \
+  static THREAD_LOCAL std::mt19937 Gen;                       \
   std::uniform_int_distribution<Type> dist(min_val, max_val); \
   return dist(Gen); }
 
@@ -196,7 +196,11 @@ uint64_t UnixTimestampMilliSeconds()
 
 void Sleep(int32_t ms)
 {
+#if defined(HAS_PROPER_CX11)
   std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+#else
+  usleep(ms);
+#endif
 }
 
 string Format(const char* fmt, ...)
