@@ -38,12 +38,14 @@ AlgorithmParameters::AlgorithmParameters()
     , gradientTolerance(1e-8)
     , relaxTolerancesForCoarseLevels(true)
     , lossFunction(LossFunctionType::kTukey)
+    , descriptor(DescriptorType::kIntensity)
     , verbosity(VerbosityType::kIteration)
     , minTranslationMagToKeyFrame(0.15)
     , minRotationMagToKeyFrame(5.0)
     , maxFractionOfGoodPointsToKeyFrame(0.6)
     , goodPointThreshold(0.85)
     , minNumPixelsForNonMaximaSuppression(320*240)
+    , nonMaxSuppRadius(1)
     , minNumPixelsToWork(256)
     , minSaliency(0.1)
     , minDisparity(1.0)
@@ -65,12 +67,14 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   gradientTolerance = cf.get<float>("gradientTolerance", 1e-6);
   relaxTolerancesForCoarseLevels = cf.get<int>("relaxTolerancesForCoarseLevels", 1);
   lossFunction = LossFunctionTypeFromString(cf.get<std::string>("lossFunction", "Huber"));
+  descriptor = DescriptorTypeFromString(cf.get<std::string>("descriptor", "Intensity"));
   verbosity = VerbosityTypeFromString(cf.get<std::string>("Verbosity", "Iteration"));
   minTranslationMagToKeyFrame = cf.get<float>("minTranslationMagToKeyFrame", 0.1);
   minRotationMagToKeyFrame = cf.get<float>("minRotationMagToKeyFrame", 2.5);
   maxFractionOfGoodPointsToKeyFrame = cf.get<float>("maxFractionOfGoodPointsToKeyFrame", 0.6f);
   goodPointThreshold = cf.get<float>("goodPointThreshold", 0.75);
   minNumPixelsForNonMaximaSuppression = cf.get<int>("minNumPixelsForNonMaximaSuppression", 320*240);
+  nonMaxSuppRadius = cf.get<int>("nonMaxSuppRadius", 1);
   minNumPixelsToWork = cf.get<int>("minNumPixelsToWork", 256);
   minSaliency = cf.get<float>("minSaliency", 0.1f);
   minDisparity = cf.get<float>("minDisparity", 1.0f);
@@ -101,6 +105,16 @@ LossFunctionType LossFunctionTypeFromString(std::string s)
     return kL2;
   else
     THROW_ERROR("unknown LossFunctionType");
+}
+
+DescriptorType DescriptorTypeFromString(std::string s)
+{
+  if(icompare("Intensity", s))
+    return kIntensity;
+  else if(icompare("BitPlanes", s))
+    return kBitPlanes;
+  else
+    THROW_ERROR("unknown DescriptorType");
 }
 
 std::string ToString(VerbosityType v)

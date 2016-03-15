@@ -53,7 +53,6 @@ endif()
 include(cmake/MakeVersion.cmake)
 MakeVersion(BPVO 0 9 3-1)
 
-
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Direct Visual Odometry")
 set(CPACK_PACKAGE_VENDOR              "halismai")
 set(CPACK_PACKAGE_CONTACT             "halismai@cs.cmu.edu")
@@ -92,10 +91,17 @@ endif()
 # REQUIRED packages
 find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui contrib)
 find_package(Eigen  REQUIRED)
+find_package(Ceres  REQUIRED)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
-list(APPEND MY_LIBRARIES ${OpenCV_LIBS})
+include_directories(${CERES_INCLUDE_DIRS})
+include_directories(${CMAKE_SOURCE_DIR}/externals/Sophus/)
+
+add_definitions(-DWITH_CERES)
+add_definitions(-DWITH_SOPHUS)
+
+list(APPEND MY_LIBRARIES ${OpenCV_LIBS} ${CERES_LIBRARIES})
 
 set(Boost_USE_STATIC_LIBS     ON)
 set(Boost_USE_STATIC_RUNTIME  ON)

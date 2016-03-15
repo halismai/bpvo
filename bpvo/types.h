@@ -134,6 +134,12 @@ enum VerbosityType
   kDebug      //< print debug info
 }; // VerbosityType
 
+enum DescriptorType
+{
+  kIntensity = 0x30, //< raw intensity (fast)
+  kBitPlanes         //< bit-planes (robust)
+}; // DescriptorType
+
 struct AlgorithmParameters
 {
   //
@@ -194,6 +200,11 @@ struct AlgorithmParameters
   LossFunctionType lossFunction;
 
   /**
+   * Descriptor type
+   */
+  DescriptorType descriptor;
+
+  /**
    * how much verbosity you want!
    */
   VerbosityType verbosity;
@@ -245,6 +256,10 @@ struct AlgorithmParameters
    * Minimum number of pixels to do non-maxima suppression
    */
   int minNumPixelsForNonMaximaSuppression;
+
+  /**
+   */
+  int nonMaxSuppRadius;
 
   /**
    * Minimum number of pixels to estimate pose
@@ -440,6 +455,7 @@ std::string ToString(PoseEstimationStatus);
 std::string ToString(KeyFramingReason);
 
 LossFunctionType LossFunctionTypeFromString(std::string);
+DescriptorType DescriptorTypeFromString(std::string);
 VerbosityType VerbosityTypeFromString(std::string);
 
 }; // bpvo

@@ -208,7 +208,7 @@ void TemplateData_<CN,W>::getValidPoints(const CN& cn, const cv::Mat& D)
   //
   // we'll pre-compute the saliency maps anyways because this is faster with
   // BitPlanes, but if we are doing intensity only we are better off computing
-  // the saliency on the fly if nms is not neededq
+  // the saliency on the fly if nms is not needed
   //
   cn.computeSaliencyMap(_buffer);
 

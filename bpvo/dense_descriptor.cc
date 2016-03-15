@@ -15,16 +15,16 @@
    along with bpvo.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef BPVO_CONFIG_H
-#define BPVO_CONFIG_H
+/*
+ * Contributor: halismai@cs.cmu.edu
+ */
 
-/** DO NOT EDIT auto generated header */
-#define BPVO_VERSION_MAJOR "0"
-#define BPVO_VERSION_MINOR "9"
-#define BPVO_VERSION_PATCH "3-1-v0.9.3-13-g28d58c0-Release"
-#define BPVO_BUILD_DATE    "Mon Mar 14 21:00:52 EDT 2016"
-#define BPVO_BUILD_STR \
-    "BPVO version: " BPVO_VERSION_MAJOR "." BPVO_VERSION_MINOR "." BPVO_VERSION_PATCH \
-    "\nBuilt on: " BPVO_BUILD_DATE
+#include "bpvo/dense_descriptor.h"
 
-#endif // BPVO_CONFIG_H
+namespace bpvo {
+
+DenseDescriptor::DenseDescriptor() {}
+
+DenseDescriptor::~DenseDescriptor() {}
+
+}; // bpvo
