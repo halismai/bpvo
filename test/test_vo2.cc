@@ -16,8 +16,9 @@
 #include <gperftools/profiler.h>
 #endif
 
-using namespace bpvo;
+#include <opencv2/highgui/highgui.hpp>
 
+using namespace bpvo;
 
 class Vo
 {
@@ -71,6 +72,11 @@ int main(int argc, char** argv)
         break;
       }
 
+      cv::imshow("image", frame->image());
+      int k = 0xff & cv::waitKey(5);
+      if('q' == k)
+        break;
+
       Timer timer;
       const auto I_ptr = frame->image().ptr<const uint8_t>();
       const auto D_ptr = frame->disparity().ptr<const float>();
@@ -81,10 +87,6 @@ int main(int argc, char** argv)
       f_i += 1;
       trajectory.push_back(result.pose);
 
-      dprintf("got %zu\n", result.optimizerStatistics.size());
-      if(f_i > 2)
-        break;
-
       int num_iters = result.optimizerStatistics[maxTestLevel].numIterations;
       if(num_iters == params.maxIterations)
       {
@@ -92,7 +94,7 @@ int main(int argc, char** argv)
         Warn("maximum iterations reached %d\n", params.maxIterations);
       }
 
-#if 0
+#if 1
       fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d\r",
               f_i-1, 6, tt, 5, (f_i - 1) / total_time,  num_iters,
               ToString(result.keyFramingReason).c_str(), 8, 0/*vo.numPointsAtLevel()*/);
@@ -122,3 +124,4 @@ int main(int argc, char** argv)
 
   return 0;
 }
+

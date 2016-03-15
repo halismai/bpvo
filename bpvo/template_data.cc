@@ -229,6 +229,8 @@ void TemplateData::computeResiduals(const DenseDescriptor* desc, const Matrix44&
 
   ComputeResidualsBody func(desc, _photo_error, _points.size(),
                             _pixels.data(), residuals.data());
+
+  parallel_for(Range(0, desc->numChannels()), func);
 }
 
 }; // bpvo

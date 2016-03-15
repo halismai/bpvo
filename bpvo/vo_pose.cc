@@ -22,6 +22,7 @@
 #include <opencv2/core/core.hpp>
 
 #include <bpvo/vo_pose.h>
+#include <bpvo/parallel.h>
 #include <bpvo/utils.h>
 #include <bpvo/intensity_descriptor.h>
 
@@ -29,11 +30,14 @@
 
 namespace bpvo {
 
-static int getNumberOfPyramidLevels(int n_levels, int min_image_dim)
+static int getNumberOfPyramidLevels(int min_image_dim, int min_allowed_res = 40)
 {
-  return n_levels < 0 ?
-      1 + std::round(std::log2(min_image_dim / (double) n_levels)) :
-      n_levels;
+  return 1 + std::round(std::log2(min_image_dim / (double) min_allowed_res));
+}
+
+static int getNumberOfPyramidLevels(ImageSize s, int min_allowed_res)
+{
+  return getNumberOfPyramidLevels(std::min(s.rows, s.cols), min_allowed_res);
 }
 
 template <typename T> static inline
@@ -48,7 +52,9 @@ VisualOdometryPose::VisualOdometryPose(const Matrix33& K, const float b, ImageSi
   , _params(p)
   , _pose_est_params(p)
   , _pose_est_params_low_res(p)
-  , _image_pyramid( getNumberOfPyramidLevels(p.numPyramidLevels, 40) )
+  , _image_pyramid( _params.numPyramidLevels < 0 ?
+                    getNumberOfPyramidLevels(image_size, 40) :
+                    _params.numPyramidLevels )
   , _tdata_pyr( _image_pyramid.size() )
 {
   _params.numPyramidLevels = _image_pyramid.size();
@@ -66,7 +72,7 @@ VisualOdometryPose::VisualOdometryPose(const Matrix33& K, const float b, ImageSi
   }
 }
 
-static inline UniquePointer<DenseDescriptor> makeDescriptor(DescriptorType t)
+static inline UniquePointer<DenseDescriptor> MakeDescriptor(DescriptorType t)
 {
   if(DescriptorType::kIntensity == t)
     return UniquePointer<DenseDescriptor>(new IntensityDescriptor);
@@ -74,20 +80,41 @@ static inline UniquePointer<DenseDescriptor> makeDescriptor(DescriptorType t)
     THROW_ERROR("not implemented");
 }
 
+struct VoPoseSetTemplateBody : public ParallelForBody
+{
+  VoPoseSetTemplateBody(DescriptorType desc_type, const ImagePyramid& image_pyramid,
+                        const cv::Mat& D, std::vector<UniquePointer<TemplateData>>& tdata_pyr)
+      : _desc_type(desc_type), _image_pyramid(image_pyramid), _D(D), _tdata_pyr(tdata_pyr)
+    {
+      assert( _image_pyramid.size() == _tdata_pyr.size() );
+    }
+
+  inline void operator()(const Range& range) const
+  {
+    for(int i = range.begin(); i != range.end(); ++i)
+    {
+      auto desc = MakeDescriptor(_desc_type);
+      desc->compute(_image_pyramid[i]);
+      _tdata_pyr[i]->setData( desc.get(), _D);
+    }
+  }
+
+ protected:
+  DescriptorType _desc_type;
+  const ImagePyramid& _image_pyramid;
+  const cv::Mat& _D;
+  std::vector<UniquePointer<TemplateData>>& _tdata_pyr;
+}; // VoPoseSetTemplateBody
+
 void VisualOdometryPose::setTemplate(const uint8_t* image_ptr, const float* dmap_ptr)
 {
   const auto I = ToOpenCV(image_ptr, _image_size);
   const auto D = ToOpenCV(dmap_ptr, _image_size);
 
   _image_pyramid.compute(I);
-
-  for(size_t i = 0; i < _tdata_pyr.size(); ++i) {
-    auto desc = makeDescriptor(_params.descriptor);
-    desc->compute(_image_pyramid[i]);
-    _tdata_pyr[i]->setData(desc.get(), D);
-  }
+  VoPoseSetTemplateBody func(_params.descriptor, _image_pyramid, D, _tdata_pyr);
+  parallel_for(Range(0, _image_pyramid.size()), func);
 }
-
 
 Result VisualOdometryPose::estimatePose(const uint8_t* image_ptr,
                                         const Matrix44& T_init)
@@ -97,7 +124,7 @@ Result VisualOdometryPose::estimatePose(const uint8_t* image_ptr,
   auto& stats = ret.optimizerStatistics;
   stats.resize(_tdata_pyr.size());
 
-  auto desc = makeDescriptor(_params.descriptor);
+  auto desc = MakeDescriptor(_params.descriptor);
   _image_pyramid.compute(ToOpenCV(image_ptr, _image_size));
 
   _pose_estimator.setParameters(_pose_est_params_low_res);
@@ -113,8 +140,6 @@ Result VisualOdometryPose::estimatePose(const uint8_t* image_ptr,
     }
   }
 
-  dprintf("estimatePose done %zu\n", stats.size());
-  std::cout << ret << std::endl;
   return ret;
 }
 

@@ -432,6 +432,33 @@ void AutoScaleEstimator::reset()
 
 float AutoScaleEstimator::getScale() const { return _scale; }
 
+static inline
+float ScaleEstimator(const ResidualsVector& residuals,
+                     const ValidVector& valid_flags,
+                     ResidualsVector& buffer)
+
+{
+  buffer.resize(0);
+
+#define USE_MAD_ESTIMATOR 1
+#if USE_MAD_ESTIMATOR
+  for(size_t i = 0; i < residuals.size(); ++i)
+    if(valid_flags[i])
+      buffer.push_back( residuals[i] );
+
+  return bpvo::medianAbsoluteDeviation(buffer) / 0.6745;
+#else
+  for(size_t i = 0; i < residuals.size(); ++i)
+    if(valid_flags[i])
+      buffer.push_back( std::fabs(residuals[i]) );
+
+  return (1.4826 * (1.0 + 5 / (_buffer.size()-6) )) *
+      median(buffer.begin(), buffer.end());
+#endif
+#undef USE_MAD_ESTIMATOR
+
+}
+
 float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
                                         const ValidVector& valid)
 {

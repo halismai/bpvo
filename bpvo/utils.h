@@ -220,7 +220,6 @@ struct Error : public std::logic_error
 
 #define THROW_ERROR_IF(cond, msg) if( !!(cond) ) THROW_ERROR( (msg) )
 
-
 template <typename Iterator> static inline typename
 Iterator::value_type median(Iterator first, Iterator last)
 {
@@ -237,17 +236,22 @@ Iterator::value_type median(Iterator first, Iterator last)
   }
 }
 
-template <typename T> static inline
-T median(std::vector<T>& data)
+template <class Container> static inline typename Container::
+value_type median(Container& data)
 {
+  if(data.empty()) {
+    Warn("median: empty data\n");
+    return typename Container::value_type(0);
+  }
+
   if(data.size() < 3)
     return data[0];
 
   return median(std::begin(data), std::end(data));
 }
 
-template <typename T> static inline
-T medianAbsoluteDeviation(std::vector<T>& data)
+template <class Container> static inline typename Container::
+value_type medianAbsoluteDeviation(Container& data)
 {
   auto m = median(data);
   for(auto& v : data)
@@ -255,6 +259,7 @@ T medianAbsoluteDeviation(std::vector<T>& data)
 
   return median(data);
 }
+
 
 namespace fs {
 
