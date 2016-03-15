@@ -55,6 +55,8 @@ struct SetTemplateDataBody : public ParallelForBody
 
     _pixels.resize( num_channels * num_points );
     _jacobians.resize(num_channels * num_points );
+
+    assert( _inds.size() == _points.size() );
   }
 
   inline void operator()(const Range& range) const
@@ -127,10 +129,10 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
   }
 
   std::vector<int> valid_inds;
-
-  _points.reserve(inds.size()/2);
   valid_inds.reserve(inds.size()/2);
 
+  _points.resize(0);
+  _points.reserve(inds.size()/2);
   auto D_ptr = D.ptr<const float>();
   for(size_t i = 0; i < inds.size(); i += 2)
   {
@@ -152,9 +154,36 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
   if(_params.withNormalization)
     _warp.setNormalization(_points);
 
+#define DO_SET_TEMPLATE_DATA_PARALLEL 0
 
+#if DO_SET_TEMPLATE_DATA_PARALLEL
   SetTemplateDataBody func(desc, _points, valid_inds, _warp, _pixels, _jacobians);
   parallel_for(Range(0, desc->numChannels()), func);
+#else
+  int num_points = _points.size();
+  int num_channels = desc->numChannels();
+  _pixels.resize( num_channels * num_points );
+  _jacobians.resize( num_channels * num_points );
+
+  typename AlignedVector<float>::type IxIy(2*num_points);
+  for(int c = 0; c < num_channels; ++c)
+  {
+    auto c_ptr = desc->getChannel(c).ptr<const float>();
+    auto P_ptr = _pixels.data() + c*num_points;
+    for(int i = 0; i < num_points; ++i)
+    {
+      auto ii = valid_inds[i];
+      P_ptr[i] = c_ptr[ii];
+      IxIy[2*i+0] = c_ptr[ii+1] - c_ptr[ii-1];
+      IxIy[2*i+1] = c_ptr[ii+cols] - c_ptr[ii-cols];
+    }
+
+    auto J_ptr = _jacobians.data() + c*num_points;
+    int i = _warp.computeJacobian(_points, IxIy.data(), J_ptr->data());
+    for( ; i < num_points; ++i)
+      _warp.jacobian(_points[i], IxIy[2*i+0], IxIy[2*i+1], J_ptr[i].data());
+  }
+#endif
 
   // NOTE: we push an empty Jacobian at the end because of SSE code loading
   _jacobians.push_back(Jacobian::Zero());

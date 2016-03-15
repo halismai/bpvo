@@ -83,7 +83,6 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   withNormalization = cf.get<int>("withNormalization", true);
 }
 
-
 std::string ToString(LossFunctionType t)
 {
   switch(t) {
