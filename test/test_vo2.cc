@@ -72,27 +72,32 @@ int main(int argc, char** argv)
       }
 
       Timer timer;
-      auto I_ptr = frame->image().ptr<const uint8_t>();
-      auto D_ptr = frame->disparity().ptr<const float>();
-      auto result = vo.addFrame(I_ptr, D_ptr);
+      const auto I_ptr = frame->image().ptr<const uint8_t>();
+      const auto D_ptr = frame->disparity().ptr<const float>();
+      const auto result = vo.addFrame(I_ptr, D_ptr);
       double tt = timer.stop().count();
       total_time += (tt / 1000.0);
 
       f_i += 1;
       trajectory.push_back(result.pose);
 
-      //int num_iters = result.optimizerStatistics[maxTestLevel].numIterations;
-      int num_iters =5;
+      dprintf("got %zu\n", result.optimizerStatistics.size());
+      if(f_i > 2)
+        break;
+
+      int num_iters = result.optimizerStatistics[maxTestLevel].numIterations;
       if(num_iters == params.maxIterations)
       {
         printf("\n");
         Warn("maximum iterations reached %d\n", params.maxIterations);
       }
 
+#if 0
       fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d\r",
               f_i-1, 6, tt, 5, (f_i - 1) / total_time,  num_iters,
               ToString(result.keyFramingReason).c_str(), 8, 0/*vo.numPointsAtLevel()*/);
       fflush(stdout);
+#endif
     }
   }
 

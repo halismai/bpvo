@@ -214,7 +214,9 @@ Result::Result()
 Result::Result(Result&& other)
   : pose(other.pose)
   , covariance(other.covariance)
+  , optimizerStatistics(std::move(other.optimizerStatistics))
   , isKeyFrame(other.isKeyFrame)
+  , keyFramingReason(other.keyFramingReason)
   , pointCloud(std::move(other.pointCloud)) {}
 
 Result::~Result() {}

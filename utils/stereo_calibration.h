@@ -25,6 +25,8 @@ struct StereoCalibration : public Calibration
   const Matrix33& getIntrinsics() const { return K; }
   float getBaseline() const { return baseline; }
 
+  void scale(double s);
+
   Matrix33 K;
   float baseline;
 

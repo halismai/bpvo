@@ -64,8 +64,6 @@ VisualOdometryPose::VisualOdometryPose(const Matrix33& K, const float b, ImageSi
     b_pyr *= 2.0;
     _tdata_pyr[i] = make_unique<TemplateData>(i, K_pyr, b_pyr, _params);
   }
-
-  dprintf("we have %zu levels\n", _tdata_pyr.size());
 }
 
 static inline UniquePointer<DenseDescriptor> makeDescriptor(DescriptorType t)
@@ -83,11 +81,6 @@ void VisualOdometryPose::setTemplate(const uint8_t* image_ptr, const float* dmap
 
   _image_pyramid.compute(I);
 
-  // TODO we should disable the parallelism inside TemplateData::setData and
-  // instead it perform it her over all pyramid levels. It might have a better
-  // cache performance characteristics, etc.
-  //
-  // This is why we have desc created inside the loop
   for(size_t i = 0; i < _tdata_pyr.size(); ++i) {
     auto desc = makeDescriptor(_params.descriptor);
     desc->compute(_image_pyramid[i]);
@@ -100,27 +93,28 @@ Result VisualOdometryPose::estimatePose(const uint8_t* image_ptr,
                                         const Matrix44& T_init)
 {
   Result ret;
-  ret.optimizerStatistics.resize(_tdata_pyr.size());
   ret.pose = T_init;
+  auto& stats = ret.optimizerStatistics;
+  stats.resize(_tdata_pyr.size());
 
   auto desc = makeDescriptor(_params.descriptor);
   _image_pyramid.compute(ToOpenCV(image_ptr, _image_size));
 
   _pose_estimator.setParameters(_pose_est_params_low_res);
   for(int i = _image_pyramid.size()-1; i >= _params.maxTestLevel; --i) {
-    dprintf("level %d\n", i);
     if(i >= _params.maxTestLevel)
     _pose_estimator.setParameters(_pose_est_params); // restore high res params
 
     if(_tdata_pyr[i]->numPixels() > _params.minNumPixelsToWork) {
       desc->compute(_image_pyramid[i]);
-      ret.optimizerStatistics[i] = _pose_estimator.run(_tdata_pyr[i].get(), desc.get(), ret.pose);
+      stats[i] = _pose_estimator.run(_tdata_pyr[i].get(), desc.get(), ret.pose);
     } else {
       Warn("Not enough points at octave %d [needs %d]\n", i, _params.minNumPixelsToWork);
     }
   }
 
-  dprintf("we have %zu\n", ret.optimizerStatistics.size());
+  dprintf("estimatePose done %zu\n", stats.size());
+  std::cout << ret << std::endl;
   return ret;
 }
 

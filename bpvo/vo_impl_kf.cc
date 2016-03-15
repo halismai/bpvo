@@ -48,15 +48,17 @@ Result VisualOdometryKf::addFrame(const uint8_t* image_ptr, const float* dmap_pt
 {
   Result ret;
 
-  if(_vo_pose->hasData())
-  {
+  if(_vo_pose->hasData()) {
+    dprintf("estimating pose\n");
     ret = _vo_pose->estimatePose(image_ptr, _T_kf);
-    dprintf("got %zu\n", ret.optimizerStatistics.size());
-  } else
-  {
+    dprintf("vo_pose got %zu\n", ret.optimizerStatistics.size());
+  } else {
+    dprintf("setting first frame\n");
+    //
+    // the first frame, there is no pose estimation
+    //
     ret.optimizerStatistics.resize( _vo_pose->getImagePyramid().size() );
-    for(auto& s : ret.optimizerStatistics)
-    {
+    for(auto& s : ret.optimizerStatistics) {
       s.numIterations = 0;
       s.finalError = 0.0;
       s.firstOrderOptimality = 0.0;
@@ -66,6 +68,7 @@ Result VisualOdometryKf::addFrame(const uint8_t* image_ptr, const float* dmap_pt
     ret.keyFramingReason = KeyFramingReason::kFirstFrame;
   }
 
+  dprintf("template\n");
   _vo_pose->setTemplate(image_ptr, dmap_ptr);
 
   return ret;
