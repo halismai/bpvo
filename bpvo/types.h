@@ -421,6 +421,7 @@ struct Result
 
   Result();
   Result(Result&&);
+  Result(const Result&) = delete;
 
   Result& operator=(Result&&);
 

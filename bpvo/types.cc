@@ -225,6 +225,7 @@ Result& Result::operator=(Result&& r)
 {
   pose = r.pose;
   covariance = r.covariance;
+  optimizerStatistics = std::move(r.optimizerStatistics);
   isKeyFrame = r.isKeyFrame;
   keyFramingReason = r.keyFramingReason;
   pointCloud = std::move(r.pointCloud);
