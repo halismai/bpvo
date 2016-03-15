@@ -21,6 +21,8 @@
 
 #include "bpvo/vo_impl.h"
 #include "bpvo/utils.h"
+#include "bpvo/dense_descriptor.h"
+#include "bpvo/intensity_descriptor.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -83,10 +85,9 @@ static inline void updatePointCloudWeights(PointCloud& pc, const ValidVector& va
 }
 
 auto VisualOdometry::Impl::
-makeTemplateData(const Matrix33& K, float b, int pyr_level) const -> UniquePointer<TData>
+makeTemplateData(int pyr_level, const Matrix33& K, float b) const -> UniquePointer<TData>
 {
-  return make_unique<TData>(K, b, pyr_level, _params.minNumPixelsForNonMaximaSuppression,
-                            _params.minSaliency, _params.minDisparity, _params.maxDisparity);
+  return make_unique<TData>(pyr_level, K, b,  _params);
 }
 
 VisualOdometry::Impl::Impl(const Matrix33& K, const float& b, ImageSize image_size,
@@ -116,16 +117,15 @@ VisualOdometry::Impl::Impl(const Matrix33& K, const float& b, ImageSize image_si
   //
   Matrix33 K_pyr(K);
   float b_pyr = b;
-  _tdata_pyr.push_back(makeTemplateData(K_pyr, b_pyr, 0));
+  _tdata_pyr.push_back(makeTemplateData(0, K_pyr, b_pyr));
   for(int i = 1; i < _params.numPyramidLevels; ++i) {
     K_pyr *= 0.5; K_pyr(2,2) = 1.0f;
     b_pyr *= 2.0;
-    _tdata_pyr.push_back(makeTemplateData(K_pyr, b_pyr, i));
+    _tdata_pyr.push_back(makeTemplateData(i, K_pyr, b_pyr));
   }
 
   for(int i= 0; i < _params.numPyramidLevels; ++i)
-    _channels_pyr.push_back(ChannelsT(_params.sigmaPriorToCensusTransform,
-                                      _params.sigmaBitPlanes));
+    _desc_pyr.push_back( makeDescriptor() );
 
   _image_pyramid = make_unique<ImagePyramid>(_params.numPyramidLevels);
 }
@@ -142,11 +142,12 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
   _input_image = I.clone(); // maybe eleminate this copy later
 
   _image_pyramid->compute(_input_image);
-  for(int i = _image_pyramid->size()-1; i >= _params.maxTestLevel; --i)
-    _channels_pyr[i].compute(_image_pyramid->operator[](i));
+  for(int i = _image_pyramid->size()-1; i >= _params.maxTestLevel; --i) {
+    _desc_pyr[i]->compute(_image_pyramid->operator[](i));
+  }
 
   Result ret;
-  ret.optimizerStatistics.resize(_channels_pyr.size());
+  ret.optimizerStatistics.resize( _desc_pyr.size() );
 
   if(isFirstFrame())
   {
@@ -155,7 +156,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     //
     cv::Mat D = ToOpenCV(D_ptr, _image_size);
 
-    this->setAsKeyFrame(_channels_pyr, D);
+    this->setAsKeyFrame(_desc_pyr, D);
     _kf_point_cloud.pose().setIdentity();
     _kf_pose_index = _frame_index = 0;
     _trajectory.push_back( _T_kf );
@@ -165,7 +166,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     ret.keyFramingReason = KeyFramingReason::kFirstFrame;
     ret.isKeyFrame = true;
 
-    _kf_candidate.channels_pyr.resize(_channels_pyr.size()); // so we can swap later
+    _kf_candidate.desc_pyr.resize(_desc_pyr.size()); // so we can swap later
     return ret;
   }
 
@@ -174,7 +175,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
   //
   // initialize pose estimation for the next frame using the latest estimate
   //
-  Matrix44 T_est = estimatePose(_channels_pyr, _T_kf, ret.optimizerStatistics);
+  Matrix44 T_est = estimatePose(_desc_pyr, _T_kf, ret.optimizerStatistics);
 
   ret.keyFramingReason = shouldKeyFrame(T_est, _pose_estimator.getWeights());
   ret.isKeyFrame = ((int)ret.keyFramingReason != (int)KeyFramingReason::kNoKeyFraming);
@@ -182,7 +183,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
   if(ret.isKeyFrame)
   {
     updatePointCloudWeights(_kf_point_cloud, _pose_estimator.getValidFlags(),
-                            _pose_estimator.getWeights(), _channels_pyr.front().size());
+                            _pose_estimator.getWeights(), _desc_pyr.size());
 
     ret.pointCloud = make_unique<PointCloud>(_kf_point_cloud);
     ret.pointCloud->pose() = _trajectory[_kf_pose_index];
@@ -192,7 +193,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     // motion passed the keyframing criteria
     if(_kf_candidate.empty())
     {
-      setAsKeyFrame(_channels_pyr, ToOpenCV(D_ptr, _image_size));
+      setAsKeyFrame(_desc_pyr, ToOpenCV(D_ptr, _image_size));
       ret.pose = T_est * _T_kf.inverse();
       _T_kf.setIdentity();
     } else
@@ -205,7 +206,7 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
       setAsKeyFrame(_kf_candidate);
 
       Matrix44 T_init = Matrix44::Identity();
-      Matrix44 T_est = estimatePose(_channels_pyr, T_init, ret.optimizerStatistics);
+      Matrix44 T_est = estimatePose(_desc_pyr, T_init, ret.optimizerStatistics);
       ret.pose = T_est;
       _T_kf = T_est;
       _kf_candidate.clear();
@@ -219,8 +220,11 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
     // assigned as a keyframe candidate
     if(isDisparityGood(D_ptr, _image_size))
     {
-      _kf_candidate.channels_pyr.swap(_channels_pyr);
+      _kf_candidate.desc_pyr.swap(_desc_pyr);
       _kf_candidate.disparity = ToOpenCV(D_ptr, _image_size).clone();
+
+      for(size_t i = 0; i < _desc_pyr.size(); ++i)
+        _desc_pyr[i]=makeDescriptor();
     }
 
     ret.pose = T_est * _T_kf.inverse(); // return the relative motion wrt to the added frame
@@ -233,7 +237,8 @@ Result VisualOdometry::Impl::addFrame(const uint8_t* I_ptr, const float* D_ptr)
 }
 
 Matrix44 VisualOdometry::
-Impl::estimatePose(const std::vector<ChannelsT>& cn, const Matrix44& T_init,
+Impl::estimatePose(const std::vector<UniquePointer<DenseDescriptor>>& cn,
+                   const Matrix44& T_init,
                    std::vector<OptimizerStatistics>& stats)
 {
   stats.resize(cn.size());
@@ -251,7 +256,7 @@ Impl::estimatePose(const std::vector<ChannelsT>& cn, const Matrix44& T_init,
     }
 
     if(_tdata_pyr[i]->numPoints() > _params.minNumPixelsToWork) {
-      stats[i] = _pose_estimator.run(_tdata_pyr[i].get(), cn[i], T_est);
+      stats[i] = _pose_estimator.run(_tdata_pyr[i].get(), cn[i].get(), T_est);
     } else {
       Warn("not enough points at pyramid level %d need %d\n",
            _tdata_pyr[i]->numPoints(), _params.minNumPixelsToWork);;
@@ -303,15 +308,14 @@ typename PointWithInfo::Color makeColor(const cv::Mat& image, const ImagePoint& 
 }
 
 
-void VisualOdometry::Impl::setAsKeyFrame(const std::vector<ChannelsT>& cn,
-                                         const cv::Mat& disparity)
+void VisualOdometry::Impl::
+setAsKeyFrame(const std::vector<UniquePointer<DenseDescriptor>>& cn, const cv::Mat& disparity)
 {
   assert( _tdata_pyr.size() == cn.size() );
 
-  // test this with bitplanes
 //#pragma omp parallel for
   for(int i = cn.size()-1; i >= _params.maxTestLevel; --i)
-    _tdata_pyr[i]->setData(cn[i], disparity);
+    _tdata_pyr[i]->setData(cn[i].get(), disparity);
 
   const auto& tdata = _tdata_pyr[_params.maxTestLevel];
   auto n = tdata->numPoints();
@@ -384,6 +388,24 @@ bool VisualOdometry::Impl::KeyFrameCandidate::empty() const
 void VisualOdometry::Impl::KeyFrameCandidate::clear()
 {
   disparity = cv::Mat();
+}
+
+UniquePointer<DenseDescriptor>
+VisualOdometry::Impl::makeDescriptor() const
+{
+  switch(_params.descriptor)
+  {
+    case DescriptorType::kIntensity:
+      return UniquePointer<DenseDescriptor>(new IntensityDescriptor);
+      break;
+
+    case DescriptorType::kBitPlanes:
+      {
+        THROW_ERROR("not implemented yet");
+      }
+  }
+
+  THROW_ERROR("not impelmented yet");
 }
 
 } // bpvo

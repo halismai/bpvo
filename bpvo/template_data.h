@@ -38,6 +38,7 @@ class TemplateData
 {
  public:
   typedef RigidBodyWarp WarpType;
+  typedef WarpType Warp;
   typedef typename WarpType::Point Point;
   typedef typename WarpType::Jacobian Jacobian;
   typedef typename WarpType::PointVector PointVector;
@@ -61,6 +62,15 @@ class TemplateData
 
   void computeResiduals(const DenseDescriptor*, const Matrix44& pose,
                         ResidualsVector&, ValidVector&);
+
+  inline int numPixels() const { return (int) _pixels.size(); }
+  inline int numPoints() const { return (int) _points.size(); }
+
+  inline const PointVector& points() const { return _points; }
+  inline const PixelVector& pixels() const { return _pixels; }
+  inline const JacobianVector& jacobians() const { return _jacobians; }
+
+  inline const Warp& warp() const { return _warp; }
 
  private:
   int _pyr_level;

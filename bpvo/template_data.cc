@@ -109,15 +109,14 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
     is_local_max.setRadius( _params.nonMaxSuppRadius );
   }
 
-
   const int border = std::max(_params.nonMaxSuppRadius, 2);
 
   std::vector<uint16_t> inds;
   inds.reserve( saliency_map.rows * saliency_map.cols * 0.5 );
-  for(int y = border; y < saliency_map.cols - border - 1; ++y)
+  for(int y = border; y < saliency_map.rows - border - 1; ++y)
   {
     auto srow = saliency_map.ptr<const float>(y);
-    for(int x = border; x < saliency_map.rows - border - 1; ++x)
+    for(int x = border; x < saliency_map.cols - border - 1; ++x)
     {
       if(srow[x] >= _params.minSaliency && is_local_max(y,x))
       {

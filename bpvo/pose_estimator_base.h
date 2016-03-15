@@ -22,9 +22,11 @@
 #ifndef BPVO_POSE_ESTIMATOR_BASE_H
 #define BPVO_POSE_ESTIMATOR_BASE_H
 
+#include <bpvo/debug.h>
 #include <bpvo/types.h>
 #include <bpvo/pose_estimator_params.h>
 #include <bpvo/mestimator.h>
+#include <bpvo/dense_descriptor.h>
 
 #include <cmath>
 #include <limits>
@@ -38,14 +40,13 @@ template <class TDataT> class PoseEstimatorLM;
 
 template <class> class PoseEstimatorTraits;
 
-template<> template <class TDataT>
+template <class TDataT>
 class PoseEstimatorTraits< PoseEstimatorGN<TDataT> >
 {
  public:
   typedef TDataT TemplateData;
   typedef typename TemplateData::Warp Warp;
   typedef typename TemplateData::Jacobian Jacobian;
-  typedef typename TemplateData::Channels Channels;
 
   static constexpr int NumParameters = Jacobian::ColsAtCompileTime;
   typedef typename Jacobian::Scalar DataType;
@@ -55,7 +56,7 @@ class PoseEstimatorTraits< PoseEstimatorGN<TDataT> >
   typedef Eigen::Matrix<DataType, NumParameters, NumParameters> Hessian;
 }; // PoseEstimatorTraits
 
-template<> template <class TDataT>
+template <class TDataT>
 class PoseEstimatorTraits< PoseEstimatorLM<TDataT> >
   : public PoseEstimatorTraits< PoseEstimatorGN<TDataT> >
 {
@@ -102,10 +103,9 @@ class PoseEstimatorBase
   typedef PoseEstimatorTraits<Derived> Triats;
 
   typedef typename PoseEstimatorTraits<Derived>::TemplateData TemplateData;
-  typedef typename TemplateData::Channels Channels;
-  typedef typename PoseEstimatorTraits<Derived>::Warp         Warp;
-  typedef typename PoseEstimatorTraits<Derived>::Jacobian     Jacobian;
-  typedef typename PoseEstimatorTraits<Derived>::Gradient     Gradient;
+  typedef typename PoseEstimatorTraits<Derived>::Warp            Warp;
+  typedef typename PoseEstimatorTraits<Derived>::Jacobian        Jacobian;
+  typedef typename PoseEstimatorTraits<Derived>::Gradient        Gradient;
   typedef typename PoseEstimatorTraits<Derived>::ParameterVector ParameterVector;
   typedef typename PoseEstimatorTraits<Derived>::Hessian         Hessian;
 
@@ -120,7 +120,7 @@ class PoseEstimatorBase
    * \param T    Pose (input and output). It is used for initialization as well
    *             as the return value
    */
-  OptimizerStatistics run(TemplateData* data, const Channels& cn, Matrix44& T);
+  OptimizerStatistics run(TemplateData* data, const DenseDescriptor* cn, Matrix44& T);
 
   inline void setParameters(const PoseEstimatorParameters& p) {
     _params = p;
@@ -242,7 +242,7 @@ class PoseEstimatorBase
 
 template <class Derived> inline
 OptimizerStatistics PoseEstimatorBase<Derived>::
-run(TemplateData* tdata, const Channels& channels, Matrix44& T)
+run(TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
 {
   this->reset();
 
@@ -254,7 +254,7 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
   PoseEstimatorData data;
   data.T = T;
 
-  float f_norm = derived()->linearize(tdata, channels, data),
+  float f_norm = derived()->linearize(tdata, desc, data),
         g_norm = data.gradientNorm();
 
   this->_g_tol = _params.gradientTolerance *
@@ -286,17 +286,15 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
       data.H.diagonal().array() += u;
       ok = data.solve();
       if(!ok) {
-        Warn("failed again\n");
+        Warn("failed again will bail\n");
       }
     }
 
-    //Fatal("bye\n");
     if(!ok) {
       ret.status = PoseEstimationStatus::kSolverError;
       return ret;
     }
   }
-
 
   _f_norm_prev = 0.0f;
   float dp_norm_prev = 0.0f;
@@ -316,7 +314,7 @@ run(TemplateData* tdata, const Channels& channels, Matrix44& T)
     _f_norm_prev = f_norm;
 
     if(!has_converged) {
-      if(!derived()->runIteration(tdata, channels, data, f_norm, ret.status)) {
+      if(!derived()->runIteration(tdata, desc, data, f_norm, ret.status)) {
         break;
       }
     }

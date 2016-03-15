@@ -27,7 +27,7 @@
 #include <bpvo/pose_estimator_gn.h>
 #include <bpvo/mestimator.h>
 #include <bpvo/vo.h>
-#include <bpvo/template_data_.h>
+#include <bpvo/template_data.h>
 #include <bpvo/channels.h>
 #include <bpvo/linear_system_builder.h>
 #include <bpvo/trajectory.h>
@@ -44,25 +44,15 @@ class Mat;
 
 namespace bpvo {
 
+class DenseDescriptor;
+
 class VisualOdometry::Impl
 {
   friend class VisualOdometry;
 
  public:
 
-#if defined(WITH_BITPLANES)
-  typedef BitPlanes ChannelsT;
-#else
-  typedef RawIntensity ChannelsT;
-#endif
-
-#if defined(WITH_DISPARITY_SPACE_WARP)
-  typedef DisparitySpaceWarp WarpT;
-#else
-  typedef RigidBodyWarp WarpT;
-#endif
-
-  typedef TemplateData_<ChannelsT, WarpT> TData;
+  typedef TemplateData TData;
   typedef PoseEstimatorGN<TData> PoseEstimatorT_;
   typedef PoseEstimatorBase<PoseEstimatorT_> PoseEstimatorT;
 
@@ -120,7 +110,7 @@ class VisualOdometry::Impl
   UniquePointer<ImagePyramid> _image_pyramid;
 
   /** buffer to contain input data pyr pyramid level */
-  std::vector<ChannelsT> _channels_pyr;
+  std::vector<UniquePointer<DenseDescriptor>> _desc_pyr;
 
   /** Transformation wrt to the keyframe, used to initialize the pose for new frames */
   Matrix44 _T_kf;
@@ -147,7 +137,7 @@ class VisualOdometry::Impl
   cv::Mat _input_image;
 
  protected:
-  void setAsKeyFrame(const std::vector<ChannelsT>&, const cv::Mat&);
+  void setAsKeyFrame(const std::vector<UniquePointer<DenseDescriptor>>&, const cv::Mat&);
 
   /**
    * Estimate the pose of the input channels with respect to the current keyframe
@@ -158,9 +148,8 @@ class VisualOdometry::Impl
    *
    * \return the estimated pose
    */
-  Matrix44 estimatePose(const std::vector<ChannelsT>& input_channels,
-                        const Matrix44& T_init,
-                        std::vector<OptimizerStatistics>& stats);
+  Matrix44 estimatePose(const std::vector<UniquePointer<DenseDescriptor>>& input_channels,
+                        const Matrix44& T_init, std::vector<OptimizerStatistics>& stats);
 
   /**
    * keyframing based on pose and valid points
@@ -173,7 +162,7 @@ class VisualOdometry::Impl
    */
   struct KeyFrameCandidate
   {
-    std::vector<ChannelsT> channels_pyr; // the channels
+    std::vector<UniquePointer<DenseDescriptor>> desc_pyr; // the channels
     cv::Mat disparity;            // the disparity image
 
     /**
@@ -189,14 +178,20 @@ class VisualOdometry::Impl
 
   KeyFrameCandidate _kf_candidate;
 
-  inline void setAsKeyFrame(const KeyFrameCandidate& kfc) {
-    this->setAsKeyFrame(kfc.channels_pyr, kfc.disparity);
+  inline void setAsKeyFrame(const KeyFrameCandidate& kfc)
+  {
+    this->setAsKeyFrame(kfc.desc_pyr, kfc.disparity);
   }
 
   /**
    * a wrapper to create template data given calibration and pyramid level
    */
-  UniquePointer<TData> makeTemplateData(const Matrix33& K, float b, int pyr_level) const;
+  UniquePointer<TData> makeTemplateData(int pyr_level, const Matrix33& K, float b) const;
+
+  /**
+   * a wrapper to create descriptors
+   */
+  UniquePointer<DenseDescriptor> makeDescriptor() const;
 
   inline bool isFirstFrame() const
   {

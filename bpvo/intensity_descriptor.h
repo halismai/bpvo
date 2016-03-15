@@ -52,6 +52,9 @@ class IntensityDescriptor : public DenseDescriptor
 
   inline int numChannels() const { return 1; }
 
+  inline int rows() const { return _I.rows; }
+  inline int cols() const { return _I.cols; }
+
  protected:
   cv::Mat_<float> _I;
 }; // IntensityDescriptor
