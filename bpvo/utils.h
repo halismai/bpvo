@@ -260,6 +260,12 @@ value_type medianAbsoluteDeviation(Container& data)
   return median(data);
 }
 
+template <typename T> inline
+T clamp(T v, T min_val, T max_val)
+{
+  return (v < min_val) ? min_val : (( v > max_val ) ? max_val : v);
+}
+
 
 namespace fs {
 

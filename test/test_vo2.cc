@@ -42,11 +42,13 @@ int main(int argc, char** argv)
       ("config,c", "/home/halismai/code/bpvo/conf/tsukuba.cfg", "config file")
       ("output,o", "output.txt", "trajectory output file")
       ("numframes,n", int(100), "number of frames to process")
+      ("dontshow,x", "don't show images")
       .parse(argc, argv);
 
   auto conf_fn = options.get<std::string>("config");
   auto max_frames = options.get<int>("numframes");
   auto dataset = Dataset::Create(conf_fn);
+  auto do_show = !options.hasOption("dontshow");
 
   AlgorithmParameters params(conf_fn);
   auto maxTestLevel = params.maxTestLevel;
@@ -72,10 +74,12 @@ int main(int argc, char** argv)
         break;
       }
 
-      cv::imshow("image", frame->image());
-      int k = 0xff & cv::waitKey(5);
-      if('q' == k)
-        break;
+      if(do_show) {
+        cv::imshow("image", frame->image());
+        int k = 0xff & cv::waitKey(5);
+        if('q' == k)
+          break;
+      }
 
       Timer timer;
       const auto I_ptr = frame->image().ptr<const uint8_t>();

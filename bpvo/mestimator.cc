@@ -432,31 +432,20 @@ void AutoScaleEstimator::reset()
 
 float AutoScaleEstimator::getScale() const { return _scale; }
 
-static inline
-float ScaleEstimator(const ResidualsVector& residuals,
-                     const ValidVector& valid_flags,
-                     ResidualsVector& buffer)
+static inline float ScaleEstimator(const ResidualsVector& residuals,
+                                   const ValidVector& valid_flags,
+                                   ResidualsVector& buffer)
 
 {
   buffer.resize(0);
+  buffer.reserve(residuals.size());
 
-#define USE_MAD_ESTIMATOR 1
-#if USE_MAD_ESTIMATOR
   for(size_t i = 0; i < residuals.size(); ++i)
-    if(valid_flags[i])
-      buffer.push_back( residuals[i] );
-
-  return bpvo::medianAbsoluteDeviation(buffer) / 0.6745;
-#else
-  for(size_t i = 0; i < residuals.size(); ++i)
-    if(valid_flags[i])
+    if(valid_flags[i] != 0)
       buffer.push_back( std::fabs(residuals[i]) );
 
-  return (1.4826 * (1.0 + 5 / (_buffer.size()-6) )) *
-      median(buffer.begin(), buffer.end());
-#endif
-#undef USE_MAD_ESTIMATOR
-
+  auto m = approximate_median(buffer, 0.0f, 255.0f, 0.05f);
+  return (1.4826 * (1.0 + 5 / (buffer.size()-6) )) * m;
 }
 
 float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
@@ -466,29 +455,8 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
 
   if(_delta_scale > _tol)
   {
-    _buffer.resize(0);
+    auto scale = ScaleEstimator(residuals, valid, _buffer);
 
-    size_t npts = residuals.size();
-    for(size_t i = 0; i < npts; ++i)
-    {
-      if(valid[i] != 0)
-        _buffer.push_back(std::fabs(residuals[i]));
-    }
-
-
-    auto z = 1.4826 * (1.0 + 5.0/(_buffer.size()-6));
-
-#define DO_APPROX_MEDIAN 0
-
-#if DO_APPROX_MEDIAN
-    // TODO fix for AlignedVector
-    // does not seem accurate with real testing
-    auto m = approximate_median(_buffer, 0.0f, 255.0f, 0.01f);
-#else
-    auto m = median(_buffer.begin(), _buffer.end());
-#endif
-
-    auto scale = z * m;
     if(scale < 1e-6)
       scale = 1.0; // for the case of zero error
 
@@ -497,8 +465,6 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
   } else {
     ;//printf("scale is stable %f\n", _delta_scale);
   }
-
-#undef DO_APPROX_MEDIAN
 
   return _scale;
 }
