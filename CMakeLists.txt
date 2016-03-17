@@ -117,7 +117,6 @@ endif()
 # optional stuff
 find_package(TBB)
 find_package(GooglePerfTools)
-find_package(GTest)
 
 if(TBB_FOUND)
   include_directories(${TBB_INCLUDE_DIRS})
@@ -140,14 +139,10 @@ if(WITH_TCMALLOC)
   endif()
 endif()
 
-if(GTEST_FOUND)
-  include_directories(${GTEST_INCLUDE_DIRS})
-  list(APPEND MY_LIBRARIES ${GTEST_LIBRARIES})
-  add_definitions(-DWITH_GTEST)
-endif()
-
 if(WITH_TCMALLOC OR WITH_PROFILER)
-  include_directories(${GOOGLE_PERFTOOLS_INCLUDE_DIR})
+  if(GOOGLE_PERFTOOLS_FOUND)
+    include_directories(${GOOGLE_PERFTOOLS_INCLUDE_DIR})
+  endif()
 endif()
 
 if(WITH_SIMD)
