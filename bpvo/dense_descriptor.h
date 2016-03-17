@@ -33,7 +33,11 @@ namespace bpvo {
 class DenseDescriptor
 {
  public:
+  typedef UniquePointer<DenseDescriptor> Pointer;
+
+ public:
   DenseDescriptor();
+  DenseDescriptor(const DenseDescriptor&);
   virtual ~DenseDescriptor();
 
   /**
@@ -50,6 +54,10 @@ class DenseDescriptor
    * \return the i-th channel
    */
   virtual const cv::Mat& getChannel(int i) const = 0;
+
+  /**
+   */
+  virtual Pointer clone() const = 0;
 
   /**
    * \return the number of channels

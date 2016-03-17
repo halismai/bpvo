@@ -32,7 +32,13 @@ class BitPlanesDescriptor : public DenseDescriptor
 {
  public:
   BitPlanesDescriptor(float s0 = 0.5f, float s1 = -1.0);
+
   virtual ~BitPlanesDescriptor();
+
+  BitPlanesDescriptor(const BitPlanesDescriptor& other)
+      : DenseDescriptor(other)
+      , _rows(other._rows), _cols(other._cols), _sigma_ct(other._sigma_ct)
+      , _sigma_bp(other._sigma_bp), _channels(other._channels) {}
 
   void compute(const cv::Mat&);
 
@@ -46,6 +52,11 @@ class BitPlanesDescriptor : public DenseDescriptor
 
   inline void setSigmaPriorToCensus(float s) { _sigma_ct = s; }
   inline void setSigmaBitPlanes(float s) { _sigma_bp = s; }
+
+  inline Pointer clone() const
+  {
+    return Pointer(new BitPlanesDescriptor(*this));
+  }
 
  private:
   int _rows, _cols;

@@ -40,7 +40,7 @@ class VisualOdometryWithKeyFraming
   UniquePointer<DenseDescriptorPyramid> _desc_pyr;
 
  private:
-  KeyFramingReason shouldKeyFrame(const Result&);
+  KeyFramingReason shouldKeyFrame(const Matrix44& pose) const;
 }; // VisualOdometryWithKeyFraming
 
 }; // bpvo

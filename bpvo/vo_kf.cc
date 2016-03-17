@@ -1,3 +1,24 @@
+/*
+   This file is part of bpvo.
+
+   bpvo is free software: you can redistribute it and/or modify
+   it under the terms of the Lesser GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   bpvo is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   Lesser GNU General Public License for more details.
+
+   You should have received a copy of the Lesser GNU General Public License
+   along with bpvo.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * Contributor: halismai@cs.cmu.edu
+ */
+
 #include "bpvo/vo_kf.h"
 #include "bpvo/utils.h"
 #include "bpvo/parallel_tasks.h"
@@ -12,7 +33,6 @@ cv::Mat ToOpenCV(const T* p, const ImageSize& siz)
 {
   return cv::Mat(siz.rows, siz.cols, cv::DataType<T>::type, (void*) p);
 }
-
 
 class VisualOdometryPoseEstimator
 {
@@ -132,6 +152,19 @@ bool VisualOdometryPoseEstimator::hasTemplate() const
 
 struct VisualOdometryWithKeyFraming::KeyFrameCandidate
 {
+  void set(const DenseDescriptorPyramid& desc_pyr, const cv::Mat& D)
+  {
+    _disparity = D;
+    _desc_pyr.reset(new DenseDescriptorPyramid(desc_pyr));
+    _has_data = true;
+  }
+
+  bool empty() const { return !_has_data; }
+  void clear() { _has_data = false;}
+
+  bool _has_data = false;
+  UniquePointer<DenseDescriptorPyramid> _desc_pyr;
+  cv::Mat _disparity;
 }; // KeyFrameCandidate
 
 VisualOdometryWithKeyFraming::
@@ -177,6 +210,7 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
       s.status = PoseEstimationStatus::kFunctionTolReached;
     }
 
+    _vo_pose->setTemplate(*_desc_pyr, D);
     return ret;
   }
 
@@ -185,14 +219,36 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
 
   Result ret;
   ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, _T_kf, T_est);
-  ret.pose = T_est;
-  ret.keyFramingReason = shouldKeyFrame(ret);
+  ret.keyFramingReason = shouldKeyFrame(T_est);
   ret.isKeyFrame = ret.keyFramingReason != KeyFramingReason::kNoKeyFraming;
-  if(!ret.isKeyFrame) {
-    printf("should not keyframe\n");
-  }
 
-  _vo_pose->setTemplate(*_desc_pyr, D);
+  if(!ret.isKeyFrame)
+  {
+    _kf_candidate->set(*_desc_pyr, D);
+    ret.pose = T_est * _T_kf.inverse();
+    _T_kf = T_est;
+  }
+  else
+  {
+    dprintf("keyframe\n");
+    if(_kf_candidate->empty())
+    {
+      dprintf("no kfc\n");
+      _vo_pose->setTemplate(*_desc_pyr, D);
+      ret.pose = T_est * _T_kf.inverse();
+      _T_kf.setIdentity();
+    }
+    else
+    {
+      dprintf("using kfc\n");
+      _vo_pose->setTemplate(*_kf_candidate->_desc_pyr, _kf_candidate->_disparity);
+      ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, Matrix44::Identity(), T_est);
+      ret.pose = T_est;
+      _T_kf = T_est;
+
+      _kf_candidate->clear();
+    }
+  }
 
   return ret;
 }
@@ -206,22 +262,19 @@ int VisualOdometryWithKeyFraming::numPointsAtLevel(int level) const
 }
 
 KeyFramingReason
-VisualOdometryWithKeyFraming::shouldKeyFrame(const Result& result)
+VisualOdometryWithKeyFraming::shouldKeyFrame(const Matrix44& pose) const
 {
-  if(result.keyFramingReason == KeyFramingReason::kFirstFrame)
-  {
-    return KeyFramingReason::kFirstFrame;
-  }
-
-  auto t_norm = result.pose.block<3,1>(0,3).squaredNorm();
+  auto t_norm = pose.block<3,1>(0,3).squaredNorm();
   if(t_norm > math::sq(_params.minTranslationMagToKeyFrame))
   {
+    dprintf("keyFramingReason::kLargeTranslation\n");
     return KeyFramingReason::kLargeTranslation;
   }
 
-  auto r_norm = math::RotationMatrixToEulerAngles(result.pose).squaredNorm();
+  auto r_norm = math::RotationMatrixToEulerAngles(pose).squaredNorm();
   if(r_norm > math::sq(_params.minRotationMagToKeyFrame))
   {
+    dprintf("kLargeRotation\n");
     return KeyFramingReason::kLargeRotation;
   }
 
@@ -232,6 +285,7 @@ VisualOdometryWithKeyFraming::shouldKeyFrame(const Result& result)
   auto frac_good = num_good / (float) w.size();
   if(frac_good < _params.maxFractionOfGoodPointsToKeyFrame)
   {
+    dprintf("kSmallFracOfGoodPoints\n");
     return KeyFramingReason::kSmallFracOfGoodPoints;
   }
 

@@ -36,6 +36,9 @@ class IntensityDescriptor : public DenseDescriptor
  public:
   IntensityDescriptor() : DenseDescriptor() {}
 
+  IntensityDescriptor(const IntensityDescriptor& o)
+      : DenseDescriptor(o), _I(o._I) { }
+
   virtual ~IntensityDescriptor() {}
 
   void compute(const cv::Mat& src);
@@ -54,6 +57,11 @@ class IntensityDescriptor : public DenseDescriptor
 
   inline int rows() const { return _I.rows; }
   inline int cols() const { return _I.cols; }
+
+  inline Pointer clone() const
+  {
+    return Pointer(new IntensityDescriptor(*this));
+  }
 
  protected:
   cv::Mat_<float> _I;

@@ -56,6 +56,16 @@ class DenseDescriptorPyramid
   ~DenseDescriptorPyramid();
 
   /**
+   * deep copies the thing
+   */
+  DenseDescriptorPyramid(const DenseDescriptorPyramid&);
+
+  /**
+   * move
+   */
+  DenseDescriptorPyramid(DenseDescriptorPyramid&&);
+
+  /**
    * Computes the descriptor at pyramid level 'i'
    *
    * \param force if true the descriptor will be re-computed. Otherwise, if it
