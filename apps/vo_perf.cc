@@ -10,6 +10,8 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
+#include <fstream>
+
 using namespace bpvo;
 
 class Vo
@@ -45,7 +47,7 @@ int main(int argc, char** argv)
 {
   ProgramOptions options("vo_perf");
   options
-      ("config,c", "/home/halismai/code/bpvo/conf/tsukuba.cfg", "config file")
+      ("config,c", "/home/halismai/code/bpvo/conf/tsukuba_stereo.cfg", "config file")
       ("output,o", "", "prefix to store results for later analysis")
       ("numframes,n", int(1000), "number of frames to process")
       ("dontshow,x", "do not show the image").parse(argc, argv);
@@ -53,6 +55,7 @@ int main(int argc, char** argv)
   const auto conf_fn = options.get<std::string>("config");
   const auto max_frames = options.get<int>("numframes");
   const auto do_show = !options.hasOption("dontshow");
+  const auto output_fn = options.get<std::string>("output");
   auto dataset = Dataset::Create(conf_fn);
 
   AlgorithmParameters params(conf_fn);
@@ -62,6 +65,12 @@ int main(int argc, char** argv)
 
   Trajectory trajectory;
   UniquePointer<DatasetFrame> frame;
+
+  std::vector<int> iterations;
+  std::vector<float> time_ms;
+
+  iterations.reserve(max_frames);
+  time_ms.reserve(max_frames);
 
   double total_time = 0.0;
   int f_i;
@@ -95,6 +104,47 @@ int main(int argc, char** argv)
               f_i-1, 6, tt, 5, (f_i - 1) / total_time,  num_iters,
               ToString(result.keyFramingReason).c_str(), 8, 0/*vo.numPointsAtLevel()*/);
     fflush(stdout);
+
+    trajectory.push_back(result.pose);
+    time_ms.push_back(tt);
+    iterations.push_back(num_iters);
+  }
+
+  fprintf(stdout, "\n");
+  Info("done\n");
+
+  if(!output_fn.empty()) {
+    printf("writing results to prefix %s\n", output_fn.c_str());
+
+    {
+      trajectory.writeCameraPath( output_fn + "_path.txt" );
+
+      std::ofstream ofs(output_fn + "_poses.txt");
+      if(ofs.is_open()) {
+        for(size_t i = 0; i < trajectory.size(); ++i)
+          ofs << trajectory[i] << "\n";
+      }
+
+      ofs.close();
+    }
+
+    {
+      std::ofstream ofs(output_fn + "_iterations.txt");
+      if(ofs.is_open()) {
+        for(size_t i = 0; i < iterations.size(); ++i)
+          ofs << iterations[i] << "\n";
+      }
+      ofs.close();
+    }
+
+    {
+      std::ofstream ofs(output_fn + "_time.txt");
+      if(ofs.is_open()) {
+        for(size_t i = 0; i < time_ms.size(); ++i)
+          ofs << time_ms[i] << "\n";
+      }
+      ofs.close();
+    }
   }
 
   return 0;
