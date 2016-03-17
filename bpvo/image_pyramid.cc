@@ -30,6 +30,13 @@ ImagePyramid::ImagePyramid(int num_levels)
   assert( num_levels >= 0 );
 }
 
+ImagePyramid::ImagePyramid(const ImagePyramid& other)
+  : _pyr(other._pyr.size())
+{
+  for(size_t i = 0; i < _pyr.size(); ++i)
+    _pyr[i] = other._pyr[i].clone();
+}
+
 void ImagePyramid::compute(const cv::Mat& I)
 {
   assert( !_pyr.empty() );

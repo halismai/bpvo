@@ -34,6 +34,8 @@ class VisualOdometry
 
  public:
   /**
+   * \param K the intrinsic calibration of the rectified image
+   * \param b the stereo baseline
    * \param ImageSize
    * \param AlgorithmParameters
    */

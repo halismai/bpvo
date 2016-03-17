@@ -29,7 +29,8 @@
 namespace bpvo {
 
 /**
- * The trivial form of the descriptor (grayscale image)
+ * The trivial form of the descriptor (grayscale image) converted to floating
+ * point
  */
 class IntensityDescriptor : public DenseDescriptor
 {

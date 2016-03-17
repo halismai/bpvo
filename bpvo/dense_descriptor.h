@@ -30,6 +30,9 @@ class Mat;
 
 namespace bpvo {
 
+/**
+ * Base class for all dense descriptors
+ */
 class DenseDescriptor
 {
  public:
@@ -41,21 +44,25 @@ class DenseDescriptor
   virtual ~DenseDescriptor();
 
   /**
-   * computes the channels/descriptors
+   * Computes the channels/descriptors given the input image
    */
-  virtual void compute(const cv::Mat&) = 0;
+  virtual void compute(const cv::Mat& image) = 0;
 
   /**
-   * computes the saliency map
+   * Computes the saliency map and stores it in smap.
+   *
+   * compute() should be called prior to calling this function
    */
-  virtual void computeSaliencyMap(cv::Mat&) const = 0;
+  virtual void computeSaliencyMap(cv::Mat& smap) const = 0;
 
   /**
-   * \return the i-th channel
+   * \return the i-th channel, the index must be less than the number of
+   * channels for the descriptor
    */
   virtual const cv::Mat& getChannel(int i) const = 0;
 
   /**
+   * \return a deep copy of the object
    */
   virtual Pointer clone() const = 0;
 
@@ -64,15 +71,30 @@ class DenseDescriptor
    */
   virtual int numChannels() const = 0;
 
+  /**
+   * \return number of rows of the descriptor. The same across all channels
+   */
   virtual int rows() const = 0;
+
+  /**
+   * \return number of columns of the descriptor. The same across all channels
+   */
   virtual int cols() const = 0;
 
+  /**
+   * Sets the status of the data avaiability. When processing a new frame, this
+   * should be set to false to force re-computation
+   */
   inline void setHasData(bool v) { _has_data = v;}
 
+  /**
+   * \return true if descriptor has been computed (i.e. compute()) was called.
+   * We use this to cache previous computation.
+   */
   inline bool hasData() const { return _has_data; }
 
  protected:
-  bool _has_data = false;
+  bool _has_data = false; //
 }; // DenseDescriptor
 
 

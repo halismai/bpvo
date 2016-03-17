@@ -26,6 +26,8 @@
 
 #include <cmath>
 
+#include <opencv2/highgui/highgui.hpp>
+
 namespace bpvo {
 
 template <typename T> static inline
@@ -121,7 +123,6 @@ setTemplate(DenseDescriptorPyramid& desc_pyr, const cv::Mat& D)
 std::vector<OptimizerStatistics> VisualOdometryPoseEstimator::
 estimatePose(DenseDescriptorPyramid& desc_pyr, const Matrix44& T_init, Matrix44& T_est)
 {
-
   std::vector<OptimizerStatistics> ret(desc_pyr.size());
   _pose_estimator.setParameters(_pose_est_params_low_res);
   T_est = T_init;
@@ -160,7 +161,7 @@ struct VisualOdometryWithKeyFraming::KeyFrameCandidate
   }
 
   bool empty() const { return !_has_data; }
-  void clear() { _has_data = false;}
+  void clear() { _has_data = false; }
 
   bool _has_data = false;
   UniquePointer<DenseDescriptorPyramid> _desc_pyr;
@@ -224,6 +225,7 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
 
   if(!ret.isKeyFrame)
   {
+    dprintf("updating kfc\n");
     _kf_candidate->set(*_desc_pyr, D);
     ret.pose = T_est * _T_kf.inverse();
     _T_kf = T_est;
@@ -242,9 +244,20 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
     {
       dprintf("using kfc\n");
       _vo_pose->setTemplate(*_kf_candidate->_desc_pyr, _kf_candidate->_disparity);
+      T_est.setIdentity();
+
+      const auto I0 = _kf_candidate->_desc_pyr->getImagePyramid()[0];
+      const auto I1 = _desc_pyr->getImagePyramid()[0];
+      cv::Mat DD;
+      cv::absdiff(I0, I1, DD);
+      cv::imshow("D0", DD);
+      cv::waitKey(0);
+
       ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, Matrix44::Identity(), T_est);
       ret.pose = T_est;
       _T_kf = T_est;
+
+      std::cout << "GOT motion\n" << T_est << "\n" << std::endl;
 
       _kf_candidate->clear();
     }

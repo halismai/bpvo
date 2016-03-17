@@ -31,6 +31,28 @@ namespace bpvo {
 class BitPlanesDescriptor : public DenseDescriptor
 {
  public:
+  /**
+   * Creates the dense bit-planes descriptor
+   *
+   * \param s0 std. dev of a Gaussian to apply to the input image before
+   * computing the census signatures. If the value is <= 0, no smoothing will be
+   * applied.
+   *
+   * Typical values for s0 are within 0.25 - 1.0, depending on the noise in the
+   * data
+   *
+   *
+   * \param s1 std. dev of a Gaussian to apply to each of the bit-planes. If the
+   * value is <= 0, no smoothing will be applied (the bit-planes will be
+   * binary). NOTE: we will scale the bits by 255 so that thresholds for
+   * IntensityDescriptor work the same with BitPlanes.
+   *
+   * Typical values for s1 are within 0.5 - 1.5 depending no how much smoothing
+   * you want
+   *
+   * NOTE: preforming this smoothing over the 8 bit-planes will be expensive,
+   * but not so bad (depending on how many cores you have)
+   */
   BitPlanesDescriptor(float s0 = 0.5f, float s1 = -1.0);
 
   virtual ~BitPlanesDescriptor();

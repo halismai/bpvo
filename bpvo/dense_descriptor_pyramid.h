@@ -88,12 +88,14 @@ class DenseDescriptorPyramid
    */
   inline int size() const { return static_cast<int>(_desc_pyr.size()); }
 
+  inline const ImagePyramid& getImagePyramid() const { return _image_pyramid; }
+
  protected:
   typedef UniquePointer<DenseDescriptor> DenseDescriptorPointer;
   std::vector<DenseDescriptorPointer> _desc_pyr;
   ImagePyramid _image_pyramid;
-}; // DenseDescriptorPyramid
 
+}; // DenseDescriptorPyramid
 }; // bpvo
 
 #endif // BPVO_DENSE_DESCRIPTOR_PYRAMID_H

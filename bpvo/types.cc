@@ -214,7 +214,7 @@ Result::Result()
   , isKeyFrame(false)
   , keyFramingReason(kNoKeyFraming) {}
 
-Result::Result(Result&& other)
+Result::Result(Result&& other) noexcept
   : pose(other.pose)
   , covariance(other.covariance)
   , optimizerStatistics(std::move(other.optimizerStatistics))
@@ -224,7 +224,7 @@ Result::Result(Result&& other)
 
 Result::~Result() {}
 
-Result& Result::operator=(Result&& r)
+Result& Result::operator=(Result&& r) noexcept
 {
   pose = r.pose;
   covariance = r.covariance;

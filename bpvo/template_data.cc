@@ -24,6 +24,7 @@
 #include "bpvo/dense_descriptor.h"
 #include "bpvo/imgproc.h"
 #include "bpvo/parallel.h"
+#include "bpvo/utils.h"
 
 namespace bpvo {
 
@@ -222,6 +223,7 @@ struct ComputeResidualsBody : public ParallelForBody
 void TemplateData::computeResiduals(const DenseDescriptor* desc, const Matrix44& pose,
                                     ResidualsVector& residuals, ValidVector& valid)
 {
+  THROW_ERROR_IF( numPoints() == 0, "you should call setData before calling computeResiduals" );
   _warp.setPose(pose);
 
   valid.resize(_points.size());
@@ -236,4 +238,5 @@ void TemplateData::computeResiduals(const DenseDescriptor* desc, const Matrix44&
 }
 
 }; // bpvo
+
 

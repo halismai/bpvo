@@ -6,7 +6,7 @@
 
 namespace bpvo {
 
-DenseDescriptor* MakeDescriptor(DescriptorType dtype, const AlgorithmParameters&)
+DenseDescriptor* MakeDescriptor(DescriptorType dtype, const AlgorithmParameters& p)
 {
   switch(dtype)
   {
@@ -14,7 +14,7 @@ DenseDescriptor* MakeDescriptor(DescriptorType dtype, const AlgorithmParameters&
       return new IntensityDescriptor();
 
     case DescriptorType::kBitPlanes:
-      return new BitPlanesDescriptor();
+      return new BitPlanesDescriptor(p.sigmaPriorToCensusTransform, p.sigmaBitPlanes);
 
     default:
       THROW_ERROR("unkonwn DescriptorType\n");

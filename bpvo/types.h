@@ -140,7 +140,6 @@ enum DescriptorType
   kBitPlanes         //< bit-planes (robust)
 }; // DescriptorType
 
-
 struct AlgorithmParameters
 {
   //
@@ -265,6 +264,8 @@ struct AlgorithmParameters
   int minNumPixelsForNonMaximaSuppression;
 
   /**
+   * Radius of non maxima suppression when performing pixel selection over the
+   * saliency map of the densee descriptor
    */
   int nonMaxSuppRadius;
 
@@ -293,7 +294,14 @@ struct AlgorithmParameters
   //
 
   /**
-   * TODO
+   * Maximum level to use for pose estimation in the pyramid. By default this is
+   * set to 0, meaning process up to level 0.  Level zero is the finest pyramid
+   * level.
+   *
+   * If you want to run up to half the original resolution, set this value to 1,
+   * which corresponds to the second level in the pyramid, etc.
+   *
+   * numPyramidLevels must enough to accomodate maxTestLevel
    */
   int maxTestLevel;
 
@@ -320,7 +328,6 @@ struct AlgorithmParameters
   friend std::ostream& operator<<(std::ostream&, const AlgorithmParameters&);
 }; // AlgorithmParameters
 
-
 /**
  * Tells you why the code returned a certain result
  */
@@ -333,19 +340,19 @@ enum PoseEstimationStatus
   kSolverError          //< !
 }; // PoseEstimationStatus
 
-
 /**
- * tells you why the code decided to keyframe
+ * Tells you why the code decided to keyframe.
+ *
+ * Thresholds for the parameters are decided in AlgorithmParameters
  */
 enum KeyFramingReason
 {
-  kLargeTranslation = 0x40,      //< translation was large
-  kLargeRotation,         //< rotation was large
-  kSmallFracOfGoodPoints, //< fraction of good points is low
-  kNoKeyFraming,          //< there was no keyframe
+  kLargeTranslation = 0x40,  //< translation was large
+  kLargeRotation,            //< rotation was large
+  kSmallFracOfGoodPoints,    //< fraction of good points is low
+  kNoKeyFraming,             //< there was no keyframe
   kFirstFrame
 }; // KeyFramingReason
-
 
 /**
  * Statistics from the optimizer
@@ -353,22 +360,35 @@ enum KeyFramingReason
 struct OptimizerStatistics
 {
   /**
+   * Number of iterations it took to converge. If this is unsually high, it may
+   * indicate a problem. For example, motion was too large, or the optimizer got
+   * stuck in a local minima
    */
   int numIterations;
 
   /**
-   * error at the last iteration of the optimization.
-   * This is the squared norm of the weighted residuals vector
+   * Error at the last iteration of the optimization.
+   * This is the squared norm of the weighted residuals vector. Monitering this
+   * across iterations is useful, to access the quality of the solution and/or
+   * detect issues with the data.
    */
   float finalError;
 
   /**
-   * first order optimiality at the end of the optimization
+   * First order optimiality at the end of the optimization, aka the Inf norm of
+   * the gradient vector at the solution.
+   *
+   * Sometimes this is called the 1-st order necessary condition for convergece.
+   * In plain language, it is gradient of the function.
+   *
+   * If this is zero, then the 1-st order necessary condition has been
+   * satified. However, it is usually possible (especially with the IC)
+   * formulation. A large value does not mean a bad solution
    */
   float firstOrderOptimality;
 
   /**
-   *
+   *  Status from pose estimation module
    */
   PoseEstimationStatus status;
 
@@ -378,46 +398,67 @@ struct OptimizerStatistics
 class PointCloud;
 
 /**
- * Output from VO include the pose and other useful statistics
+ * Output from VO including the pose and other useful statistics
  */
 struct Result
 {
   /**
    * The estimated pose.
    *
-   * This is relative motion of the most recent frame
+   * This is the relative motion of the most recently added frame wrt the
+   * current reference/template frame
    */
   Pose pose;
 
   /**
-   * Covariance of the estimated parameters
+   * Covariance of the estimated parameters. The inverse of the weighed hessian
+   * at the solution. It is a 6x6 matrix with rotations present first.
    */
   PoseCovariance covariance;
 
   /**
-   * opeimizer statistics from every iteration. The first element corresponds to
-   * the `finest' pyramid level (highest resolution)
+   * Optimizer statistics at every iteration. The first element corresponds to
+   * the `finest' pyramid level (highest resolution).
+   *
+   * You should use optimizerStatistics at the index corresponding to
+   * maxTestLevel, i.e.
+   *
+   * auto stats = result.optimizerStatistics[ params.maxTestLevel ];
+   *
    */
   std::vector<OptimizerStatistics> optimizerStatistics;
 
   /**
    * If this is set to 'true' then we set a keyframe (usually from the previous
    * image)
+   *
+   * If isKeyFrame := true, then a point cloud may be obtained from VO
    */
   bool isKeyFrame;
 
   /**
-   * reason for keyframeing
+   * Reason for keyframeing
    */
   KeyFramingReason keyFramingReason;
 
   /**
-   * Point cloud and its own.
-   * check the pointer before using it, it is not null iff we have points (based
+   * Point cloud from the most recenet keyframe.
+   *
+   * Check the pointer before using it, as it is not null iff we have points (based
    * on keyframing)
    *
    * Before using the point cloud, it must also be transformed with the
-   * associated pose
+   * associated pose. We return the pointCloud in the local coordinates of the
+   * image in case the user wants to do other color extraction/processing.
+   *
+   * The point cloud is extracted from integer pixel locations, to get the
+   * correspoinding pixel in the image you can do:
+   *
+   *  auto uv = normHomog( K.inverse() * X_i);
+   *  int col = std::round(uv[0]);
+   *  int row = std::round(uv[1]);
+   *
+   * You need the round() for floating point errors
    */
   UniquePointer<PointCloud> pointCloud;
 
@@ -427,9 +468,12 @@ struct Result
   friend std::ostream& operator<<(std::ostream&, const Result&);
 
   Result();
-  Result(Result&&);
-  Result& operator=(Result&&);
+  Result(Result&&) noexcept;
+  Result& operator=(Result&&) noexcept;
 
+  //
+  // copy and assigment are deleted. The class must be moved
+  //
   Result(const Result&) = delete;
   Result& operator=(const Result&) = delete;
 
@@ -443,7 +487,8 @@ struct Result
  * The image size.
  *
  * All images are rows x cols
- * The stride (number of elements per columns) is the same as the 'cols'
+ * The stride (number of elements per columns), which is usually the same as the
+ * 'cols' for single channel images
  */
 struct ImageSize
 {
