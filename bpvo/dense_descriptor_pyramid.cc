@@ -40,21 +40,19 @@ DenseDescriptorPyramid(DescriptorType dtype, int n_levels, const cv::Mat& I,
     _desc_pyr.push_back(UniquePointer<DenseDescriptor>(MakeDescriptor(dtype, p)));
 }
 
-DenseDescriptorPyramid::DenseDescriptorPyramid(const DenseDescriptorPyramid& other)
+DenseDescriptorPyramid::
+DenseDescriptorPyramid(const DenseDescriptorPyramid& other)
   :  _image_pyramid(other._image_pyramid)
 {
   for(size_t i = 0; i < _desc_pyr.size(); ++i) {
-    _desc_pyr.emplace_back(other._desc_pyr[i]->clone());
+    _desc_pyr.push_back(other._desc_pyr[i]->clone());
   }
-
 }
 
-DenseDescriptorPyramid::DenseDescriptorPyramid(DenseDescriptorPyramid&& o)
+DenseDescriptorPyramid::
+DenseDescriptorPyramid(DenseDescriptorPyramid&& o) noexcept
   : _desc_pyr(std::move(o._desc_pyr))
-  , _image_pyramid(std::move(o._image_pyramid))
-{
-}
-
+  , _image_pyramid(std::move(o._image_pyramid)) {}
 
 DenseDescriptorPyramid::~DenseDescriptorPyramid() {}
 

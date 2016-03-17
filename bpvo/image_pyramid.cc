@@ -37,6 +37,9 @@ ImagePyramid::ImagePyramid(const ImagePyramid& other)
     _pyr[i] = other._pyr[i].clone();
 }
 
+ImagePyramid::ImagePyramid(ImagePyramid&& other) noexcept
+  : _pyr(std::move(other._pyr)) {}
+
 void ImagePyramid::compute(const cv::Mat& I)
 {
   assert( !_pyr.empty() );

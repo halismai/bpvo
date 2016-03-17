@@ -33,6 +33,7 @@ class ImagePyramid
  public:
   ImagePyramid(int num_levels);
   ImagePyramid(const ImagePyramid&);
+  ImagePyramid(ImagePyramid&&) noexcept;
 
  public:
   void compute(const cv::Mat&);

@@ -63,7 +63,7 @@ class DenseDescriptorPyramid
   /**
    * move
    */
-  DenseDescriptorPyramid(DenseDescriptorPyramid&&);
+  DenseDescriptorPyramid(DenseDescriptorPyramid&&) noexcept;
 
   /**
    * Computes the descriptor at pyramid level 'i'
@@ -88,6 +88,9 @@ class DenseDescriptorPyramid
    */
   inline int size() const { return static_cast<int>(_desc_pyr.size()); }
 
+  /**
+   * \return the image pyramid
+   */
   inline const ImagePyramid& getImagePyramid() const { return _image_pyramid; }
 
  protected:
