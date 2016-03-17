@@ -27,16 +27,17 @@ DenseDescriptorPyramid(DescriptorType dtype, const ImagePyramid& I_pyr,
   : _image_pyramid(I_pyr)
 {
   for(int i = 0; i < _image_pyramid.size(); ++i)
-    _desc_pyr.push_back(MakeDescriptor(dtype, params));
+    _desc_pyr.push_back(UniquePointer<DenseDescriptor>(MakeDescriptor(dtype, params)));
 }
 
 DenseDescriptorPyramid::
-DenseDescriptorPyramid(DescriptorType dtype, int n_levels, const AlgorithmParameters& p)
+DenseDescriptorPyramid(DescriptorType dtype, int n_levels, const cv::Mat& I,
+                       const AlgorithmParameters& p)
   : _image_pyramid(n_levels)
 {
   _image_pyramid.compute(I);
   for(int i = 0; i < n_levels; ++i)
-    _desc_pyr.push_back(MakeDescriptor(dtype, p));
+    _desc_pyr.push_back(UniquePointer<DenseDescriptor>(MakeDescriptor(dtype, p)));
 }
 
 DenseDescriptorPyramid::~DenseDescriptorPyramid() {}
@@ -44,8 +45,10 @@ DenseDescriptorPyramid::~DenseDescriptorPyramid() {}
 void DenseDescriptorPyramid::compute(size_t i, bool force)
 {
   assert( i < _desc_pyr.size() );
-  if(force || !_desc_pyr[i]->hasData())
+  if(force || !_desc_pyr[i]->hasData()) {
     _desc_pyr[i]->compute(_image_pyramid[i]);
+    _desc_pyr[i]->setHasData(true);
+  }
 }
 
 void DenseDescriptorPyramid::setImage(const cv::Mat& image)

@@ -7,7 +7,7 @@
 #include "bpvo/trajectory.h"
 #include "bpvo/utils.h"
 
-#include "bpvo/vo_impl_kf.h"
+#include "bpvo/vo_kf.h"
 
 #include <iostream>
 #include <fstream>
@@ -24,7 +24,7 @@ class Vo
 {
  public:
   inline Vo(const Matrix33& K, float b, ImageSize imsize, AlgorithmParameters p)
-      : _impl(make_unique<VisualOdometryKf>(K, b, imsize, p)) {}
+      : _impl(make_unique<VisualOdometryWithKeyFraming>(K, b, imsize, p)) {}
 
   inline Result addFrame(const uint8_t* I, const float* D)
   {
@@ -32,7 +32,7 @@ class Vo
   }
 
  protected:
-  UniquePointer<VisualOdometryKf> _impl;
+  UniquePointer<VisualOdometryWithKeyFraming> _impl;
 }; // Vo
 
 int main(int argc, char** argv)
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
         Warn("maximum iterations reached %d\n", params.maxIterations);
       }
 
-#if 0
+#if 1
       fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d\r",
               f_i-1, 6, tt, 5, (f_i - 1) / total_time,  num_iters,
               ToString(result.keyFramingReason).c_str(), 8, 0/*vo.numPointsAtLevel()*/);

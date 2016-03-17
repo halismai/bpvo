@@ -73,6 +73,9 @@ class DenseDescriptorPyramid
    */
   const DenseDescriptor* operator[](size_t i) const;
 
+  /**
+   * \return the number of pyramid levels
+   */
   inline int size() const { return static_cast<int>(_desc_pyr.size()); }
 
  protected:

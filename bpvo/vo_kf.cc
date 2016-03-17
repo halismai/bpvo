@@ -16,6 +16,8 @@ cv::Mat ToOpenCV(const T* p, const ImageSize& siz)
 
 class VisualOdometryPoseEstimator
 {
+  friend class VisualOdometryWithKeyFraming;
+
  public:
   /**
    * \param K the intrinsics matrix
@@ -183,9 +185,57 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
 
   Result ret;
   ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, _T_kf, T_est);
+  ret.pose = T_est;
+  ret.keyFramingReason = shouldKeyFrame(ret);
+  ret.isKeyFrame = ret.keyFramingReason != KeyFramingReason::kNoKeyFraming;
+  if(!ret.isKeyFrame) {
+    printf("should not keyframe\n");
+  }
+
   _vo_pose->setTemplate(*_desc_pyr, D);
 
   return ret;
+}
+
+int VisualOdometryWithKeyFraming::numPointsAtLevel(int level) const
+{
+  if(level < 0)
+    level = _params.maxTestLevel;
+
+  return _vo_pose->_tdata_pyr[level]->numPoints();
+}
+
+KeyFramingReason
+VisualOdometryWithKeyFraming::shouldKeyFrame(const Result& result)
+{
+  if(result.keyFramingReason == KeyFramingReason::kFirstFrame)
+  {
+    return KeyFramingReason::kFirstFrame;
+  }
+
+  auto t_norm = result.pose.block<3,1>(0,3).squaredNorm();
+  if(t_norm > math::sq(_params.minTranslationMagToKeyFrame))
+  {
+    return KeyFramingReason::kLargeTranslation;
+  }
+
+  auto r_norm = math::RotationMatrixToEulerAngles(result.pose).squaredNorm();
+  if(r_norm > math::sq(_params.minRotationMagToKeyFrame))
+  {
+    return KeyFramingReason::kLargeRotation;
+  }
+
+  const auto& w = _vo_pose->_pose_estimator.getWeights();
+  const auto thresh = _params.goodPointThreshold;
+  auto num_good = std::count_if(std::begin(w), std::end(w),
+                                [=](float w_i) { return w_i > thresh; });
+  auto frac_good = num_good / (float) w.size();
+  if(frac_good < _params.maxFractionOfGoodPointsToKeyFrame)
+  {
+    return KeyFramingReason::kSmallFracOfGoodPoints;
+  }
+
+  return KeyFramingReason::kNoKeyFraming;
 }
 
 } // bpvo
