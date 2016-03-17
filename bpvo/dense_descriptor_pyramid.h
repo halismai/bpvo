@@ -24,15 +24,12 @@
 
 #include <bpvo/types.h>
 #include <bpvo/image_pyramid.h>
-#include <bpvo/dense_descriptor.h>
-#include <bpvo/intensity_descriptor.h>
-#include <bpvo/bitplanes_descriptor.h>
 
 namespace bpvo {
 
+class DenseDescriptor;
 
-template <class ... Args> static inline
-DenseDescriptor* MakeDescriptor(DescriptorType dtype, Args... args);
+DenseDescriptor* MakeDescriptor(DescriptorType dtype, const AlgorithmParameters&);
 
 /**
  */
@@ -43,31 +40,20 @@ class DenseDescriptorPyramid
    * \param pointer to the descriptor
    * \param ImagePyramid pre-computed image pyramid
    */
-  template <class ... Args>
-  DenseDescriptorPyramid(DescriptorType dtype, const ImagePyramid& I_pyr, Args... args)
-    : _image_pyramid(I_pyr)
-  {
-    for(int i = 0; i < _image_pyramid.size(); ++i)
-      _desc_pyr.push_back(MakeDescriptor(dtype, args...));
-  }
+  DenseDescriptorPyramid(DescriptorType dtype, const ImagePyramid& I_pyr,
+                         const AlgorithmParameters& = AlgorithmParameters());
 
   /**
    * \param pointer to descriptor
    * \param number of levels
    * \param image the input image
    */
-  template <class ... Args>
-  DenseDescriptorPyramid(DescriptorType dtype, int n_levels, const cv::Mat& I, Args...  args)
-    : _image_pyramid(n_levels)
-  {
-    _image_pyramid.compute(I);
-    for(int i = 0; i < n_levels; ++i)
-      _desc_pyr.push_back(MakeDescriptor(dtype, args...));
-  }
+  DenseDescriptorPyramid(DescriptorType dtype, int n_levels, const cv::Mat&,
+                         const AlgorithmParameters& = AlgorithmParameters());
 
   /**
    */
-  ~DenseDescriptorPyramid() {}
+  ~DenseDescriptorPyramid();
 
   /**
    * Computes the descriptor at pyramid level 'i'
@@ -75,21 +61,19 @@ class DenseDescriptorPyramid
    * \param force if true the descriptor will be re-computed. Otherwise, if it
    * had been computed before the function does nothing
    */
-  inline void compute(size_t i, bool force = false)
-  {
-    assert( i < _desc_pyr.size() );
-    if(force || _desc_pyr[i]->rows() == 0 || _desc_pyr[i]->cols() == 0)
-      _desc_pyr[i]->compute(_image_pyramid[i]);
-  }
+  void compute(size_t i, bool force = false);
+
+  /**
+   * sets the image for the pyramid (does not compute descriptors)
+   */
+  void setImage(const cv::Mat& image);
 
   /**
    * \return the descriptor at level 'i'
    */
-  inline const DenseDescriptor* operator[](size_t i) const
-  {
-    assert( i < _desc_pyr.size() );
-    return _desc_pyr[i].get();
-  }
+  const DenseDescriptor* operator[](size_t i) const;
+
+  inline int size() const { return static_cast<int>(_desc_pyr.size()); }
 
  protected:
   typedef UniquePointer<DenseDescriptor> DenseDescriptorPointer;
@@ -100,3 +84,4 @@ class DenseDescriptorPyramid
 }; // bpvo
 
 #endif // BPVO_DENSE_DESCRIPTOR_PYRAMID_H
+

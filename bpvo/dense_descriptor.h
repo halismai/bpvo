@@ -59,6 +59,12 @@ class DenseDescriptor
   virtual int rows() const = 0;
   virtual int cols() const = 0;
 
+  inline void setHasData(bool v) { _has_data = v;}
+
+  inline bool hasData() const { return _has_data; }
+
+ protected:
+  bool _has_data = false;
 }; // DenseDescriptor
 
 

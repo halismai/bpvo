@@ -27,6 +27,7 @@ class ParallelForBody
   virtual void operator()(const Range&) const = 0;
 }; // ParallelForBody
 
+
 int getNumThreads();
 int getNumMaxThreads();
 int getThreadNum();

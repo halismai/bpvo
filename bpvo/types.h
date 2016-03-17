@@ -140,6 +140,7 @@ enum DescriptorType
   kBitPlanes         //< bit-planes (robust)
 }; // DescriptorType
 
+
 struct AlgorithmParameters
 {
   //
@@ -150,6 +151,12 @@ struct AlgorithmParameters
    * number of pyramid levels (negative means auto)
    * */
   int numPyramidLevels;
+
+  /**
+   * minium dimension of the image at the coarest pyramid level. This will be
+   * use dif numPyramidLevels <=0
+   */
+  int minImageDimensionForPyramid;
 
   /**
    * std. deviation of Gaussian to apply to the image before computing the

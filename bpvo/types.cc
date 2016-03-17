@@ -30,6 +30,7 @@ namespace bpvo {
 
 AlgorithmParameters::AlgorithmParameters()
     : numPyramidLevels(-1)
+    , minImageDimensionForPyramid(40)
     , sigmaPriorToCensusTransform(-1.0f)
     , sigmaBitPlanes(0.5)
     , maxIterations(50)
@@ -59,6 +60,7 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   ConfigFile cf(filename);
 
   numPyramidLevels = cf.get<int>("numPyramidLevels", -1);
+  minImageDimensionForPyramid = cf.get<int>("minImageDimensionForPyramid", 40);
   sigmaPriorToCensusTransform = cf.get<float>("sigmaPriorToCensusTransform", 0.5f);
   sigmaBitPlanes = cf.get<float>("sigmaBitPlanes", 0.5f);
   maxIterations = cf.get<int>("maxIterations", 50);
@@ -171,6 +173,7 @@ std::string ToString(KeyFramingReason r)
 std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
 {
   os << "numPyramidLevels = " << p.numPyramidLevels << "\n";
+  os << "minImageDimensionForPyramid = " << p.minImageDimensionForPyramid << "\n";
   os << "sigmaPriorToCensusTransform = " << p.sigmaPriorToCensusTransform << "\n";
   os << "sigmaBitPlanes = " << p.sigmaBitPlanes << "\n";
   os << "maxIterations = " << p.maxIterations << "\n";

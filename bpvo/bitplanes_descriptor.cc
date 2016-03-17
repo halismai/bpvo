@@ -81,6 +81,8 @@ void BitPlanesDescriptor::compute(const cv::Mat& I_)
 
   BitPlanesComputeBody<float> func(I_, _sigma_ct, _sigma_bp, _channels);
   parallel_for(Range(0, 8), func);
+
+  this->_has_data = true;
 }
 
 void BitPlanesDescriptor::computeSaliencyMap(cv::Mat& dst) const

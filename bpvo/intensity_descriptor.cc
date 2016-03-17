@@ -38,6 +38,8 @@ void IntensityDescriptor::compute(const cv::Mat& src)
   }
 
   _I.convertTo(_I, CV_32FC1);
+
+  this->_has_data = true;
 }
 
 void IntensityDescriptor::computeSaliencyMap(cv::Mat& dst) const

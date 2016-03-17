@@ -35,12 +35,10 @@ class BitPlanesDescriptor : public DenseDescriptor
   virtual ~BitPlanesDescriptor();
 
   void compute(const cv::Mat&);
+
   void computeSaliencyMap(cv::Mat&) const;
 
-  inline const cv::Mat& getChannel(int i) const
-  {
-    return _channels[i];
-  }
+  inline const cv::Mat& getChannel(int i) const  { return _channels[i]; }
 
   inline int numChannels() const { return 8; }
   inline int rows() const { return _rows; }
