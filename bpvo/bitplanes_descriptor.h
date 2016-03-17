@@ -19,42 +19,43 @@
  * Contributor: halismai@cs.cmu.edu
  */
 
-#ifndef BPVO_IMAGE_PYRAMID_H
-#define BPVO_IMAGE_PYRAMID_H
+#ifndef BPVO_BITPLANES_DESCRIPTOR_H
+#define BPVO_BITPLANES_DESCRIPTOR_H
 
+#include <bpvo/dense_descriptor.h>
 #include <opencv2/core/core.hpp>
-#include <vector>
-
+#include <array>
 
 namespace bpvo {
 
-class ImagePyramid
+class BitPlanesDescriptor : public DenseDescriptor
 {
  public:
-  ImagePyramid(int num_levels);
+  BitPlanesDescriptor(float s0 = 0.5f, float s1 = -1.0);
+  virtual ~BitPlanesDescriptor();
 
- public:
   void compute(const cv::Mat&);
+  void computeSaliencyMap(cv::Mat&) const;
 
-  inline const cv::Mat& operator[](int i) const
+  inline const cv::Mat& getChannel(int i) const
   {
-    assert( i >= 0 && i < size() );
-    return _pyr[i];
+    return _channels[i];
   }
 
-  inline cv::Mat& operator[](int i)
-  {
-    assert( i >= 0 && i < size() );
-    return _pyr[i];
-  }
+  inline int numChannels() const { return 8; }
+  inline int rows() const { return _rows; }
+  inline int cols() const { return _cols; }
 
-  inline int size() const { return static_cast<int>(_pyr.size()); }
-  inline bool empty() const { return _pyr.empty(); }
+  inline void setSigmaPriorToCensus(float s) { _sigma_ct = s; }
+  inline void setSigmaBitPlanes(float s) { _sigma_bp = s; }
 
- protected:
-  std::vector<cv::Mat> _pyr;
-}; // ImagePyramid
+ private:
+  int _rows, _cols;
+  float _sigma_ct, _sigma_bp;
+  std::array<cv::Mat,8> _channels;
+}; // BitPlanesDescriptor
 
 }; // bpvo
 
-#endif // BPVO_IMAGE_PYRAMID_H
+
+#endif // BPVO_BITPLANES_DESCRIPTOR_H

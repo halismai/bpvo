@@ -59,7 +59,7 @@ class Histogram
 
   inline void add(const T& v)
   {
-    int i = cvFloor( (clamp(v, _min_val, _max_val) / _range) * (_size - 1) );
+    int i = std::floor( (clamp(v, _min_val, _max_val) / _range) * (_size - 1) );
     _counts[i]++;
     _samples++;
   }

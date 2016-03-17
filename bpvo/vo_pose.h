@@ -50,14 +50,34 @@ class VisualOdometryPose
    */
   void setTemplate(const uint8_t* image_ptr, const float* disparity_map_ptr);
 
+  void setTemplate(const ImagePyramid&, const float*);
+
   /**
    * Estimates the pose wrt the input image
    */
-  Result estimatePose(const uint8_t* image_ptr, const Matrix44& T_init);
+  Result estimatePose(const uint8_t* image_ptr, const Matrix44& T_init, Matrix44& T_est);
 
+  /**
+   * \return true if there is template data
+   */
   bool hasData() const;
 
+  /**
+   * \return the image pyramid (check _image_pyramid.front().empty()) to verify
+   * that the there are images
+   */
   inline const ImagePyramid& getImagePyramid() const { return _image_pyramid; }
+
+  /**
+   * \return the M-Estimator weights computed at the most recent call to
+   * estimatePose
+   */
+  inline const WeightsVector& getWeights() const { return _pose_estimator.getWeights(); }
+
+  /**
+   * \return the image size
+   */
+  inline const ImageSize& imageSize() const { return _image_size; }
 
  protected:
   ImageSize _image_size;

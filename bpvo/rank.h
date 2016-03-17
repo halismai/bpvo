@@ -19,49 +19,22 @@
  * Contributor: halismai@cs.cmu.edu
  */
 
-#ifndef BPVO_DENSE_DESCRIPTOR_H
-#define BPVO_DENSE_DESCRIPTOR_H
+#ifndef BPVO_RANK_H
+#define BPVO_RANK_H
 
-#include <bpvo/types.h>
+
+#include <array>
 
 namespace cv {
 class Mat;
-}; // cv
+};
 
 namespace bpvo {
 
-class DenseDescriptor
-{
- public:
-  DenseDescriptor();
-  virtual ~DenseDescriptor();
-
-  /**
-   * computes the channels/descriptors
-   */
-  virtual void compute(const cv::Mat&) = 0;
-
-  /**
-   * computes the saliency map
-   */
-  virtual void computeSaliencyMap(cv::Mat&) const = 0;
-
-  /**
-   * \return the i-th channel
-   */
-  virtual const cv::Mat& getChannel(int i) const = 0;
-
-  /**
-   * \return the number of channels
-   */
-  virtual int numChannels() const = 0;
-
-  virtual int rows() const = 0;
-  virtual int cols() const = 0;
-
-}; // DenseDescriptor
-
+cv::Mat rankTransform(const cv::Mat& src, float sigma = -1.0f);
+void completeRankPlanes(const cv::Mat& src, std::array<cv::Mat,9>&,
+                        float sigma = -1.0, float sigma_rank = -1.0f);
 
 }; // bpvo
 
-#endif // BPVO_DENSE_DESCRIPTOR_H
+#endif // BPVO_RANK_H

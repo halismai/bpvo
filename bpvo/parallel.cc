@@ -66,6 +66,7 @@ static int s_numThreads = -1;
 
 #if defined(WITH_TBB)
 static tbb::task_scheduler_init s_taskScheduler(tbb::task_scheduler_init::deferred);
+//static tbb::task_scheduler_init s_taskScheduler(tbb::task_scheduler_init::automatic);
 #endif
 
 int getNumThreads()

@@ -23,6 +23,7 @@
 #define BPVO_MESTIMATOR_H
 
 #include <bpvo/types.h>
+#include <bpvo/histogram.h>
 #include <vector>
 
 namespace bpvo {
@@ -66,8 +67,8 @@ class AutoScaleEstimator
   float estimateScale(const ResidualsVector& residuals, const ValidVector& valid);
 
  private:
-  float _scale = 1.0, _delta_scale = 1e10, _tol = 1e-4;
-  ResidualsVector _buffer;
+  float _scale = 1.0, _delta_scale = 1e10, _tol = 1e-6;
+  Histogram<float> _hist;
 }; // AutoScaleEstimator
 
 }; // bpvo

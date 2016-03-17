@@ -35,13 +35,8 @@ void ImagePyramid::compute(const cv::Mat& I)
   assert( !_pyr.empty() );
   _pyr[0] = I; //.clone();
 
-#if 1
   for(size_t i = 1; i < _pyr.size(); ++i)
     cv::pyrDown(_pyr[i-1], _pyr[i]);
-#else
-  for(size_t i = 1; i < _pyr.size(); ++i)
-    cv::resize(_pyr[i-1], _pyr[i], cv::Size(), 0.5, 0.5, CV_INTER_LINEAR);
-#endif
 }
 
 } // bpvo

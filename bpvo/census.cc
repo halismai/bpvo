@@ -36,7 +36,7 @@ static const __m128i K0x20 = _mm_set1_epi8(0x20);
 static const __m128i K0x40 = _mm_set1_epi8(0x40);
 static const __m128i K0x80 = _mm_set1_epi8(0x80);
 
-#define C_OP >=
+#define C_OP >
 /**
  * computes the Census Transform for 16 pixels at once
  */
@@ -58,11 +58,10 @@ static inline void censusOp(const uint8_t* src, int stride, uint8_t* dst)
 cv::Mat census(const cv::Mat& src, float s)
 {
   assert( src.type() == CV_8UC1 && src.channels() == 1 && src.isContinuous() );
-  cv::Mat image;
+  cv::Mat image = src;
+
   if(s > 0.0f)
-    cv::GaussianBlur(src, image, cv::Size(), s, s);
-  else
-    image = src;
+    cv::GaussianBlur(src, image, cv::Size(3,3), s, s);
 
   cv::Mat dst(src.size(), CV_8UC1);
   const int W = 1 + ((src.cols - 2) & ~15);

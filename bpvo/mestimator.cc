@@ -422,30 +422,29 @@ ComputeWeights(LossFunctionType loss_func, const ResidualsVector& residuals,
 }
 
 AutoScaleEstimator::AutoScaleEstimator(float t)
-  : _scale(1.0), _delta_scale(1e10), _tol(t) {}
+  : _scale(1.0), _delta_scale(1e10), _tol(t), _hist(0.0f, 255.0f, 0.05f) {}
 
 void AutoScaleEstimator::reset()
 {
   _delta_scale = 1e10;
   _scale = 1.0;
+  _hist.clear();
 }
 
 float AutoScaleEstimator::getScale() const { return _scale; }
 
 static inline float ScaleEstimator(const ResidualsVector& residuals,
                                    const ValidVector& valid_flags,
-                                   ResidualsVector& buffer)
+                                   Histogram<float>& hist)
 
 {
-  buffer.resize(0);
-  buffer.reserve(residuals.size());
+  hist.clear();
 
   for(size_t i = 0; i < residuals.size(); ++i)
     if(valid_flags[i] != 0)
-      buffer.push_back( std::fabs(residuals[i]) );
+      hist.add(std::fabs(residuals[i]));
 
-  auto m = approximate_median(buffer, 0.0f, 255.0f, 0.05f);
-  return (1.4826 * (1.0 + 5 / (buffer.size()-6) )) * m;
+  return (1.4826 * (1.0 + 5 / (hist.numSamples()-6) )) * hist.median();
 }
 
 float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
@@ -455,7 +454,7 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
 
   if(_delta_scale > _tol)
   {
-    auto scale = ScaleEstimator(residuals, valid, _buffer);
+    auto scale = ScaleEstimator(residuals, valid, _hist);
 
     if(scale < 1e-6)
       scale = 1.0; // for the case of zero error

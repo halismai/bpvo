@@ -51,3 +51,4 @@ void IntensityDescriptor::computeSaliencyMap(cv::Mat& dst) const
 }
 
 } // bpvo
+

@@ -154,6 +154,8 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
   if(_params.withNormalization)
     _warp.setNormalization(_points);
 
+  // no point of doing things in parallel here
+  // we do it over the pyramid instead
 #define DO_SET_TEMPLATE_DATA_PARALLEL 0
 
 #if DO_SET_TEMPLATE_DATA_PARALLEL

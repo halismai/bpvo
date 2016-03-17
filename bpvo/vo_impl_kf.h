@@ -37,8 +37,11 @@ class VisualOdometryKf
 
   Result addFrame(const uint8_t*, const float*);
 
+  int numPointsAtLevel(int level = -1) const;
+
  protected:
   AlgorithmParameters _params;
+  ImageSize _image_size;
   UniquePointer<VisualOdometryPose> _vo_pose;
   UniquePointer<PointCloud> _kf_point_cloud;
 
@@ -46,6 +49,9 @@ class VisualOdometryKf
 
   struct KeyFrameCandidate;
   UniquePointer<KeyFrameCandidate> _kf_candidate;
+
+ private:
+  KeyFramingReason shouldKeyFrame(const Result&);
 }; // VisualOdometryKf
 
 }; // bpvo
