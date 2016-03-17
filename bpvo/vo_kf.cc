@@ -155,7 +155,7 @@ struct VisualOdometryWithKeyFraming::KeyFrameCandidate
 {
   void set(const DenseDescriptorPyramid& desc_pyr, const cv::Mat& D)
   {
-    _disparity = D;
+    D.copyTo(_disparity);
     _desc_pyr.reset(new DenseDescriptorPyramid(desc_pyr));
     _has_data = true;
   }
@@ -244,24 +244,16 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
     {
       dprintf("using kfc\n");
       _vo_pose->setTemplate(*_kf_candidate->_desc_pyr, _kf_candidate->_disparity);
-      T_est.setIdentity();
 
-      const auto I0 = _kf_candidate->_desc_pyr->getImagePyramid()[0];
-      const auto I1 = _desc_pyr->getImagePyramid()[0];
-      cv::Mat DD;
-      cv::absdiff(I0, I1, DD);
-      cv::imshow("D0", DD);
-      cv::waitKey(0);
-
-      ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, Matrix44::Identity(), T_est);
+      ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, _T_est, T_est);
       ret.pose = T_est;
       _T_kf = T_est;
-
-      std::cout << "GOT motion\n" << T_est << "\n" << std::endl;
 
       _kf_candidate->clear();
     }
   }
+
+  _T_est = ret.pose;
 
   return ret;
 }

@@ -89,10 +89,6 @@ int main(int argc, char** argv)
       double tt = timer.stop().count();
       total_time += (tt / 1000.0);
 
-      std::cout << "-----\n" << result.pose << "\n-----\n" << std::endl;
-      if(f_i > 0 && result.isKeyFrame)
-        break;
-
       f_i += 1;
       trajectory.push_back(result.pose);
 

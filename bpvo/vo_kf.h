@@ -58,7 +58,8 @@ class VisualOdometryWithKeyFraming
   AlgorithmParameters _params;
   ImageSize _image_size;
   UniquePointer<VisualOdometryPoseEstimator> _vo_pose;
-  Matrix44 _T_kf;
+  Matrix44 _T_kf;  //< motion wrt to the keyframe
+  Matrix44 _T_est; //< last estimated motion
 
   struct KeyFrameCandidate;
   /**

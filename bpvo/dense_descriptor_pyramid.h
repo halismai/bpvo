@@ -65,6 +65,9 @@ class DenseDescriptorPyramid
    */
   DenseDescriptorPyramid(DenseDescriptorPyramid&&) noexcept;
 
+  DenseDescriptorPyramid& operator=(const DenseDescriptorPyramid&) = default;
+  DenseDescriptorPyramid& operator=(DenseDescriptorPyramid&&) = default;
+
   /**
    * Computes the descriptor at pyramid level 'i'
    *

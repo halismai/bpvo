@@ -39,9 +39,14 @@ class DenseDescriptor
   typedef UniquePointer<DenseDescriptor> Pointer;
 
  public:
-  DenseDescriptor();
   DenseDescriptor(const DenseDescriptor&);
   virtual ~DenseDescriptor();
+
+  DenseDescriptor() = default;
+  DenseDescriptor(DenseDescriptor&&) noexcept = default;
+
+  DenseDescriptor& operator=(const DenseDescriptor&) = default;
+  DenseDescriptor& operator=(DenseDescriptor&&) noexcept = default;
 
   /**
    * Computes the channels/descriptors given the input image

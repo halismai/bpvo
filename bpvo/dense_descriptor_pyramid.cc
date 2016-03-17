@@ -26,8 +26,10 @@ DenseDescriptorPyramid(DescriptorType dtype, const ImagePyramid& I_pyr,
                        const AlgorithmParameters& params)
   : _image_pyramid(I_pyr)
 {
-  for(int i = 0; i < _image_pyramid.size(); ++i)
+  for(int i = 0; i < _image_pyramid.size(); ++i) {
     _desc_pyr.push_back(UniquePointer<DenseDescriptor>(MakeDescriptor(dtype, params)));
+    _desc_pyr[i]->setHasData(false);
+  }
 }
 
 DenseDescriptorPyramid::
@@ -44,7 +46,7 @@ DenseDescriptorPyramid::
 DenseDescriptorPyramid(const DenseDescriptorPyramid& other)
   :  _image_pyramid(other._image_pyramid)
 {
-  for(size_t i = 0; i < _desc_pyr.size(); ++i) {
+  for(size_t i = 0; i < other._desc_pyr.size(); ++i) {
     _desc_pyr.push_back(other._desc_pyr[i]->clone());
   }
 }
@@ -55,6 +57,7 @@ DenseDescriptorPyramid(DenseDescriptorPyramid&& o) noexcept
   , _image_pyramid(std::move(o._image_pyramid)) {}
 
 DenseDescriptorPyramid::~DenseDescriptorPyramid() {}
+
 
 void DenseDescriptorPyramid::compute(size_t i, bool force)
 {

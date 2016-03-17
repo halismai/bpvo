@@ -101,7 +101,7 @@ struct VoPoseSetTemplateBody : public ParallelForBody
                         const cv::Mat& D, std::vector<UniquePointer<TemplateData>>& tdata_pyr)
       : _desc_type(desc_type), _image_pyramid(image_pyramid), _D(D), _tdata_pyr(tdata_pyr)
     {
-      assert( _image_pyramid.size() == (int) _tdata_pyr.size() );
+      assert( _image_pyramid.size() == (int)  _tdata_pyr.size() );
     }
 
   inline void operator()(const Range& range) const

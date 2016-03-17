@@ -38,7 +38,7 @@ class IntensityDescriptor : public DenseDescriptor
   IntensityDescriptor() : DenseDescriptor() {}
 
   IntensityDescriptor(const IntensityDescriptor& o)
-      : DenseDescriptor(o), _I(o._I) { }
+      : DenseDescriptor(o), _I(o._I.clone()) { }
 
   virtual ~IntensityDescriptor() {}
 

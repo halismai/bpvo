@@ -23,9 +23,6 @@
 
 namespace bpvo {
 
-DenseDescriptor::DenseDescriptor()
-  : _has_data(false) {}
-
 DenseDescriptor::DenseDescriptor(const DenseDescriptor& other)
     : _has_data(other._has_data) {}
 
