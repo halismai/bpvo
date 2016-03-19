@@ -245,7 +245,8 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
       dprintf("using kfc\n");
       _vo_pose->setTemplate(*_kf_candidate->_desc_pyr, _kf_candidate->_disparity);
 
-      ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, _T_est, T_est);
+      Matrix44 T_init(Matrix44::Identity());
+      ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, T_init, T_est);
       ret.pose = T_est;
       _T_kf = T_est;
 

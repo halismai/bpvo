@@ -22,7 +22,10 @@
 #include "bpvo/linear_system_builder.h"
 #include "bpvo/parallel.h"
 
-#if defined(WITH_TBB)
+#define LINEAR_SYSTEM_PARALLEL 0
+#define DO_PARALLEL defined(WITH_TBB) && LINEAR_SYSTEM_PARALLEL
+
+#if DO_PARALLEL
 #include <tbb/parallel_reduce.h>
 #include <tbb/blocked_range.h>
 #endif
@@ -45,7 +48,7 @@ class LinearSystemBuilderReduction
                                const ResidualsVector& W, const ValidVector& V);
   ~LinearSystemBuilderReduction();
 
-#if defined(WITH_TBB)
+#if DO_PARALLEL
   LinearSystemBuilderReduction(LinearSystemBuilderReduction&, tbb::split);
   void join(const LinearSystemBuilderReduction&);
   void operator()(const tbb::blocked_range<int>& range);
@@ -84,7 +87,7 @@ LinearSystemBuilderReduction(const JacobianVector& J, const ResidualsVector& R,
 
 LinearSystemBuilderReduction::~LinearSystemBuilderReduction() {}
 
-#if defined(WITH_TBB)
+#if DO_PARALLEL
 LinearSystemBuilderReduction::
 LinearSystemBuilderReduction(LinearSystemBuilderReduction& o, tbb::split)
 : _J(o._J), _R(o._R), _W(o._W), _valid(o._valid) { setZero(); }
@@ -206,7 +209,7 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
   if(H && G) {
     LinearSystemBuilderReduction reduction(J, R, W, V);
 
-#if (defined(WITH_TBB))
+#if DO_PARALLEL
     tbb::parallel_reduce(tbb::blocked_range<int>(0, (int) R.size()), reduction);
     *H = reduction.hessian();
     *G = reduction.gradient();
@@ -326,4 +329,8 @@ float LinearSystemBuilder::Run(const JacobianVector& J, const ResidualsVector& r
 }
 
 }; // bpvo
+
+#undef DO_PARALLEL
+#undef LINEAR_SYSTEM_PARALLEL
+
 

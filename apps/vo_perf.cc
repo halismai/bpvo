@@ -56,6 +56,7 @@ int main(int argc, char** argv)
   const auto max_frames = options.get<int>("numframes");
   const auto do_show = !options.hasOption("dontshow");
   const auto output_fn = options.get<std::string>("output");
+
   auto dataset = Dataset::Create(conf_fn);
 
   AlgorithmParameters params(conf_fn);

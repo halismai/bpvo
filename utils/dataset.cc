@@ -113,6 +113,7 @@ UniquePointer<DatasetFrame> StereoDataset::getFrame(int f_i) const
   {
     printf("badness\n%s\n%s", _left_filenames->operator[](f_i).c_str(),
            _right_filenames->operator[](f_i).c_str());
+
     return nullptr;
   }
 

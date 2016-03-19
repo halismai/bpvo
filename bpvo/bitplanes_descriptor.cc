@@ -38,15 +38,21 @@ void ExtractChannel(const cv::Mat& src, cv::Mat& dst, int bit, float sigma)
 {
   dst.create(src.size(),  cv::DataType<TDst>::type);
 
+  constexpr TDst Scale = 1.0;
+  constexpr TDst Bias  = 0.0;
+
   auto src_ptr = src.ptr<const uint8_t>();
   auto dst_ptr = dst.ptr<TDst>();
   auto n = src.rows * src.cols;
 
+#if defined(WITH_OPENMP)
+#pragma omp simd
+#endif
   for(int i = 0; i < n; ++i)
-    dst_ptr[i] = TDst(255) * ((src_ptr[i] & (1 << bit)) >> bit) - TDst(128);
+    dst_ptr[i] = Scale * ((src_ptr[i] & (1 << bit)) >> bit) - Bias;
 
-  if(sigma > 0)
-    cv::GaussianBlur(dst, dst, cv::Size(3,3), sigma, sigma);
+  if(sigma > 0.0f)
+    cv::GaussianBlur(dst, dst, cv::Size(5,5), sigma, sigma);
 }
 
 template <typename TDst>

@@ -49,8 +49,8 @@ AlgorithmParameters::AlgorithmParameters()
     , nonMaxSuppRadius(1)
     , minNumPixelsToWork(256)
     , minSaliency(0.1)
-    , minDisparity(1.0)
-    , maxDisparity(512.0f)
+    , minValidDisparity(1.0)
+    , maxValidDisparity(512.0f)
     , maxTestLevel(0)
     , withNormalization(true) {}
 
@@ -79,8 +79,8 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   nonMaxSuppRadius = cf.get<int>("nonMaxSuppRadius", 1);
   minNumPixelsToWork = cf.get<int>("minNumPixelsToWork", 256);
   minSaliency = cf.get<float>("minSaliency", 0.1f);
-  minDisparity = cf.get<float>("minDisparity", 1.0f);
-  maxDisparity = cf.get<float>("maxDisparity", 512.0f);
+  minValidDisparity = cf.get<float>("minValidDisparity", 1.0f);
+  maxValidDisparity = cf.get<float>("maxValidDisparity", 512.0f);
   maxTestLevel = cf.get<int>("maxTestLevel", 0);
   withNormalization = cf.get<int>("withNormalization", true);
 }
@@ -190,8 +190,8 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   os << "minNumPixelsForNonMaximaSuppression = " << p.minNumPixelsForNonMaximaSuppression << "\n";
   os << "minNumPixelsToWork = " << p.minNumPixelsToWork << "\n";
   os << "minSaliency = " << p.minSaliency << "\n";
-  os << "minDisparity = " << p.minDisparity << "\n";
-  os << "maxDisparity = " << p.maxDisparity << "\n";
+  os << "minValidDisparity = " << p.minValidDisparity << "\n";
+  os << "maxValidDisparity = " << p.maxValidDisparity << "\n";
   os << "withNormalization = " << p.withNormalization << "\n";
   os << "maxTestLevel = " << p.maxTestLevel;
 

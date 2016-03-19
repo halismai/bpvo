@@ -139,7 +139,7 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
   {
     int y = inds[i + 0], x = inds[i + 1];
     auto d = D_ptr[ (1 << _pyr_level) * (y*D.cols + x) ];
-    if(d >= _params.minDisparity && d <= _params.maxDisparity)
+    if(d >= _params.minValidDisparity && d <= _params.maxValidDisparity)
     {
       _points.push_back( _warp.makePoint(x, y, d) );
       valid_inds.push_back( y*cols + x );

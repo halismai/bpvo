@@ -307,7 +307,8 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
   int n_processed = 0;
   for( ; n_processed <= N-4; n_processed += 4)
     ;*/
-  // this now is a multiple pf 16
+
+  // this now is a multiple pf 16 always!
   int n_processed = N;
   return n_processed;
 }

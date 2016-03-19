@@ -50,7 +50,7 @@ if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL 
 endif()
 
 include(cmake/MakeVersion.cmake)
-MakeVersion(BPVO 0 9 5)
+MakeVersion(BPVO 0 9 6)
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Direct Visual Odometry")
 set(CPACK_PACKAGE_VENDOR              "halismai")
@@ -67,7 +67,8 @@ set(CPACK_SOURCE_IGNORE_FILES
   # TODO this regex could be wrong
   "/*.swp"
   #"/*.in"
-  "${PROJECT_SOURCE_DIR}/.hgignore")
+  "${PROJECT_SOURCE_DIR}/.hgignore"
+  "${PROJECT_SOURCE_DIR}/.gitignore")
 
 message(STATUS "ignore ${CPACK_SOURCE_IGNORE_FILES}")
 
@@ -76,6 +77,9 @@ add_custom_target(srcdist COMMAND ${CMAKE_MAKE_PROGRAM} package_source)
 message(STATUS "dist file: ${CPACK_SOURCE_PACKAGE_FILE_NAME}")
 message(STATUS "version  : ${BPVO_VERSION}")
 
+if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+  add_definitions(-DIS_64BIT)
+endif()
 
 # Set the compiler options
 include(cmake/SetCompilerOptions.cmake)

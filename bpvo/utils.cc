@@ -43,7 +43,7 @@ namespace bpvo {
 
 bool icompare(const std::string& a, const std::string& b)
 {
-  return !strncasecmp(a.c_str(), b.c_str(), a.size());
+  return a.size() == b.size() ? !strncasecmp(a.c_str(), b.c_str(), a.size()) : false;
 }
 
 struct NoCaseCmp {

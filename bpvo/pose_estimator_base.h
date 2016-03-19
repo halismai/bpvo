@@ -62,26 +62,53 @@ class PoseEstimatorTraits< PoseEstimatorLM<TDataT> >
 {
 }; // PoseEstimatorTraits
 
-template <int N> // TODO add solver template
+/**
+ * templated with 'N' the number of parameters we are solving for (i.e. 6)
+ * Solver_ the type of the linear system solver want to use
+ */
+template <int N, class Solver_ = Eigen::LDLT<Eigen::Matrix<float,N,N>>>
 struct PoseEstimatorData_
 {
-  Eigen::Matrix<float,N,N> H;
-  Eigen::Matrix<float,N,1> G;
-  Eigen::Matrix<float,N,1> dp;
-  Matrix44 T;
+  Eigen::Matrix<float,N,N> H;   //< hessian approx./design matrix
+  Eigen::Matrix<float,N,1> G;   //< gradient of the objective (rhs)
+  Eigen::Matrix<float,N,1> dp;  //< delta parameter update
+  Matrix44 T; //< the pose as homogenous rigid body transformation
+  Solver_ solver;
 
-  inline float gradientNorm() const {
-    return G.template lpNorm<Eigen::Infinity>();
-  }
+  PoseEstimatorData_()
+      : H(), G(), dp(), T(Matrix44::Identity()), solver(N) {}
 
+  /**
+   * \return the Inf norm of the objective's gradient. This is used to test the
+   * first order optimality
+   */
+  inline float gradientNorm() const { return G.template lpNorm<Eigen::Infinity>(); }
+
+  /**
+   * solves the linear system
+   *
+   * \return true on success
+   */
   inline bool solve()
   {
-    dp = H.ldlt().solve(G);
+    //dp = H.ldlt().solve(G);
+    dp = solver.compute(H).solve(G);
     return (H*dp).isApprox(G);
+  }
+
+  inline bool solveAugmented(float s)
+  {
+    Eigen::Matrix<float,N,N> H_a( H );
+    H_a.diagonal().array() += s;
+    dp = solver.compute(H_a).solve(G);
+    return (H_a * dp).isApprox(G);
   }
 
   inline bool solve2()
   {
+    // sometimes, solving the sytem with floating point causes numerical issues.
+    // Here, we attemp to solve the system using doubles.
+    // TODO use the same solver type as in the template parameter
     Eigen::Matrix<double,N,N> H_ = H.template cast<double>();
     Eigen::Matrix<double,N,1> G_ = G.template cast<double>();
 
@@ -102,7 +129,7 @@ class PoseEstimatorBase
  public:
   typedef PoseEstimatorTraits<Derived> Triats;
 
-  typedef typename PoseEstimatorTraits<Derived>::TemplateData TemplateData;
+  typedef typename PoseEstimatorTraits<Derived>::TemplateData    TemplateData;
   typedef typename PoseEstimatorTraits<Derived>::Warp            Warp;
   typedef typename PoseEstimatorTraits<Derived>::Jacobian        Jacobian;
   typedef typename PoseEstimatorTraits<Derived>::Gradient        Gradient;
@@ -122,13 +149,24 @@ class PoseEstimatorBase
    */
   OptimizerStatistics run(TemplateData* data, const DenseDescriptor* cn, Matrix44& T);
 
-  inline void setParameters(const PoseEstimatorParameters& p) {
-    _params = p;
-  }
+  /**
+   * set the parameters (options) for optimizer
+   */
+  inline void setParameters(const PoseEstimatorParameters& p) { _params = p; }
 
+  /**
+   * \return the options for the optimizer
+   */
   inline const PoseEstimatorParameters& parameters() const { return _params; }
 
+  /**
+   * \return the most recently computed vector of weights from the M-estimator
+   */
   inline const WeightsVector& getWeights() const { return _weights; }
+
+  /**
+   * \return the most recently determined 'valid' pixels
+   */
   inline const ValidVector& getValidFlags() const { return _valid; }
 
  protected:
@@ -139,9 +177,9 @@ class PoseEstimatorBase
   WeightsVector _weights;
   ValidVector _valid;
 
-  float _f_norm_prev = 0.0f;
-  float _g_tol = 0.0f;
-  int _num_fun_evals = 0;
+  float _f_norm_prev = 0.0f; //< previous value of the cost (to test convergence)
+  float _g_tol = 0.0f;       //< tolrance to determine 1st-order convergence
+  int _num_fun_evals = 0;    //< number of function evaluations
 
   inline const Derived* derived() const { return static_cast<const Derived*>(this); }
   inline       Derived* derived()       { return static_cast<Derived*>(this); }
@@ -162,7 +200,7 @@ class PoseEstimatorBase
   static constexpr const char* _verbose_fmt_str =
       " %5d       %5d   %13.6g    %12.3g    %12.6g    %12.6g\n";
 
-  void printHeader(float f_val, float g_norm) const
+  inline void printHeader(float f_val, float g_norm) const
   {
     if(_params.verbosity == VerbosityType::kDebug ||
        _params.verbosity == VerbosityType::kIteration) {
@@ -172,7 +210,7 @@ class PoseEstimatorBase
     }
   }
 
-  void printIteration(int iteration, float f_val, float g_norm, float dp_norm, float delta_error) const
+  inline void printIteration(int iteration, float f_val, float g_norm, float dp_norm, float delta_error) const
   {
     if(_params.verbosity == VerbosityType::kDebug ||
        _params.verbosity == VerbosityType::kIteration) {
@@ -180,8 +218,17 @@ class PoseEstimatorBase
     }
   }
 
-  bool testConvergence(float dp_norm, float dp_norm_prev, float g_norm, float f_norm,
-                       PoseEstimationStatus& status) const
+  /**
+   * \param dp_norm norm of the estimated update vector
+   * \param dp_norm_prev norm of estimated updated from the previous iteration
+   * \param g_norm Inf norm of the gradient
+   * \param f_norm function/objective norm
+   * \param status [output] stores the status of the optimization
+   *
+   * \return true if passed parameter satisfy convergence conditions
+   */
+  inline bool testConvergence(float dp_norm, float dp_norm_prev, float g_norm,
+                              float f_norm, PoseEstimationStatus& status) const
   {
     static const auto sqrt_eps = std::sqrt(std::numeric_limits<float>::epsilon());
 
@@ -206,6 +253,9 @@ class PoseEstimatorBase
     return false;
   }
 
+  /**
+   * resets the internal state of the optimizer
+   */
   inline void reset()
   {
     _scale_estimator.reset();
@@ -217,16 +267,19 @@ class PoseEstimatorBase
   inline void printResult(const OptimizerStatistics& s) const
   {
     fprintf(stdout, "PoseEstimator: %d iters |F|=%g |G|=%g term reason: %s\n",
-            s.numIterations, s.finalError, s.firstOrderOptimality,
-            ToString(s.status).c_str());
+            s.numIterations, s.finalError, s.firstOrderOptimality, ToString(s.status).c_str());
   }
 
+  /**
+   * rpelicate the valid flags vector across all channels of the dense
+   * descriptor
+   *
+   * We need to this to simplify the work for the LinearSystemBuilder
+   */
   inline void replicateValidFlags()
   {
     if(_residuals.size() != _valid.size()) {
-      assert( _residuals.size() == 8 * _valid.size() );
-
-      int m = _residuals.size() / _valid.size();
+      int m = _residuals.size() / _valid.size(); // additional channels to replicate
       decltype(_valid) tmp(_residuals.size());
       auto* ptr = tmp.data();
 

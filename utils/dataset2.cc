@@ -9,6 +9,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <fstream>
+#include <iostream>
 
 namespace bpvo {
 namespace utils {
@@ -100,6 +101,8 @@ class Dataset::Impl
   void init(std::string conf_file)
   {
     try {
+      std::cout << "Impl ConfigFile from: " << conf_file << std::endl;
+
       ConfigFile cf(conf_file);
       auto type = cf.get<std::string>("DatasetType");
 
@@ -112,38 +115,49 @@ class Dataset::Impl
       else
         THROW_ERROR(Format("unknown data set type %s\n", type.c_str()).c_str());
 
-      if(_type == Dataset::Type::Stereo)
+      if(_type == Dataset::Type::Stereo) {
         _stereo_alg = make_unique<StereoAlgorithm>(cf);
-      else {
+      } else {
         _disparity_scale = cf.get<double>("DisparityScale");
       }
 
-      // image scaling (down/up) for experiments with resoutions
+      // image scaling (down/up) for experiments with resolution
       _scale_by = cf.get<double>("ScaleBy", 1.0);
 
+      std::cout << "ScaleBy: " << _scale_by << "\n";
 
       auto name = cf.get<std::string>("DatasetName", "Generic");
-      if(icompare("tsukuba", name) || icompare("tsukuba_synthetic", name)) {
-        dprintf("initTsukubaSynthetic\n");
+      if(icompare("tsukuba", name) || icompare("tsukuba_synthetic", name))
+      {
+        printf("initTsukubaSynthetic\n");
         initTsukubaSynthetic(cf);
-      } else if(icompare("tsukuba_stereo", name)) {
-        dprintf("initTsukubaStereo\n");
+      }
+      else if(icompare("tsukuba_stereo", name))
+      {
+        printf("initTsukubaStereo\n");
         initTsukubaStereo(cf);
-      }  else if(icompare("kitti", name)) {
-        dprintf("initKitti\n");
+      }
+      else if(icompare("kitti", name))
+      {
+        printf("initKitti\n");
         initKitti(cf);
-      } else if(icompare("tunnel", name)) {
-        dprintf("initTunnel\n");
+      }
+      else if(icompare("tunnel", name))
+      {
+        printf("initTunnel\n");
         initTunnel(cf);
-      } else if(icompare("Generic", name)) {
-        dprintf("initGeneric\n");
+      }
+      else if(icompare("Generic", name))
+      {
+        printf("initGeneric\n");
         initGeneric(cf);
-      } else {
+      }
+      else
+      {
         THROW_ERROR(Format("unknown dataset name %s\n", name.c_str()).c_str());
       }
 
       _name = name;
-
     } catch(const std::exception& ex) {
       Warn("failed to init data set %s\n", ex.what());
       throw ex;
@@ -205,6 +219,8 @@ class Dataset::Impl
                            illumination.c_str(), illumination.c_str(), "%05d");
     auto right_fmt = Format("illumination/%s/right/tsukuba_%s_R_%s.png",
                            illumination.c_str(), illumination.c_str(), "%05d");
+
+    std::cout << "init with " << left_fmt << std::endl;
 
     this->_left_filenames = make_unique<FileLoader>(root_dir,  left_fmt, frame_start);
     this->_right_filenames = make_unique<FileLoader>(root_dir, right_fmt, frame_start);

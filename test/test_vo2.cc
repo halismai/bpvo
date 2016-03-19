@@ -31,6 +31,11 @@ class Vo
     return _impl->addFrame(I, D);
   }
 
+  inline int numPoints() const
+  {
+    return _impl->numPointsAtLevel();
+  }
+
  protected:
   UniquePointer<VisualOdometryWithKeyFraming> _impl;
 }; // Vo
@@ -44,6 +49,8 @@ int main(int argc, char** argv)
       ("numframes,n", int(100), "number of frames to process")
       ("dontshow,x", "don't show images")
       .parse(argc, argv);
+
+  //cv::setNumThreads(1); // disable opencv threading
 
   auto conf_fn = options.get<std::string>("config");
   auto max_frames = options.get<int>("numframes");
@@ -102,7 +109,7 @@ int main(int argc, char** argv)
 #if 1
       fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d\r",
               f_i-1, 6, tt, 5, (f_i - 1) / total_time,  num_iters,
-              ToString(result.keyFramingReason).c_str(), 8, 0/*vo.numPointsAtLevel()*/);
+              ToString(result.keyFramingReason).c_str(), 8, vo.numPoints());
       fflush(stdout);
 #endif
     }
@@ -127,6 +134,7 @@ int main(int argc, char** argv)
     ofs.close();
   }
 
+  Info("done\n");
   return 0;
 }
 

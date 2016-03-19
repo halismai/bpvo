@@ -48,7 +48,6 @@ flags = [
     '-W',
     '-Wabi',
     '-Wall',
-    '-Wcast-align',
     '-Werror=format-security',
     '-Werror=sequence-point',
     '-Wextra',

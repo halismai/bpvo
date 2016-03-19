@@ -66,9 +66,14 @@ struct AlignedVector
   typedef std::vector<T, allocator_type> type;
 }; // AlignedVector
 
+#if defined(IS_64BIT)
+typedef typename AlignedVector<uint16_t>::type ValidVector;
+#else
 typedef typename AlignedVector<uint8_t>::type ValidVector;
-typedef typename AlignedVector<float>::type   ResidualsVector;
-typedef ResidualsVector      WeightsVector;
+#endif
+
+typedef typename AlignedVector<float>::type    ResidualsVector;
+typedef ResidualsVector                        WeightsVector;
 
 /**
  * 3D points are represented as 4-vectors
@@ -282,12 +287,12 @@ struct AlgorithmParameters
   /**
    * minimum valid disparity to use
    */
-  float minDisparity;
+  float minValidDisparity;
 
   /**
    * maximum disparity to use
    */
-  float maxDisparity;
+  float maxValidDisparity;
 
   //
   // other
