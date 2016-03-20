@@ -52,7 +52,7 @@ class VisualOdometryPoseEstimator
    * \param DenseDescriptorPyramid
    * \param D the disparity at the finest resolution
    */
-  void setTemplate(DenseDescriptorPyramid&, const cv::Mat& D);
+  VisualOdometryPoseEstimator& setTemplate(const DenseDescriptorPyramid&, const cv::Mat& D);
 
   /**
    * Estimates the pose wrt to the TemplateData
@@ -105,10 +105,13 @@ VisualOdometryPoseEstimator(const Matrix33& K, const float b, AlgorithmParameter
   }
 }
 
-void VisualOdometryPoseEstimator::
-setTemplate(DenseDescriptorPyramid& desc_pyr, const cv::Mat& D)
+VisualOdometryPoseEstimator& VisualOdometryPoseEstimator::
+setTemplate(const DenseDescriptorPyramid& desc_pyr, const cv::Mat& D)
 {
+  // TODO no need for parallel stuff here, too much overhead
+#if 0
   ParallelTasks tasks(std::min(desc_pyr.size(), 4));
+
   for(int i = 0; i < desc_pyr.size(); ++i)
   {
     tasks.add([=,&desc_pyr]() {
@@ -118,6 +121,19 @@ setTemplate(DenseDescriptorPyramid& desc_pyr, const cv::Mat& D)
   }
 
   tasks.wait();
+#endif
+
+  for(int i = desc_pyr.size()-1; i >= _params.maxTestLevel; --i)
+    _tdata_pyr[i]->setData(desc_pyr[i], D);
+
+  /*
+  ParallelTasks tasks(std::min(desc_pyr.size(), 4));
+  for(int i = desc_pyr.size()-1; i >= _params.maxTestLevel; --i)
+    tasks.add([=,&desc_pyr]() { _tdata_pyr[i]->setData(desc_pyr[i], D); });
+  tasks.wait();
+  */
+
+  return *this;
 }
 
 std::vector<OptimizerStatistics> VisualOdometryPoseEstimator::
@@ -141,7 +157,7 @@ estimatePosetAtLevel(int level, DenseDescriptorPyramid& desc_pyr,
   if(level >= _params.maxTestLevel)
     _pose_estimator.setParameters(_pose_est_params);
 
-  desc_pyr.compute(level);
+  //desc_pyr.compute(level);
   T_est = T_init;
   return _pose_estimator.run(_tdata_pyr[level].get(), desc_pyr[level], T_est);
 }
@@ -153,10 +169,13 @@ bool VisualOdometryPoseEstimator::hasTemplate() const
 
 struct VisualOdometryWithKeyFraming::KeyFrameCandidate
 {
+  KeyFrameCandidate(const AlgorithmParameters& p)
+      : _has_data(false), _desc_pyr(p), _disparity() {}
+
   void set(const DenseDescriptorPyramid& desc_pyr, const cv::Mat& D)
   {
     D.copyTo(_disparity);
-    _desc_pyr.reset(new DenseDescriptorPyramid(desc_pyr));
+    desc_pyr.copyTo(_desc_pyr);
     _has_data = true;
   }
 
@@ -164,7 +183,7 @@ struct VisualOdometryWithKeyFraming::KeyFrameCandidate
   void clear() { _has_data = false; }
 
   bool _has_data = false;
-  UniquePointer<DenseDescriptorPyramid> _desc_pyr;
+  DenseDescriptorPyramid _desc_pyr;
   cv::Mat _disparity;
 }; // KeyFrameCandidate
 
@@ -174,7 +193,6 @@ VisualOdometryWithKeyFraming(const Matrix33& K, const float b,
   : _params(p)
   , _image_size(s)
   , _T_kf(Matrix44::Identity())
-  , _kf_candidate(make_unique<KeyFrameCandidate>())
 {
   if(_params.numPyramidLevels <= 0)
   {
@@ -183,6 +201,8 @@ VisualOdometryWithKeyFraming(const Matrix33& K, const float b,
   }
 
   _vo_pose = make_unique<VisualOdometryPoseEstimator>(K, b, _params);
+  _kf_candidate = make_unique<KeyFrameCandidate>(p);
+  _desc_pyr = make_unique<DenseDescriptorPyramid>(p);
 }
 
 VisualOdometryWithKeyFraming::~VisualOdometryWithKeyFraming() {}
@@ -193,11 +213,10 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
   const auto I = ToOpenCV(image_ptr, _image_size);
   const auto D = ToOpenCV(disparity_ptr, _image_size);
 
-  if(!_desc_pyr)
-  {
-    _desc_pyr = make_unique<DenseDescriptorPyramid>(
-        _params.descriptor, _params.numPyramidLevels, I, _params);
+  _desc_pyr->init(I);
 
+  if(!_vo_pose->hasTemplate())
+  {
     Result ret;
     ret.pose.setIdentity();
     ret.covariance.setIdentity();
@@ -215,7 +234,6 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
     return ret;
   }
 
-  _desc_pyr->setImage(I);
   Matrix44 T_est;
 
   Result ret;
@@ -232,34 +250,30 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
   }
   else
   {
+
     dprintf("keyframe\n");
+
     if(_kf_candidate->empty())
     {
-      dprintf("no kfc\n");
       _vo_pose->setTemplate(*_desc_pyr, D);
       ret.pose = T_est * _T_kf.inverse();
+      _T_kf.setIdentity();
     }
     else
     {
-      dprintf("using kfc\n");
-      _vo_pose->setTemplate(*_kf_candidate->_desc_pyr, _kf_candidate->_disparity);
+      printf("\nrecompute\n");
+      ret.optimizerStatistics = _vo_pose->setTemplate(
+          _kf_candidate->_desc_pyr, _kf_candidate->_disparity).
+          estimatePose(*_desc_pyr, Matrix44::Identity(), T_est);
 
-      Matrix44 T_init(Matrix44::Identity());
-      ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, T_init, T_est);
       ret.pose = T_est;
-      //_T_kf = T_est;
+      _T_kf = T_est;
 
       _kf_candidate->clear();
     }
-
-    _T_kf.setIdentity();
   }
 
   _T_est = ret.pose;
-
-  //_T_kf.block<3,1>(0,3).setZero();
-  //std::cout << _T_kf << std::endl;
-
 
   return ret;
 }

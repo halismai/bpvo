@@ -39,7 +39,7 @@ class DenseDescriptor
   typedef UniquePointer<DenseDescriptor> Pointer;
 
  public:
-  DenseDescriptor(const DenseDescriptor&);
+  DenseDescriptor(const DenseDescriptor&) = default;
   virtual ~DenseDescriptor();
 
   DenseDescriptor() = default;
@@ -72,6 +72,11 @@ class DenseDescriptor
   virtual Pointer clone() const = 0;
 
   /**
+   * Copies that data into another DenseDescriptor
+   */
+  virtual void copyTo(DenseDescriptor* other) const = 0;
+
+  /**
    * \return the number of channels
    */
   virtual int numChannels() const = 0;
@@ -86,20 +91,7 @@ class DenseDescriptor
    */
   virtual int cols() const = 0;
 
-  /**
-   * Sets the status of the data avaiability. When processing a new frame, this
-   * should be set to false to force re-computation
-   */
-  inline void setHasData(bool v) { _has_data = v;}
-
-  /**
-   * \return true if descriptor has been computed (i.e. compute()) was called.
-   * We use this to cache previous computation.
-   */
-  inline bool hasData() const { return _has_data; }
-
- protected:
-  bool _has_data = false; //
+  static DenseDescriptor* Create(const AlgorithmParameters&, int pyr_level = 0);
 }; // DenseDescriptor
 
 

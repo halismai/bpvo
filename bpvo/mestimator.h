@@ -23,8 +23,15 @@
 #define BPVO_MESTIMATOR_H
 
 #include <bpvo/types.h>
+
+#define DO_APPROX_MEDIAN 0
+
+#if DO_APPROX_MEDIAN
 #include <bpvo/histogram.h>
+#endif
+
 #include <vector>
+
 
 namespace bpvo {
 
@@ -68,7 +75,11 @@ class AutoScaleEstimator
 
  private:
   float _scale = 1.0, _delta_scale = 1e10, _tol = 1e-6;
+#if DO_APPROX_MEDIAN
   Histogram<float> _hist;
+#else
+  WeightsVector _buffer;
+#endif
 }; // AutoScaleEstimator
 
 }; // bpvo

@@ -64,6 +64,8 @@ class IntensityDescriptor : public DenseDescriptor
     return Pointer(new IntensityDescriptor(*this));
   }
 
+  void copyTo(DenseDescriptor*) const;
+
  protected:
   cv::Mat_<float> _I;
 }; // IntensityDescriptor

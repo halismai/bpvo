@@ -317,11 +317,7 @@ size_t tukey_simd(const typename ResidualsVector::value_type* r_ptr,
         t = set1_ps(tukey_t), t_i = set1_ps(1.0 / tukey_t);
 
   bool is_aligned = false;
-#if defined(__AVX__)
-  is_aligned = IsAligned<32>(r_ptr) && IsAligned<32>(w_ptr);
-#else
-  is_aligned = IsAligned<16>(r_ptr) && IsAligned<16>(w_ptr);
-#endif
+  is_aligned = IsAligned<DefaultAlignment>(r_ptr) && IsAligned<DefaultAlignment>(w_ptr);
 
   if(is_aligned) {
     for(i = 0; i < n; i += S) {
@@ -421,14 +417,23 @@ ComputeWeights(LossFunctionType loss_func, const ResidualsVector& residuals,
 #endif
 }
 
+#if DO_APPROX_MEDIAN
 AutoScaleEstimator::AutoScaleEstimator(float t)
   : _scale(1.0), _delta_scale(1e10), _tol(t), _hist(0.0f, 255.0f, 0.05f) {}
+#else
+AutoScaleEstimator::AutoScaleEstimator(float t)
+  : _scale(1.0), _delta_scale(1e10), _tol(t) {}
+#endif
 
 void AutoScaleEstimator::reset()
 {
   _delta_scale = 1e10;
   _scale = 1.0;
+
+#if DO_APPROX_MEDIAN
   _hist.clear();
+#endif
+
 }
 
 float AutoScaleEstimator::getScale() const { return _scale; }
@@ -447,6 +452,20 @@ static inline float ScaleEstimator(const ResidualsVector& residuals,
   return (1.4826 * (1.0 + 5 / (hist.numSamples()-6) )) * hist.median();
 }
 
+static inline float ScaleEstimator(const ResidualsVector& residuals,
+                                  const ValidVector& valid_flags,
+                                  WeightsVector& buffer)
+{
+  buffer.resize(0);
+  buffer.reserve(residuals.size());
+
+  for(size_t i = 0; i < residuals.size(); ++i)
+    if(valid_flags[i] != 0)
+      buffer.push_back( std::fabs(residuals[i]) );
+
+  return (1.4826 * (1.0 + 5 / (buffer.size()-6) )) * median(buffer);
+}
+
 float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
                                         const ValidVector& valid)
 {
@@ -454,7 +473,11 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
 
   if(_delta_scale > _tol)
   {
+#if DO_APPROX_MEDIAN
     auto scale = ScaleEstimator(residuals, valid, _hist);
+#else
+    auto scale = ScaleEstimator(residuals, valid, _buffer);
+#endif
 
     if(scale < 1e-6)
       scale = 1.0; // for the case of zero error
@@ -462,11 +485,12 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
     _delta_scale = std::fabs(scale - _scale);
     _scale = scale;
   } else {
-    printf("scale is stable %f\n", _delta_scale);
+    dprintf("scale is stable %f\n", _delta_scale);
   }
 
   return _scale;
 }
 
 }; // bpvo
+
 

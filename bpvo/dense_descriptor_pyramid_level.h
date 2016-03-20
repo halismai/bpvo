@@ -19,10 +19,11 @@
  * Contributor: halismai@cs.cmu.edu
  */
 
-#ifndef BPVO_DENSE_DESCRIPTOR_PYRAMID_H
-#define BPVO_DENSE_DESCRIPTOR_PYRAMID_H
+#ifndef BPVO_DENSE_DESCRIPTOR_PYRAMID_LEVEL_H
+#define BPVO_DENSE_DESCRIPTOR_PYRAMID_LEVEL_H
 
 #include <bpvo/types.h>
+
 namespace cv {
 class Mat;
 }; // cv
@@ -33,43 +34,39 @@ class DenseDescriptor;
 
 /**
  */
-class DenseDescriptorPyramid
+class DenseDescriptorPyramidLevel
 {
  public:
   /**
-   * Allocates memory for p.numPyramidLevels
    */
-  DenseDescriptorPyramid(const AlgorithmParameters& p);
-  ~DenseDescriptorPyramid(); // for the satisfaction of UniquePointer
+  explicit DenseDescriptorPyramidLevel(const AlgorithmParameters&, int pyr_level);
 
-  DenseDescriptorPyramid(DenseDescriptorPyramid&&) noexcept;
-  DenseDescriptorPyramid& operator=(DenseDescriptorPyramid&&) = default;
+  DenseDescriptorPyramidLevel(const DenseDescriptorPyramidLevel&) = delete;
+  DenseDescriptorPyramidLevel& operator=(const DenseDescriptorPyramidLevel&) = delete;
 
-  DenseDescriptorPyramid(const DenseDescriptorPyramid&) = delete;
-  DenseDescriptorPyramid& operator=(const DenseDescriptorPyramid&) = default;
+  DenseDescriptorPyramidLevel(DenseDescriptorPyramidLevel&&);
+  DenseDescriptorPyramidLevel& operator=(DenseDescriptorPyramidLevel&&);
 
-  void copyTo(DenseDescriptorPyramid&) const;
 
   /**
-   * must be called before accessing the descriptors
+   * set the image for the descriptor. The descriptor will be computed on-demand
+   * later, unless compute is set to true
    */
-  void init(const cv::Mat&);
+  void setImage(const cv::Mat&, bool compute_now = false);
 
   /**
-   * \return the descriptor at level 'i'
+   * get the descriptor data
+   *
+   * setImage must be called before hand
    */
-  const DenseDescriptor* operator[](size_t i) const;
-
-  /**
-   * \return the number of pyramid levels
-   */
-  int size() const;
+  const cv::Mat& getDescriptorData(bool force_recompute = false);
 
  private:
   struct Impl;
   UniquePointer<Impl> _impl;
-}; // DenseDescriptorPyramid
+}; // DenseDescriptorPyramidLevel
+
 }; // bpvo
 
-#endif // BPVO_DENSE_DESCRIPTOR_PYRAMID_H
+#endif // BPVO_DENSE_DESCRIPTOR_PYRAMID_LEVEL_H
 

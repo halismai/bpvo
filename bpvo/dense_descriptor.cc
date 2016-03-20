@@ -20,12 +20,32 @@
  */
 
 #include "bpvo/dense_descriptor.h"
+#include "bpvo/intensity_descriptor.h"
+#include "bpvo/bitplanes_descriptor.h"
+#include "bpvo/utils.h"
 
 namespace bpvo {
 
-DenseDescriptor::DenseDescriptor(const DenseDescriptor& other)
-    : _has_data(other._has_data) {}
-
 DenseDescriptor::~DenseDescriptor() {}
+
+DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int pyr_level)
+{
+  switch(p.descriptor)
+  {
+    case DescriptorType::kIntensity:
+      {
+        return new IntensityDescriptor();
+      } break;
+
+    case DescriptorType::kBitPlanes:
+      {
+        return new BitPlanesDescriptor(p.sigmaPriorToCensusTransform,
+                                       pyr_level >= p.maxTestLevel ? p.sigmaBitPlanes : -1.0f);
+      } break;
+
+    default:
+      THROW_ERROR("unknown DescriptorType\n");
+  }
+}
 
 }; // bpvo

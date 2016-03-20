@@ -23,6 +23,7 @@
 #include "bpvo/census.h"
 #include "bpvo/parallel.h"
 #include "bpvo/imgproc.h"
+#include "bpvo/utils.h"
 
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -87,8 +88,6 @@ void BitPlanesDescriptor::compute(const cv::Mat& I_)
 
   BitPlanesComputeBody<float> func(I_, _sigma_ct, _sigma_bp, _channels);
   parallel_for(Range(0, 8), func);
-
-  this->_has_data = true;
 }
 
 void BitPlanesDescriptor::computeSaliencyMap(cv::Mat& dst) const
@@ -102,5 +101,14 @@ void BitPlanesDescriptor::computeSaliencyMap(cv::Mat& dst) const
     gradientAbsoluteMagnitudeAcc(_channels[i], dst_ptr);
 }
 
+void BitPlanesDescriptor::copyTo(DenseDescriptor* dst_) const
+{
+  auto dst = reinterpret_cast<BitPlanesDescriptor*>(dst_);
+  THROW_ERROR_IF(nullptr == dst, "badness");
+
+  for(size_t i = 0; i < _channels.size(); ++i)
+    _channels[i].copyTo(dst->_channels[i]);
+}
 
 } // bpvo
+

@@ -22,6 +22,8 @@
 
 #include "bpvo/intensity_descriptor.h"
 #include "bpvo/imgproc.h"
+#include "bpvo/utils.h"
+
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace bpvo {
@@ -38,8 +40,6 @@ void IntensityDescriptor::compute(const cv::Mat& src)
   }
 
   _I.convertTo(_I, CV_32FC1);
-
-  this->_has_data = true;
 }
 
 void IntensityDescriptor::computeSaliencyMap(cv::Mat& dst) const
@@ -50,6 +50,14 @@ void IntensityDescriptor::computeSaliencyMap(cv::Mat& dst) const
 
   cv::Mat_<float>& buffer = (cv::Mat_<float>&) dst;
   gradientAbsoluteMagnitude(_I, buffer);
+}
+
+void IntensityDescriptor::copyTo(DenseDescriptor* dst_) const
+{
+  auto dst = reinterpret_cast<IntensityDescriptor*>(dst_);
+  THROW_ERROR_IF(nullptr == dst, "badness!!");
+
+  _I.copyTo(dst->_I);
 }
 
 } // bpvo

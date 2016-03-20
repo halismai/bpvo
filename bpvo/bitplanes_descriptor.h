@@ -80,6 +80,8 @@ class BitPlanesDescriptor : public DenseDescriptor
     return Pointer(new BitPlanesDescriptor(*this));
   }
 
+  void copyTo(DenseDescriptor*) const;
+
  private:
   int _rows, _cols;
   float _sigma_ct, _sigma_bp;

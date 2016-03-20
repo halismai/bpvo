@@ -40,7 +40,8 @@ void PoseEstimatorParameters::relaxTolerance(int max_it, float scale_by)
   parameterTolerance *= scale_by;
   gradientTolerance *= scale_by;
 
-  // huber smoother than tukey, so takes less iterations
+  // huber smoother than tukey, so it takes less iterations
+  // but if no weighting was requested, we don't mess with it
   if(lossFunction != LossFunctionType::kL2)
     lossFunction = LossFunctionType::kHuber;
 }
