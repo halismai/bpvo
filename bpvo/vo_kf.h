@@ -28,6 +28,7 @@
 
 namespace bpvo {
 
+class VisualOdometryFrame;
 class VisualOdometryPoseEstimator;
 class DenseDescriptorPyramid;
 

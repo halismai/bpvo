@@ -34,6 +34,8 @@ namespace bpvo {
 
 class DenseDescriptor;
 
+// TODO this class should be storage only, the warp and PhotoError should be
+// taken outside
 class TemplateData
 {
  public:
@@ -61,7 +63,7 @@ class TemplateData
   void setData(const DenseDescriptor*, const cv::Mat& disparity);
 
   void computeResiduals(const DenseDescriptor*, const Matrix44& pose,
-                        ResidualsVector&, ValidVector&);
+                        ResidualsVector&, ValidVector&) const;
 
   inline int numPixels() const { return (int) _pixels.size(); }
   inline int numPoints() const { return (int) _points.size(); }
@@ -75,13 +77,13 @@ class TemplateData
  private:
   int _pyr_level;
   AlgorithmParameters _params;
-  RigidBodyWarp _warp;
+  mutable RigidBodyWarp _warp; // should take the warp outside of this class
 
   JacobianVector _jacobians;
   PointVector _points;
   PixelVector _pixels;
 
-  PhotoError _photo_error;
+  mutable PhotoError _photo_error;
 }; // TemplateData
 
 }; // bpvo

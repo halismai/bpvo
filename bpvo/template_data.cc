@@ -150,7 +150,7 @@ struct ComputeResidualsBody : public ParallelForBody
 }; // namespace
 
 void TemplateData::computeResiduals(const DenseDescriptor* desc, const Matrix44& pose,
-                                    ResidualsVector& residuals, ValidVector& valid)
+                                    ResidualsVector& residuals, ValidVector& valid) const
 {
   THROW_ERROR_IF( numPoints() == 0, "you should call setData before calling computeResiduals" );
   _warp.setPose(pose);

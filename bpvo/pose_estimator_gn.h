@@ -67,7 +67,7 @@ class PoseEstimatorGN : public PoseEstimatorBase< PoseEstimatorGN<TDataT> >
    * \param G           gradien [optional]
    * \return            functionv value (norm of the residuals vector)
    */
-  inline float linearize(TemplateData* tdata, const DenseDescriptor* channels, PoseEstimatorData& data)
+  inline float linearize(const TemplateData* tdata, const DenseDescriptor* channels, PoseEstimatorData& data)
   {
     tdata->computeResiduals(channels, data.T, Base::residuals(), Base::valid());
     this->replicateValidFlags();
@@ -80,7 +80,7 @@ class PoseEstimatorGN : public PoseEstimatorBase< PoseEstimatorGN<TDataT> >
         tdata->jacobians(), Base::residuals(), Base::weights(), Base::valid(), &data.H, &data.G);
   }
 
-  inline bool runIteration(TemplateData* tdata, const DenseDescriptor* channels,
+  inline bool runIteration(const TemplateData* tdata, const DenseDescriptor* channels,
                            PoseEstimatorData& data, float& f_norm,
                            PoseEstimationStatus& status)
 

@@ -147,7 +147,7 @@ class PoseEstimatorBase
    * \param T    Pose (input and output). It is used for initialization as well
    *             as the return value
    */
-  OptimizerStatistics run(TemplateData* data, const DenseDescriptor* cn, Matrix44& T);
+  OptimizerStatistics run(const TemplateData* data, const DenseDescriptor* cn, Matrix44& T);
 
   /**
    * set the parameters (options) for optimizer
@@ -295,7 +295,7 @@ class PoseEstimatorBase
 
 template <class Derived> inline
 OptimizerStatistics PoseEstimatorBase<Derived>::
-run(TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
+run(const TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
 {
   this->reset();
 

@@ -23,18 +23,13 @@
 #include "bpvo/utils.h"
 #include "bpvo/parallel_tasks.h"
 #include "bpvo/dense_descriptor_pyramid.h"
+#include "bpvo/opencv.h"
 
 #include <cmath>
 
 #include <opencv2/highgui/highgui.hpp>
 
 namespace bpvo {
-
-template <typename T> static inline
-cv::Mat ToOpenCV(const T* p, const ImageSize& siz)
-{
-  return cv::Mat(siz.rows, siz.cols, cv::DataType<T>::type, (void*) p);
-}
 
 class VisualOdometryPoseEstimator
 {
