@@ -35,69 +35,6 @@ TemplateData::TemplateData(int pyr_level, const Matrix33& K, float b,
   THROW_ERROR_IF( _pyr_level < 0, "pyramid level must be >= 0" );
 }
 
-namespace {
-
-struct SetTemplateDataBody : public ParallelForBody
-{
-  typedef TemplateData::PointVector PointVector;
-  typedef TemplateData::WarpType WarpType;
-  typedef TemplateData::JacobianVector JacobianVector;
-  typedef TemplateData::PixelVector PixelVector;
-
- public:
-  inline SetTemplateDataBody(const DenseDescriptor* desc, const PointVector& points,
-                             const std::vector<int>& inds, const WarpType& warp,
-                             PixelVector& pixels, JacobianVector& jacobians)
-      : ParallelForBody(), _desc(desc), _points(points), _inds(inds), _warp(warp)
-      , _pixels(pixels), _jacobians(jacobians)
-  {
-    int num_channels = desc->numChannels();
-    int num_points = points.size();
-
-    _pixels.resize( num_channels * num_points );
-    _jacobians.resize(num_channels * num_points );
-
-    assert( _inds.size() == _points.size() );
-  }
-
-  inline void operator()(const Range& range) const
-  {
-    const int num_points = _points.size();
-    const int stride = _desc->cols();
-
-    typename AlignedVector<float>::type IxIy(2*num_points);
-
-    for(int c = range.begin(); c != range.end(); ++c)
-    {
-      auto c_ptr = _desc->getChannel(c).ptr<const float>();
-      auto P_ptr = _pixels.data() + c*num_points;
-      auto J_ptr = _jacobians.data() + c*num_points;
-
-      for(int i = 0; i < num_points; ++i)
-      {
-        auto ii = _inds[i];
-        P_ptr[i] = c_ptr[ii];
-        IxIy[2*i + 0] = (c_ptr[ii+1] - c_ptr[ii-1]);
-        IxIy[2*i + 1] = (c_ptr[ii+stride] - c_ptr[ii-stride]);
-      }
-
-      int i = _warp.computeJacobian(_points, IxIy.data(), J_ptr->data());
-      for( ; i < num_points; ++i)
-        _warp.jacobian(_points[i], IxIy[2*i+0], IxIy[2*i+1], J_ptr[i].data());
-    }
-  }
-
- private:
-  const DenseDescriptor* _desc;
-  const PointVector& _points;
-  const std::vector<int>& _inds;
-  const WarpType& _warp;
-  PixelVector& _pixels;
-  JacobianVector& _jacobians;
-}; // SetTemplateDataBody
-
-}; // namespace
-
 void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
 {
   cv::Mat saliency_map;
@@ -155,14 +92,6 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
   if(_params.withNormalization)
     _warp.setNormalization(_points);
 
-  // no point of doing things in parallel here
-  // we do it over the pyramid instead
-#define DO_SET_TEMPLATE_DATA_PARALLEL 0
-
-#if DO_SET_TEMPLATE_DATA_PARALLEL
-  SetTemplateDataBody func(desc, _points, valid_inds, _warp, _pixels, _jacobians);
-  parallel_for(Range(0, desc->numChannels()), func);
-#else
   int num_points = _points.size();
   int num_channels = desc->numChannels();
   _pixels.resize( num_channels * num_points );
@@ -186,7 +115,6 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
     for( ; i < num_points; ++i)
       _warp.jacobian(_points[i], IxIy[2*i+0], IxIy[2*i+1], J_ptr[i].data());
   }
-#endif
 
   // NOTE: we push an empty Jacobian at the end because of SSE code loading
   // We won't need to this when switching to Vector6
