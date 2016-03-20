@@ -22,7 +22,7 @@
 #include "bpvo/linear_system_builder.h"
 #include "bpvo/parallel.h"
 
-#define LINEAR_SYSTEM_PARALLEL 0
+#define LINEAR_SYSTEM_PARALLEL 1
 #define DO_PARALLEL defined(WITH_TBB) && LINEAR_SYSTEM_PARALLEL
 
 #if DO_PARALLEL

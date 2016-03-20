@@ -29,7 +29,8 @@ namespace bpvo {
 
 class DenseDescriptor;
 
-DenseDescriptor* MakeDescriptor(DescriptorType dtype, const AlgorithmParameters&);
+DenseDescriptor*
+MakeDescriptor(DescriptorType dtype, const AlgorithmParameters&, int pyr_level = 0);
 
 /**
  */

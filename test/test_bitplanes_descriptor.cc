@@ -1,6 +1,7 @@
 #include "bpvo/bitplanes_descriptor.h"
 #include "bpvo/timer.h"
 #include "bpvo/census.h"
+#include "bpvo/utils.h"
 #include "bpvo/rank.h"
 
 #include <opencv2/highgui/highgui.hpp>
@@ -40,31 +41,22 @@ int main()
     return 0;
   }
 
-  {
-    BitPlanesDescriptor desc(-1.0, -1.0);
+  float sigma_ct = 0.75;
+  float sigma_bp = 1.618;
 
-    auto t = RunTiming(desc, I);
-    printf("no sigma %f\n", t);
+  BitPlanesDescriptor desc(sigma_ct, sigma_bp);
+  desc.compute(I);
+
+  cv::Mat smap;
+  desc.computeSaliencyMap(smap);
+
+  WriteImage<float>("S", smap);
+
+  for(int i = 0; i < desc.numChannels(); ++i)
+  {
+    WriteImage<float>(Format("C%d", i), desc.getChannel(i));
   }
 
-  {
-    BitPlanesDescriptor desc(0.75, -1.0);
-    auto t = RunTiming(desc, I);
-    printf("ct sigma %f\n", t);
-  }
-
-  {
-    BitPlanesDescriptor desc(0.75, 0.5);
-    auto t = RunTiming(desc, I);
-    printf("ct + bp sigma %f\n", t);
-
-    WriteImage<float>("B", desc.getChannel(0));
-
-    cv::Mat C = census(I, -0.75);
-    WriteImage<uint8_t>("C", C);
-  }
-
-  WriteImage<uint8_t>("R", rankTransform(I));
 
   return 0;
 }

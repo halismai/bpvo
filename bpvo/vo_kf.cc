@@ -238,7 +238,6 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
       dprintf("no kfc\n");
       _vo_pose->setTemplate(*_desc_pyr, D);
       ret.pose = T_est * _T_kf.inverse();
-      _T_kf.setIdentity();
     }
     else
     {
@@ -248,13 +247,19 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
       Matrix44 T_init(Matrix44::Identity());
       ret.optimizerStatistics = _vo_pose->estimatePose(*_desc_pyr, T_init, T_est);
       ret.pose = T_est;
-      _T_kf = T_est;
+      //_T_kf = T_est;
 
       _kf_candidate->clear();
     }
+
+    _T_kf.setIdentity();
   }
 
   _T_est = ret.pose;
+
+  //_T_kf.block<3,1>(0,3).setZero();
+  //std::cout << _T_kf << std::endl;
+
 
   return ret;
 }

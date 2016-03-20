@@ -6,7 +6,8 @@
 
 namespace bpvo {
 
-DenseDescriptor* MakeDescriptor(DescriptorType dtype, const AlgorithmParameters& p)
+DenseDescriptor*
+MakeDescriptor(DescriptorType dtype, const AlgorithmParameters& p, int pyr_level)
 {
   switch(dtype)
   {
@@ -14,7 +15,13 @@ DenseDescriptor* MakeDescriptor(DescriptorType dtype, const AlgorithmParameters&
       return new IntensityDescriptor();
 
     case DescriptorType::kBitPlanes:
-      return new BitPlanesDescriptor(p.sigmaPriorToCensusTransform, p.sigmaBitPlanes);
+      {
+        float sigma_ct = p.sigmaPriorToCensusTransform;
+        // do not smooth the bit-planes at low pyramid level, it destroys all
+        // the infrmation and prevents us from handling large motions
+        float sigma_bp = pyr_level >= p.maxTestLevel ? p.sigmaBitPlanes : -1.0f;
+        return new BitPlanesDescriptor(sigma_ct, sigma_bp);
+      } break;
 
     default:
       THROW_ERROR("unkonwn DescriptorType\n");
@@ -27,7 +34,8 @@ DenseDescriptorPyramid(DescriptorType dtype, const ImagePyramid& I_pyr,
   : _image_pyramid(I_pyr)
 {
   for(int i = 0; i < _image_pyramid.size(); ++i) {
-    _desc_pyr.push_back(UniquePointer<DenseDescriptor>(MakeDescriptor(dtype, params)));
+    _desc_pyr.push_back(UniquePointer<DenseDescriptor>(
+            MakeDescriptor(dtype, params, i)));
     _desc_pyr[i]->setHasData(false);
   }
 }
@@ -39,7 +47,8 @@ DenseDescriptorPyramid(DescriptorType dtype, int n_levels, const cv::Mat& I,
 {
   _image_pyramid.compute(I);
   for(int i = 0; i < n_levels; ++i)
-    _desc_pyr.push_back(UniquePointer<DenseDescriptor>(MakeDescriptor(dtype, p)));
+    _desc_pyr.push_back(UniquePointer<DenseDescriptor>(
+            MakeDescriptor(dtype, p, i)));
 }
 
 DenseDescriptorPyramid::

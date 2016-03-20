@@ -462,7 +462,7 @@ float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,
     _delta_scale = std::fabs(scale - _scale);
     _scale = scale;
   } else {
-    ;//printf("scale is stable %f\n", _delta_scale);
+    printf("scale is stable %f\n", _delta_scale);
   }
 
   return _scale;

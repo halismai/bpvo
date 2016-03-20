@@ -60,12 +60,12 @@ cv::Mat census(const cv::Mat& src, float s)
   assert( src.type() == CV_8UC1 && src.channels() == 1 && src.isContinuous() );
   cv::Mat image = src;
 
-  /*
   if(s > 0.0f)
-    cv::GaussianBlur(src, image, cv::Size(), s, s);
-    */
+    cv::GaussianBlur(src, image, cv::Size(3,3), s, s);
+  /*
   if(s > 0.0)
     cv::blur(src, image, cv::Size(5,5));
+    */
 
   cv::Mat dst(src.size(), CV_8UC1);
   const int W = 1 + ((src.cols - 2) & ~15);

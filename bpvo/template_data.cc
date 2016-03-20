@@ -189,6 +189,7 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
 #endif
 
   // NOTE: we push an empty Jacobian at the end because of SSE code loading
+  // We won't need to this when switching to Vector6
   _jacobians.push_back(Jacobian::Zero());
 }
 
@@ -238,5 +239,4 @@ void TemplateData::computeResiduals(const DenseDescriptor* desc, const Matrix44&
 }
 
 }; // bpvo
-
 
