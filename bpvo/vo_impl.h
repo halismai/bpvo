@@ -28,7 +28,6 @@
 #include <bpvo/mestimator.h>
 #include <bpvo/vo.h>
 #include <bpvo/template_data.h>
-#include <bpvo/channels.h>
 #include <bpvo/linear_system_builder.h>
 #include <bpvo/trajectory.h>
 #include <bpvo/point_cloud.h>
