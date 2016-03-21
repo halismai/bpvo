@@ -100,7 +100,6 @@ if(WITH_OPENMP)
   find_package(OpenMP)
   if(OPENMP_FOUND)
     addExtraCompilerOptions(-fopenmp)
-    #addExtraLinkerOption(-lgomp)
     add_definitions(-DWITH_OPENMP)
   endif()
 endif()
@@ -130,15 +129,13 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG   "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_
 
 # they mess up with the flags too much
 # and there seems to be an issue with AVX with gcc-4.9
-include(cmake/OptimizeForArchitecture.cmake)
-include(cmake/UserWarning.cmake)
-
-set(Vc_AVX_INTRINSICS_BROKEN True)
-OptimizeForArchitecture()
-
-list(APPEND "${CMAKE_CXX_FLAGS}" "${Vc_ARCHITECTURE_FLAGS}")
-string(REPLACE ";" " " Vc_ARCHITECTURE_FLAGS_STR "${Vc_ARCHITECTURE_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Vc_ARCHITECTURE_FLAGS}")
+#include(cmake/OptimizeForArchitecture.cmake)
+#include(cmake/UserWarning.cmake)
+#set(Vc_AVX_INTRINSICS_BROKEN True)
+#OptimizeForArchitecture()
+#list(APPEND "${CMAKE_CXX_FLAGS}" "${Vc_ARCHITECTURE_FLAGS}")
+#string(REPLACE ";" " " Vc_ARCHITECTURE_FLAGS_STR "${Vc_ARCHITECTURE_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Vc_ARCHITECTURE_FLAGS}")
 
 list(APPEND CMAKE_CXX_FLAGS ${Vc_ARCHITECTURE_FLAGS})
 string(REPLACE ";" "  " FLAGS_STR "${CMAKE_CXX_FLAGS}")
