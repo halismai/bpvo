@@ -46,6 +46,8 @@ struct DenseDescriptorPyramid::Impl
     return _desc_pyr[i].get();
   }
 
+  DenseDescriptor* operator[](size_t i) { return _desc_pyr[i].get(); }
+
   inline void copy(Impl& other) const
   {
     // copy operations should be called on the pyramids of the same level to
@@ -62,13 +64,17 @@ struct DenseDescriptorPyramid::Impl
     }
   }
 
+  inline void init(const ImagePyramid& image_pyramid)
+  {
+    for(int i = image_pyramid.size()-1; i >= _max_test_level; --i)
+      _desc_pyr[i]->compute(image_pyramid[i]);
+  }
+
   inline void init(const cv::Mat& image)
   {
     ImagePyramid image_pyramid(_desc_pyr.size());
     image_pyramid.compute(image);
-
-    for(int i = image_pyramid.size()-1; i >= _max_test_level; --i)
-      _desc_pyr[i]->compute(image_pyramid[i]);
+    init(image_pyramid);
   }
 
   inline int size() const { return static_cast<int>(_desc_pyr.size()); }
@@ -91,7 +97,18 @@ void DenseDescriptorPyramid::init(const cv::Mat& image)
   _impl->init(image);
 }
 
+void DenseDescriptorPyramid::init(const ImagePyramid& image_pyramid)
+{
+  _impl->init(image_pyramid);
+}
+
 const DenseDescriptor* DenseDescriptorPyramid::operator[](size_t i) const
+{
+  assert( i < size() );
+  return _impl->operator[](i);
+}
+
+DenseDescriptor* DenseDescriptorPyramid::operator[](size_t i)
 {
   assert( i < size() );
   return _impl->operator[](i);
@@ -103,6 +120,7 @@ void DenseDescriptorPyramid::copyTo(DenseDescriptorPyramid& other) const
 }
 
 int DenseDescriptorPyramid::size() const { return _impl->size(); }
+
 
 } // bpvo
 

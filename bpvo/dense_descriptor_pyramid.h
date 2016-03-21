@@ -29,6 +29,7 @@ class Mat;
 
 namespace bpvo {
 
+class ImagePyramid;
 class DenseDescriptor;
 
 /**
@@ -56,9 +57,15 @@ class DenseDescriptorPyramid
   void init(const cv::Mat&);
 
   /**
+   * init using a pre-computed image pyramid
+   */
+  void init(const ImagePyramid&);
+
+  /**
    * \return the descriptor at level 'i'
    */
   const DenseDescriptor* operator[](size_t i) const;
+  DenseDescriptor* operator[](size_t i);
 
   /**
    * \return the number of pyramid levels

@@ -24,7 +24,7 @@
 
 #include <bpvo/types.h>
 
-#define DO_APPROX_MEDIAN 0
+#define DO_APPROX_MEDIAN 1
 
 #if DO_APPROX_MEDIAN
 #include <bpvo/histogram.h>
@@ -75,6 +75,7 @@ class AutoScaleEstimator
 
  private:
   float _scale = 1.0, _delta_scale = 1e10, _tol = 1e-6;
+
 #if DO_APPROX_MEDIAN
   Histogram<float> _hist;
 #else

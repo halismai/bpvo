@@ -27,6 +27,8 @@ class VisualOdometryPoseEstimator
                const Matrix44& T_init,
                Matrix44& T_est);
 
+  float getFractionOfGoodPoints(float thresh) const;
+
  private:
   AlgorithmParameters _params;
   PoseEstimatorGN<TemplateData> _pose_estimator;

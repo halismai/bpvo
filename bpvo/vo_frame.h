@@ -38,8 +38,19 @@ class VisualOdometryFrame
    */
   void setData(const cv::Mat& image, const cv::Mat& disparity);
 
-  inline void clear() { _has_data = false; }
+  /**
+   */
+  void setDataAndTemplate(const cv::Mat&, const cv::Mat&);
+
+  /**
+   * compute the template data
+   */
+  void setTemplate();
+
+  inline void clear() { _has_data = false; _has_template = false; }
   inline bool empty() { return !_has_data; }
+
+  inline bool hasTemplate() const { return _has_template; }
 
   /**
    * \return the dense descriptor at specified pyramid level
@@ -57,25 +68,13 @@ class VisualOdometryFrame
   int numLevels() const;
 
 
-  inline bool isTemplateDataReady() const { return _is_tdata_ready; }
-
-  inline std::mutex& mutex() { return _mutex; }
-
  private:
   int _max_test_level;
   bool _has_data;
+  bool _has_template;
   UniquePointer<cv::Mat> _disparity;
   UniquePointer<DenseDescriptorPyramid> _desc_pyr;
   std::vector<TemplateDataPointer> _tdata_pyr;
-
-  mutable std::mutex _mutex;
-  std::condition_variable _has_template_data;
-  std::thread _set_template_thread;
-
-  void set_template_data();
-
-  bool _is_tdata_ready;
-  bool _should_quit;
 }; // VisualOdometryFrame
 
 }; // bpvo

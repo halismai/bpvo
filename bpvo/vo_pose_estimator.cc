@@ -1,6 +1,8 @@
 #include <bpvo/vo_pose_estimator.h>
 #include <bpvo/vo_frame.h>
 
+#include <algorithm>
+
 namespace bpvo {
 
 VisualOdometryPoseEstimator::VisualOdometryPoseEstimator(const AlgorithmParameters& p)
@@ -29,6 +31,13 @@ VisualOdometryPoseEstimator::estimatePose(
   }
 
   return ret;
+}
+
+float VisualOdometryPoseEstimator::getFractionOfGoodPoints(float thresh) const
+{
+  const auto& w = _pose_estimator.getWeights();
+  auto n = std::count_if(w.begin(), w.end(), [=](float w_i) { return w_i > thresh; });
+  return n / static_cast<float>(w.size());
 }
 
 }; // bpvo

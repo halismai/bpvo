@@ -4,7 +4,6 @@
 #include "bpvo/opencv.h"
 
 #include <cmath>
-#include <condition_variable>
 
 namespace bpvo {
 
@@ -23,7 +22,7 @@ const Matrix33& K, float b, ImageSize s, AlgorithmParameters p)
 
 VisualOdometryNoKeyFraming::~VisualOdometryNoKeyFraming() {}
 
-Result FirstFrameResult(int n_levels)
+static inline Result FirstFrameResult(int n_levels)
 {
   Result r;
   r.pose.setIdentity();
@@ -44,12 +43,9 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
   _cur_frame->setData(I, D);
 
   Result ret;
-  if(!_ref_frame->empty())
-  {
-    std::unique_lock<std::mutex> lock(_ref_frame->mutex());
-    std::condition_variable cond;
-    cond.wait(lock, [&]() { return _ref_frame->isTemplateDataReady(); });
 
+  if(_ref_frame->hasTemplate())
+  {
     ret.optimizerStatistics = _vo_pose->estimatePose(
         _ref_frame.get(), _cur_frame.get(), Matrix44::Identity(), ret.pose);
     ret.isKeyFrame = true;
@@ -60,6 +56,8 @@ addFrame(const uint8_t* image_ptr, const float* disparity_ptr)
   }
 
   std::swap(_ref_frame, _cur_frame);
+  _ref_frame->setTemplate();
+
   return ret;
 }
 

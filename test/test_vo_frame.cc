@@ -9,7 +9,7 @@ int main()
 {
   AlgorithmParameters p;
   p.numPyramidLevels = 4;
-  p.descriptor = DescriptorType::kBitPlanes;
+  p.descriptor = DescriptorType::kIntensity;
   p.parameterTolerance = 1e-6;
 
   TsukubaSyntheticDataset dataset("../conf/tsukuba.cfg");
@@ -21,6 +21,8 @@ int main()
   int nf = 100;
   for(int i = 0; i < nf; ++i) {
     vo_frame.setData(frame->image(), frame->disparity());
+    vo_frame.setTemplate();
+    //vo_frame.setDataAndTemplate(frame->image(), frame->disparity());
   }
 
   auto tt = (double) timer.stop().count();
