@@ -81,6 +81,18 @@ if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
   add_definitions(-DIS_64BIT)
 endif()
 
+# add a 'tuning' build type
+set(CMAKE_CXX_FLAGS_TUNE "-O3 -g"
+  CACHE STRING "Flags for code tuning" FORCE)
+set(CMAKE_C_FLAGS_TUNE "-O3 -g"
+  CACHE STRING "Flags for code tuning" FORCE)
+set(CMAKE_EXE_LINKER_FLAGS_TUNE ""
+  CACHE STRING "Flags for code tuning" FORCE)
+set(CMAKE_SHARED_LINKER_FLAGS_TUNE ""
+  CACHE STRING "Flags for code tuning" FORCE)
+mark_as_advanced(CMAKE_CXX_FLAGS_TUNE CMAKE_C_FLAGS_TUNE
+  CMAKE_EXE_LINKER_FLAGS_TUNE CMAKE_SHARED_LINKER_FLAGS_TUNE)
+
 # Set the compiler options
 include(cmake/SetCompilerOptions.cmake)
 
