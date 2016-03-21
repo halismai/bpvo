@@ -104,13 +104,13 @@ void DenseDescriptorPyramid::init(const ImagePyramid& image_pyramid)
 
 const DenseDescriptor* DenseDescriptorPyramid::operator[](size_t i) const
 {
-  assert( i < size() );
+  assert( i < (size_t) size() );
   return _impl->operator[](i);
 }
 
 DenseDescriptor* DenseDescriptorPyramid::operator[](size_t i)
 {
-  assert( i < size() );
+  assert( i < (size_t) size() );
   return _impl->operator[](i);
 }
 

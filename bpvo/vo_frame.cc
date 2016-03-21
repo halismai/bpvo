@@ -34,7 +34,7 @@ VisualOdometryFrame::~VisualOdometryFrame()
 
 const DenseDescriptor* VisualOdometryFrame::getDenseDescriptorAtLevel(size_t l) const
 {
-  assert( l  < _desc_pyr->size() );
+  assert( l  < (size_t) _desc_pyr->size() );
   return _desc_pyr->operator[](l);
 }
 
