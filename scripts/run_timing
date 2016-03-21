@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# run intensity stuff
+./bin/test_timing_paper -o tsukuba_intensity -c ../conf/perf_intensity.cfg -n 500
+
+# run bitplanes
+./bin/test_timing_paper -o tsukuba_bitplanes -c ../conf/perf_bitplanes.cfg -n 500
