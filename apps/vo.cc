@@ -177,6 +177,5 @@ void writePointCloud(std::string prefix, int i, const PointCloud& pc,
   }
 
   ToPlyFile(Format("%s_%05d.ply", prefix.c_str(), i), pc_out);
-
 }
 

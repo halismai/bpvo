@@ -57,9 +57,10 @@ class Histogram
     _samples = 0;
   }
 
-  inline void add(const T& v)
+  inline void add(const T& v_)
   {
-    int i = std::floor( (clamp(v, _min_val, _max_val) / _range) * (_size - 1) );
+    const T v = std::max(_min_val, std::min(v_, _max_val));
+    const int i = std::floor((v / _range) * (_size - 1));
     _counts[i]++;
     _samples++;
   }
@@ -107,7 +108,7 @@ class Histogram
   T _range;
   size_t _size;
   size_t _samples;
-  cv::AutoBuffer<size_t> _counts;
+  cv::AutoBuffer<size_t,5100> _counts;
 }; // Histogram
 
 }; // bpvo

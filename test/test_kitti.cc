@@ -48,6 +48,9 @@ void RunKittiSquence(int sequence_number, std::string conf_fn, std::string outpu
   VisualOdometryKeyFraming vo(dataset->calibration().K, dataset->calibration().baseline,
                               dataset->imageSize(), params);
 
+  if(params.descriptor == DescriptorType::kBitPlanes)
+    cv::setNumThreads(1);
+
   std::vector<int> num_iters;
   std::vector<int> kf_inds;
   std::vector<double> time_ms;;
@@ -87,7 +90,10 @@ void RunKittiSquence(int sequence_number, std::string conf_fn, std::string outpu
     overlayDisparity(frame->image(), frame->disparity(), display_image,
                      0.5, 1, 96);
     cv::imshow("image", display_image);
-    if( 'q' == (cv::waitKey(5) & 0xff))
+    int k = cv::waitKey(5) & 0xff;
+    if(k == ' ')
+      k = cv::waitKey(0) & 0xff;
+    if(k == 'q')
       break;
   }
 

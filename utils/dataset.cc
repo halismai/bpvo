@@ -21,7 +21,9 @@ static void toGray(const cv::Mat& src, cv::Mat& ret)
 }
 
 DisparityDataset::DisparityFrame::DisparityFrame() {}
-DisparityDataset::DisparityFrame::DisparityFrame(cv::Mat I_, cv::Mat D_, cv::Mat I_orig_, std::string fn_)
+
+DisparityDataset::DisparityFrame::
+DisparityFrame(cv::Mat I_, cv::Mat D_, cv::Mat I_orig_, std::string fn_)
     : I_orig(I_orig_), I(I_), D(D_), fn(fn_) {}
 
 DisparityDataset::DisparityDataset(std::string conf_fn)
@@ -48,9 +50,6 @@ UniquePointer<DatasetFrame> DisparityDataset::getFrame(int f_i) const
   THROW_ERROR_IF( D.channels() > 1, "disparity must be a single channel" );
   THROW_ERROR_IF( I.size() != D.size(), "frame size mismatch" );
 
-  /*THROW_ERROR_IF( D.type() != cv::DataType<uint16_t>::type,
-                 "disparity image must be uint16_t");*/
-
   if(D.type() != cv::DataType<float>::type)
     D.convertTo(D, CV_32FC1, _disparity_scale, 0.0);
 
@@ -73,7 +72,8 @@ bool DisparityDataset::init(const ConfigFile& cf)
     //
     // allow children to set this later
     //
-    if(!left_fmt.empty()) {
+    if(!left_fmt.empty())
+    {
       _image_filenames = make_unique<FileLoader>(root_dir, left_fmt, frame_start);
       _disparity_filenames = make_unique<FileLoader>(root_dir, dmap_fmt, frame_start);
 
@@ -111,8 +111,9 @@ UniquePointer<DatasetFrame> StereoDataset::getFrame(int f_i) const
 
   if(frame.I_orig[0].empty() || frame.I_orig[1].empty())
   {
-    printf("badness\n%s\n%s", _left_filenames->operator[](f_i).c_str(),
-           _right_filenames->operator[](f_i).c_str());
+    dprintf("nore more images?\nleft:%s\nright:%s",
+            _left_filenames->operator[](f_i).c_str(),
+            _right_filenames->operator[](f_i).c_str());
 
     return nullptr;
   }
@@ -161,5 +162,5 @@ bool StereoDataset::init(const ConfigFile& cf)
   return true;
 }
 
-
 } // bpvo
+

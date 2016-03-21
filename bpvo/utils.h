@@ -260,10 +260,16 @@ value_type medianAbsoluteDeviation(Container& data)
   return median(data);
 }
 
-template <typename T> inline
-T clamp(T v, T min_val, T max_val)
+template <typename T, class Pred> inline
+T clamp(const T& v, const T& min_val, const T& max_val, Pred pred)
 {
-  return (v < min_val) ? min_val : (( v > max_val ) ? max_val : v);
+  return pred(v, min_val) ? min_val : pred(max_val, v) ? max_val : v;
+}
+
+template <typename T> inline
+T clamp(const T& v, const T& min_val, const T& max_val)
+{
+  return clamp(v, min_val, max_val, std::less<T>());
 }
 
 

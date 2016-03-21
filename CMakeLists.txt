@@ -82,9 +82,9 @@ if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 endif()
 
 # add a 'tuning' build type
-set(CMAKE_CXX_FLAGS_TUNE "-O3 -g"
+set(CMAKE_CXX_FLAGS_TUNE "-O3 -g -DNDEBUG"
   CACHE STRING "Flags for code tuning" FORCE)
-set(CMAKE_C_FLAGS_TUNE "-O3 -g"
+set(CMAKE_C_FLAGS_TUNE "-O3 -g -DNDEBUG"
   CACHE STRING "Flags for code tuning" FORCE)
 set(CMAKE_EXE_LINKER_FLAGS_TUNE ""
   CACHE STRING "Flags for code tuning" FORCE)

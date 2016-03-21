@@ -22,7 +22,7 @@ void WriteVector(std::string filename, const std::vector<T>& v)
 
 int main()
 {
-  //cv::setNumThreads(1);
+  cv::setNumThreads(1);
 
   AlgorithmParameters p;
   p.numPyramidLevels = 3;
@@ -54,7 +54,7 @@ int main()
   std::vector<double> time_ms;
   std::vector<int> kf_inds;
   double total_time = 0.0;
-  int nf = 500;
+  int nf = 300;
   Trajectory trajectory;
   for(int i = 0; i < nf; ++i)
   {
