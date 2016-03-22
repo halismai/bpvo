@@ -42,6 +42,12 @@ class VoApp
     /** what to show, if any */
     ViewerOptions viewer_options;
 
+    /** store the timing per iteration to disk */
+    bool store_iter_time;
+
+    /** store the number of iterations per frame */
+    bool store_iter_num;
+
     Options();
   }; // Options
 

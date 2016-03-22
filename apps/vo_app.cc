@@ -12,9 +12,9 @@
 
 #include <atomic>
 #include <thread>
+#include <fstream>
 
 #include <opencv2/highgui/highgui.hpp>
-
 
 namespace bpvo {
 
@@ -151,6 +151,8 @@ VoApp::Options::Options()
     , data_buffer_size(16)
     , max_num_frames(-1)
     , viewer_options()
+    , store_iter_time(false)
+    , store_iter_num(false)
 {
 }
 
@@ -233,9 +235,26 @@ bool writePointCloud(std::string fn, const PointCloud& pc, float min_weight, flo
 }
 
 
+template <typename T> static inline
+bool WriteVector(std::string fn, const std::vector<T>& data)
+{
+  std::ofstream ofs(fn);
+  if(ofs.is_open()) {
+    for(const auto& v : data)
+      ofs << v << "\n";
+
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void VoApp::Impl::mainLoop()
 {
   _num_frames_processed = 0;
+
+  std::vector<float> iter_time_ms;
+  std::vector<int> iter_num;
 
   _viewer->init();
 
@@ -276,6 +295,12 @@ void VoApp::Impl::mainLoop()
               ToString(vo_result.keyFramingReason).c_str(), 8, _vo.numPointsAtLevel());
       fflush(stdout);
 
+      if(_options.store_iter_num)
+        iter_num.push_back( num_iters );
+
+      if(_options.store_iter_time)
+        iter_time_ms.push_back( tt );
+
       if(!_viewer->showImages(frame.get()))
         break;
 
@@ -307,6 +332,16 @@ void VoApp::Impl::mainLoop()
     Info("Writing poses to '%s'\n", poses_fn.c_str());
     if(!trajectory.write(poses_fn))
       Warn("Failed to write camera poses\n");
+
+    if(_options.store_iter_num) {
+      WriteVector(Format("%s_iter_time.txt", _options.trajectory_prefix.c_str()),
+                  iter_time_ms);
+    }
+
+    if(_options.store_iter_num) {
+      WriteVector(Format("%s_iter_num.txt", _options.trajectory_prefix.c_str()),
+                  iter_num);
+    }
   }
 
   _is_running = false;
