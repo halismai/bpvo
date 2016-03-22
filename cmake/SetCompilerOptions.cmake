@@ -52,6 +52,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
   addExtraCompilerOptions(-msse4.1)
   addExtraCompilerOptions(-msse2)
   addExtraCompilerOptions(-msse)
+  addExtraCompilerOptions(-mavx)
   addExtraCompilerOptions(-mtune=native)
   addExtraCompilerOptions(-mfpmath=sse)
 

@@ -251,11 +251,8 @@ size_t huber_simd(const typename ResidualsVector::value_type* r_ptr,
 
   size_t i = 0;
   bool is_aligned = false;
-#if defined(__AVX__)
-  is_aligned = IsAligned<32>(r_ptr) && IsAligned<32>(w_ptr);
-#else
-  is_aligned = IsAligned<16>(r_ptr) && IsAligned<16>(w_ptr);
-#endif
+
+  is_aligned = IsAligned<DefaultAlignment>(r_ptr) && IsAligned<DefaultAlignment>(w_ptr);
 
   if(is_aligned) {
     for(i=0; i < n; i += S) {

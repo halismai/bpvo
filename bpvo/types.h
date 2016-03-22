@@ -54,7 +54,6 @@ SharedPointer<_T> make_shared(Args&& ... args) {
 }
 
 #if defined(__AVX__)
-#error "AVX code is broken atm"
 static constexpr int DefaultAlignment = 32;
 #else
 static constexpr int DefaultAlignment = 16;

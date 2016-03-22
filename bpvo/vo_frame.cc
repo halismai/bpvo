@@ -57,7 +57,7 @@ void VisualOdometryFrame::setData(const cv::Mat& image, const cv::Mat& disparity
 
 void VisualOdometryFrame::setTemplate()
 {
-  THROW_ERROR_IF(!_has_data, "not data in frame");
+  THROW_ERROR_IF(!_has_data, "no data in frame");
 
 #define VO_FRAME_USE_PARALLEL 0
 
