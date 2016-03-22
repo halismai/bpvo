@@ -6,7 +6,6 @@
 namespace bpvo {
 
 class Dataset;
-class Viewer;
 
 class VoApp
 {
@@ -30,12 +29,16 @@ class VoApp
   {
     /** output filename to store the trajectory and camera path */
     std::string trajectory_prefix;
+
     /** prefix to store point clouds from reference frames */
     std::string points_prefix;
+
     /** buffer to size for the data loader thread */
     size_t data_buffer_size;
+
     /** maximum number of frames to process */
     int max_num_frames;
+
     /** what to show, if any */
     ViewerOptions viewer_options;
 

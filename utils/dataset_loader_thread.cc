@@ -53,6 +53,5 @@ void DatasetLoaderThread::start()
   _is_running = false;
 }
 
-
 } // bpvo
 

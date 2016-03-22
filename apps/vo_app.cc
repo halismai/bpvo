@@ -51,8 +51,9 @@ class Viewer
     }
   }
 
-  inline void showImages(const DatasetFrame* frame)
+  inline bool showImages(const DatasetFrame* frame)
   {
+    bool keep_running = true;
     switch(_options.image_display_mode)
     {
       case VoApp::ViewerOptions::ImageDisplayMode::ShowLeftAndDisparityOverlay:
@@ -77,6 +78,11 @@ class Viewer
       case VoApp::ViewerOptions::ImageDisplayMode::None:
         break; // unhanded case warning
     }
+
+    if(_options.image_display_mode != VoApp::ViewerOptions::ImageDisplayMode::None)
+      keep_running = handleKey();
+
+    return keep_running;
   }
 
  private:
@@ -84,6 +90,15 @@ class Viewer
   cv::Mat _display_image;
   float _min_disparity = 0.0f;
   float _max_dispartiy = 64.f;
+
+  inline bool handleKey()
+  {
+    int k = cv::waitKey(5) & 0xff;
+    if(k == ' ') // pause
+      k = cv::waitKey(0) & 0xff;
+
+    return k != 'q';
+  }
 }; // Viewer
 
 struct VoApp::Impl
@@ -187,10 +202,13 @@ void VoApp::Impl::run()
 
 void VoApp::Impl::stop()
 {
+  printf("dtor\n");
   if(_is_running) {
     if(_vo_thread && _vo_thread->joinable()) {
       _is_running = false;
+      printf("joining\n");
       _vo_thread->join();
+      printf("joined\n");
     }
   }
 }
@@ -258,7 +276,8 @@ void VoApp::Impl::mainLoop()
               ToString(vo_result.keyFramingReason).c_str(), 8, _vo.numPointsAtLevel());
       fflush(stdout);
 
-      _viewer->showImages(frame.get());
+      if(!_viewer->showImages(frame.get()))
+        break;
 
       if(vo_result.pointCloud != nullptr && !_options.points_prefix.empty())
       {
@@ -272,6 +291,8 @@ void VoApp::Impl::mainLoop()
       ++_num_frames_processed;
     }
   }
+
+  _data_loader_thread.stop();
 
   if(!_options.trajectory_prefix.empty())
   {
