@@ -59,14 +59,14 @@ void VisualOdometryFrame::setTemplate()
 {
   THROW_ERROR_IF(!_has_data, "not data in frame");
 
-#define VO_FRAME_USE_PARALLEL 1
+#define VO_FRAME_USE_PARALLEL 0
 
 #if VO_FRAME_USE_PARALLEL
-  ParallelTasks tasks(std::min(numLevels(), 4));
+  ParallelTasks tasks(std::min(numLevels() - _max_test_level, 4));
 #endif
 
   const cv::Mat& D = *_disparity;
-  for(size_t i = 0; i < _tdata_pyr.size(); ++i)
+  for(int i = _tdata_pyr.size()-1; i >= _max_test_level; --i)
   {
     auto code = [=]()
     {
@@ -83,6 +83,8 @@ void VisualOdometryFrame::setTemplate()
 #if VO_FRAME_USE_PARALLEL
   tasks.wait();
 #endif
+
+#undef VO_FRAME_USE_PARALLEL
 
   _has_template = true;
 }

@@ -213,6 +213,9 @@ shouldKeyFrame(const Matrix44& pose) const
 inline int VisualOdometry::Impl::
 numPointsAtLevel(int level) const
 {
+  if(level < 0)
+    level = _params.maxTestLevel;
+
   int ret = 0;
   if(_ref_frame)
     ret = _ref_frame->getTemplateDataAtLevel(level)->numPoints();
@@ -224,6 +227,8 @@ inline auto VisualOdometry::Impl::
 pointsAtLevel(int level) const -> const PointVector&
 {
   THROW_ERROR_IF( _ref_frame == nullptr, "no reference frame has been set");
+  if(level < 0)
+    level = _params.maxTestLevel;
   return _ref_frame->getTemplateDataAtLevel(level)->points();
 }
 
