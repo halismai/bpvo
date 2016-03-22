@@ -83,5 +83,16 @@ bool Trajectory::writeCameraPath(std::string filename) const
   return false;
 }
 
+bool Trajectory::write(std::string filename) const
+{
+  std::ofstream ofs(filename);
+  if(ofs.is_open()) {
+    ofs << *this;
+    return true;
+  }
+
+  return false;
+}
+
 }; // bpvo
 

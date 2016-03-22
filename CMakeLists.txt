@@ -41,6 +41,8 @@ option(ENABLE_FAST_MATH "enable fast math" OFF)
 option(ENABLE_OMIT_FRAME_POINTER "omit frame pointer" ON)
 
 option(BUILD_TEST "build the testing stuff" OFF)
+option(BUILD_APPS "build apps" ON)
+
 
 option(WITH_DISPARITY_SPACE_WARP "use disparity space" OFF)
 
@@ -165,9 +167,13 @@ configure_file(
 
 add_subdirectory(bpvo)
 add_subdirectory(utils)
-add_subdirectory(apps)
+
+if(BUILD_APPS)
+  add_subdirectory(apps)
+endif()
 
 if(BUILD_TEST)
   add_subdirectory(test)
 endif()
+
 

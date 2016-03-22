@@ -32,10 +32,33 @@ namespace bpvo {
 
 namespace math {
 
-int FORCE_INLINE Floor(float v)
+FORCE_INLINE int Floor(double v)
 {
+#if defined(WITH_SIMD)
+  auto t = _mm_set_sd(v);
+  int i = _mm_cvtsd_si32(t);
+  return i - _mm_movemask_pd(_mm_cmplt_sd(t, _mm_cvtsi32_sd(t,i)));
+#else
+  int i = static_cast<int>(v);
+  return i - (i > v);
+#endif
+}
+
+FORCE_INLINE int Floor(float v)
+{
+#if defined(WITH_SIMD)
+  auto t = _mm_set_ss(v);
+  int i = _mm_cvtss_si32(t);
+  return i - _mm_movemask_ps(_mm_cmplt_ss(t, _mm_cvtsi32_ss(t,i)));
+#else
   int i = (int) v;
   return i - (i > v);
+#endif
+}
+
+FORCE_INLINE int Floor(int v)
+{
+  return v;
 }
 
 /**

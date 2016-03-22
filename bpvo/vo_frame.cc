@@ -14,6 +14,7 @@ VisualOdometryFrame::VisualOdometryFrame(const Matrix33& K, float b, const Algor
     : _max_test_level(p.maxTestLevel)
     , _has_data(false)
     , _has_template(false)
+    , _image(make_unique<cv::Mat>())
     , _disparity(make_unique<cv::Mat>())
     , _desc_pyr(make_unique<DenseDescriptorPyramid>(p))
 {
@@ -21,8 +22,7 @@ VisualOdometryFrame::VisualOdometryFrame(const Matrix33& K, float b, const Algor
   float b_pyr(b);
 
   _tdata_pyr.push_back(make_unique<TemplateData>(0, K_pyr, b_pyr, p));
-  for(int i = 1; i < p.numPyramidLevels; ++i)
-  {
+  for(int i = 1; i < p.numPyramidLevels; ++i) {
     K_pyr *= 0.5; K_pyr(2,2) = 1.0f; b_pyr *= 2.0;
     _tdata_pyr.push_back( make_unique<TemplateData>(i, K_pyr, b_pyr, p) );
   }
@@ -49,11 +49,16 @@ int VisualOdometryFrame::numLevels() const { return _desc_pyr->size(); }
 
 void VisualOdometryFrame::setData(const cv::Mat& image, const cv::Mat& disparity)
 {
+  image.copyTo( *_image );
   disparity.copyTo( *_disparity );
   _desc_pyr->init(image);
 
   _has_data = true;
 }
+
+const cv::Mat* VisualOdometryFrame::imagePointer() const { return _image.get(); }
+
+const cv::Mat* VisualOdometryFrame::disparityPointer() const { return _disparity.get(); }
 
 void VisualOdometryFrame::setTemplate()
 {

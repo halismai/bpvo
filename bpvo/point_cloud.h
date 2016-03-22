@@ -34,6 +34,7 @@ class PointWithInfo
 
  public:
   PointWithInfo();
+  PointWithInfo(const Point&, const Color&, float w);
 
   const Point& xyzw() const;
   Point& xyzw();
@@ -74,6 +75,8 @@ class PointCloud
   PointCloud();
   PointCloud(const PointWithInfoVector& v);
   PointCloud(const PointWithInfoVector& v, const Transform& T);
+  PointCloud(size_t n);
+  PointCloud(size_t n, const Transform& T);
   virtual ~PointCloud();
 
   const typename PointWithInfoVector::value_type& operator[](int i) const;

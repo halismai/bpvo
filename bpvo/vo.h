@@ -74,6 +74,12 @@ class VisualOdometry
    */
   Result addFrame(const uint8_t* image, const float* disparity);
 
+  template <class FramePointer> inline
+  Result addFrame(const FramePointer& frame) {
+    return this->addFrame(frame->image().template ptr<const uint8_t>(),
+                          frame->disparity().template ptr<const float>());
+  }
+
 
   /**
    * \return the number of points at the specified pyramid level
@@ -82,7 +88,8 @@ class VisualOdometry
   int numPointsAtLevel(int level = -1) const;
 
   /**
-   * \return all the points at the specified level
+   * \return all the points at the specified level. This will always return
+   * points if you ask it to (given that there is template data)
    */
   const PointVector& pointsAtLevel(int level = -1) const;
 

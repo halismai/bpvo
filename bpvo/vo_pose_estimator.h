@@ -29,6 +29,8 @@ class VisualOdometryPoseEstimator
 
   float getFractionOfGoodPoints(float thresh) const;
 
+  const WeightsVector& getWeights() const;
+
  private:
   AlgorithmParameters _params;
   PoseEstimatorGN<TemplateData> _pose_estimator;

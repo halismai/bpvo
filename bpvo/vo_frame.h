@@ -67,11 +67,22 @@ class VisualOdometryFrame
    */
   int numLevels() const;
 
+  /**
+   * \return pointer to the raw input image
+   */
+  const cv::Mat* imagePointer() const;
+
+  /**
+   * \return pointer to the raw disparity
+   */
+  const cv::Mat* disparityPointer() const;
+
 
  private:
   int _max_test_level;
   bool _has_data;
   bool _has_template;
+  UniquePointer<cv::Mat> _image;
   UniquePointer<cv::Mat> _disparity;
   UniquePointer<DenseDescriptorPyramid> _desc_pyr;
   std::vector<TemplateDataPointer> _tdata_pyr;

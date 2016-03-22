@@ -30,6 +30,9 @@ namespace bpvo {
 
 PointWithInfo::PointWithInfo() {}
 
+PointWithInfo::PointWithInfo(const Point& xyzw, const Color& rgba, float w)
+    : _xyzw(xyzw), _rgba(rgba), _w(w) {}
+
 const Point& PointWithInfo::xyzw() const { return _xyzw; }
 Point& PointWithInfo::xyzw() { return _xyzw; }
 
@@ -64,6 +67,12 @@ PointCloud::PointCloud(const PointWithInfoVector& v) :
 
 PointCloud::PointCloud(const PointWithInfoVector& v, const Transform& T) :
     _points(v), _pose(T) {}
+
+PointCloud::PointCloud(size_t n, const Transform& T)
+  : _points(n), _pose(T) {}
+
+PointCloud::PointCloud(size_t n)
+  : PointCloud(n, Transform::Identity()) {}
 
 PointCloud::~PointCloud() {}
 

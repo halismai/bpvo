@@ -33,6 +33,11 @@ VisualOdometryPoseEstimator::estimatePose(
   return ret;
 }
 
+const WeightsVector& VisualOdometryPoseEstimator::getWeights() const
+{
+  return _pose_estimator.getWeights();
+}
+
 float VisualOdometryPoseEstimator::getFractionOfGoodPoints(float thresh) const
 {
   const auto& w = _pose_estimator.getWeights();

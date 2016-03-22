@@ -24,7 +24,9 @@
 
 #include <opencv2/core/core.hpp>
 #include <algorithm>
+
 #include <bpvo/utils.h>
+#include <bpvo/math_utils.h>
 
 namespace bpvo {
 
@@ -60,9 +62,10 @@ class Histogram
   inline void add(const T& v_)
   {
     const T v = std::max(_min_val, std::min(v_, _max_val));
-    const int i = std::floor((v / _range) * (_size - 1));
-    _counts[i]++;
-    _samples++;
+    const T f = (v / _range) * (_size - 1);
+    const int i = math::Floor( f );
+    ++_counts[i];
+    ++_samples;
   }
 
   template <class Iterator> inline

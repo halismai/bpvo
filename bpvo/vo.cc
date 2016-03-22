@@ -24,6 +24,7 @@
 #include "bpvo/vo_pose_estimator.h"
 #include "bpvo/trajectory.h"
 #include "bpvo/opencv.h"
+#include "bpvo/point_cloud.h"
 
 namespace bpvo {
 
@@ -33,7 +34,6 @@ class VisualOdometry::Impl
   inline Impl(const Matrix33&, float, ImageSize, AlgorithmParameters p);
 
   inline Result addFrame(const uint8_t*, const float*);
-
 
   inline const Trajectory& trajectory() const { return _trajectory; }
 
@@ -52,6 +52,9 @@ class VisualOdometry::Impl
   Trajectory _trajectory;
 
   KeyFramingReason shouldKeyFrame(const Matrix44&) const;
+
+  UniquePointer<PointCloud> getPointCloudFromRefFrame() const;
+
 }; // VisualOdometry::Impl
 
 
@@ -113,6 +116,7 @@ static inline Result FirstFrameResult(int n_levels)
   r.optimizerStatistics.resize(n_levels);
   r.isKeyFrame = true;
   r.keyFramingReason = KeyFramingReason::kFirstFrame;
+  r.pointCloud = nullptr;
 
   return r;
 }
@@ -149,6 +153,10 @@ addFrame(const uint8_t* I_ptr, const float* D_ptr)
     _T_kf = T_est; // accumulate the intitialization
   } else
   {
+    //
+    // store the point cloud
+    ret.pointCloud = getPointCloudFromRefFrame();
+
     if(_prev_frame->empty())
     {
       //
@@ -180,6 +188,10 @@ addFrame(const uint8_t* I_ptr, const float* D_ptr)
   }
 
   _trajectory.push_back(ret.pose);
+
+  if(ret.pointCloud)
+    ret.pointCloud->pose() = _trajectory.back();
+
   return ret;
 }
 
@@ -230,6 +242,40 @@ pointsAtLevel(int level) const -> const PointVector&
   if(level < 0)
     level = _params.maxTestLevel;
   return _ref_frame->getTemplateDataAtLevel(level)->points();
+}
+
+template <class Warp> static inline
+typename PointWithInfo::Color
+GetColor(const cv::Mat& image, const Warp& warp, const Point& p)
+{
+  const auto uv = warp.getImagePoint(p);
+  const auto c = uv[1] >= 0 && uv[1] < image.rows &&
+                 uv[0] >= 0 && uv[0] < image.cols ?
+                 image.at<uint8_t>(uv[1], uv[0]) : 0;
+
+  return PointWithInfo::Color(c, c, c, 255);
+}
+
+inline UniquePointer<PointCloud> VisualOdometry::Impl::
+getPointCloudFromRefFrame() const
+{
+  const auto& points = pointsAtLevel(_params.maxTestLevel);
+  const auto& weights = _vo_pose->getWeights();
+
+  const auto n = points.size();
+  THROW_ERROR_IF( n != weights.size(), "size mismatch" );
+
+  auto ret = make_unique<PointCloud>(n);
+
+  const auto& image = *_ref_frame->imagePointer();
+  const auto& warp = _ref_frame->getTemplateDataAtLevel(_params.maxTestLevel)->warp();
+  for(size_t i = 0; i < n; ++i)
+  {
+    auto color = GetColor(image, warp, points[i]);
+    ret->operator[](i) = PointWithInfo(points[i], color, weights[i]);
+  }
+
+  return ret;
 }
 
 }; // bpvo
