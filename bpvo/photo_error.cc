@@ -98,6 +98,7 @@ struct PhotoError::Impl
 
     int i = 0;
 
+    // TODO clean up this loop
     if(simd::isAligned<DefaultAlignment>(r_ptr) && simd::isAligned<DefaultAlignment>(I0_ptr))
     {
       for(i = 0; i <= num_points - 8; i += 8)
@@ -131,6 +132,18 @@ struct PhotoError::Impl
     } else {
       for(i = 0; i <= num_points - 8; i += 8)
       {
+#if defined(__AVX__)
+        _mm256_storeu_ps(r_ptr + i,
+                        _mm256_sub_ps(_mm256_setr_ps(
+                                this->operator()(I1_ptr, i + 0),
+                                this->operator()(I1_ptr, i + 1),
+                                this->operator()(I1_ptr, i + 2),
+                                this->operator()(I1_ptr, i + 3),
+                                this->operator()(I1_ptr, i + 4),
+                                this->operator()(I1_ptr, i + 5),
+                                this->operator()(I1_ptr, i + 6),
+                                this->operator()(I1_ptr, i + 7)), _mm256_loadu_ps(I0_ptr + i)));
+#else
         _mm_storeu_ps(r_ptr + i,
                       _mm_sub_ps(_mm_setr_ps(
                               this->operator()(I1_ptr, i + 0),
@@ -143,6 +156,7 @@ struct PhotoError::Impl
                               this->operator()(I1_ptr, i + 5),
                               this->operator()(I1_ptr, i + 6),
                               this->operator()(I1_ptr, i + 7)), _mm_loadu_ps(I0_ptr + i + 4)));
+#endif
       }
     }
 

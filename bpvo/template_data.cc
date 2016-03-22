@@ -135,9 +135,7 @@ struct ComputeResidualsBody : public ParallelForBody
   {
     for(int c = range.begin(); c != range.end(); ++c) {
       int off = c*_num_points;
-      printf("off: %d %p %p\n", off, _pixels + off, _residuals + off);
       const float* I1_ptr = _desc->getChannel(c).ptr<const float>();
-      printf("channel %p\n", I1_ptr);
       _photo_error.run(_pixels + off, I1_ptr, _residuals + off);
     }
   }

@@ -40,7 +40,7 @@ static const __m128i K0x80 = _mm_set1_epi8(0x80);
 /**
  * computes the Census Transform for 16 pixels at once
  */
-static inline void censusOp(const uint8_t* src, int stride, uint8_t* dst)
+static FORCE_INLINE void censusOp(const uint8_t* src, int stride, uint8_t* dst)
 {
   const v128 c(src);
   _mm_storeu_si128((__m128i*) dst,
