@@ -1,4 +1,5 @@
 #include "utils/dataset_loader_thread.h"
+#include "bpvo/utils.h"
 #include "bpvo/debug.h"
 
 namespace bpvo {
@@ -39,7 +40,11 @@ void DatasetLoaderThread::start()
   {
     _is_running = true;
     while(nullptr != (frame = _dataset->getFrame(f_i++)) && !_stop_requested)
+    {
       _buffer.push(std::move(frame));
+      Sleep(2);
+    }
+
   } catch(const std::exception& ex)
   {
     _buffer.push(nullptr);
@@ -50,3 +55,4 @@ void DatasetLoaderThread::start()
 
 
 } // bpvo
+

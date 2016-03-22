@@ -49,5 +49,5 @@ class DatasetLoaderThread
 
 }; // bpvo
 
-
 #endif // BPVO_UTILS_DATASET_LOADER_THREAD_H
+
