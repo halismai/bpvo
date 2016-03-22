@@ -1,7 +1,7 @@
 add_library(bpvo_apps ${LIBRARY_TYPE} vo_app.cc)
 
 file(GLOB src "*.cc")
-list(REMOVE_ITEM src vo_app.cc)
+list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/vo_app.cc")
 
 foreach(f ${src})
   get_filename_component(bname ${f} NAME_WE)
