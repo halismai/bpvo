@@ -7,7 +7,7 @@ namespace bpvo {
 DatasetLoaderThread::DatasetLoaderThread(UniquePointer<Dataset> dataset,
                                          BufferType& buffer)
     : _dataset(std::move(dataset)), _buffer(buffer),
-    _thread([=] { this->start(); }) {}
+    _thread([=] { this->start(); }) { _thread.detach(); }
 
 DatasetLoaderThread::~DatasetLoaderThread() { stop(); }
 

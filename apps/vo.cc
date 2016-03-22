@@ -34,6 +34,8 @@ int main(int argc, char** argv)
   vo_app_options.data_buffer_size = options.get<int>("buffersize");
   vo_app_options.max_num_frames = options.get<int>("numframes");
   vo_app_options.viewer_options.image_display_mode =
+      options.hasOption("dontshow") ?
+      VoApp::ViewerOptions::ImageDisplayMode::None :
       VoApp::ViewerOptions::ImageDisplayMode::ShowLeftAndDisparityOverlay;
 
   const auto conf_fn = options.get<std::string>("config");
@@ -41,10 +43,9 @@ int main(int argc, char** argv)
   vo_app.run();
 
   while(vo_app.isRunning())
-    Sleep(50);
+    Sleep(100);
 
   Info("done\n");
-
   return 0;
 }
 

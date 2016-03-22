@@ -198,17 +198,17 @@ void VoApp::Impl::run()
   THROW_ERROR_IF(_is_running, "VoApp is already running");
   _is_running = true;
   _vo_thread = make_unique<std::thread>(&VoApp::Impl::mainLoop, this);
+  _vo_thread->detach();
 }
 
 void VoApp::Impl::stop()
 {
-  printf("dtor\n");
   if(_is_running) {
+
+    _is_running = false;
+
     if(_vo_thread && _vo_thread->joinable()) {
-      _is_running = false;
-      printf("joining\n");
       _vo_thread->join();
-      printf("joined\n");
     }
   }
 }
@@ -257,7 +257,7 @@ void VoApp::Impl::mainLoop()
       Timer timer;
       vo_result = _vo.addFrame(frame);
       double tt = timer.stop().count();
-      total_time += tt;
+      total_time += (tt / 1000.0);
 
       int num_iters = vo_result.optimizerStatistics[_params.maxTestLevel].numIterations;
       if(num_iters == _params.maxIterations)
