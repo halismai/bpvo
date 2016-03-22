@@ -263,7 +263,9 @@ getPointCloudFromRefFrame() const
   const auto& weights = _vo_pose->getWeights();
 
   const auto n = points.size();
-  THROW_ERROR_IF( n != weights.size(), "size mismatch" );
+  // TODO we should test if the weights/num_channels == n!
+  THROW_ERROR_IF( n > weights.size(),
+                 Format("size mismatch [%zu != %zu]", points.size(), weights.size()).c_str());
 
   auto ret = make_unique<PointCloud>(n);
 

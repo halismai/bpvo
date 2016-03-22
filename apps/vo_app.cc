@@ -69,7 +69,8 @@ class Viewer
 
       case VoApp::ViewerOptions::ImageDisplayMode::ShowLeftAndDisparity:
         {
-          colorizeDisparity(frame->disparity(), _display_image, _min_disparity, _max_dispartiy);
+          colorizeDisparity(frame->disparity(), _display_image, _min_disparity,
+                            _max_dispartiy);
 
           cv::imshow("image", frame->image());
           cv::imshow("disparity", _display_image);
@@ -212,7 +213,6 @@ void VoApp::Impl::stop()
     }
   }
 }
-
 
 static inline
 bool writePointCloud(std::string fn, const PointCloud& pc, float min_weight, float max_depth)
