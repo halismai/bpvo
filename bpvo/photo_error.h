@@ -58,7 +58,7 @@ class PhotoError
    *
    * I0_ptr and r_ptr must have the same size
    */
-  void run(const float* I0_ptr, cv::InputArray I1, float* r_ptr) const;
+  void run(const float* I0_ptr, const float* I1_ptr, float* r_ptr) const;
 
  protected:
   struct Impl;

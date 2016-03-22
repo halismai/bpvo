@@ -90,19 +90,30 @@ struct PhotoError::Impl
 
   }
 
-  void run(const float* I0_ptr, const cv::Mat_<float>& I1, float* r_ptr) const
+  void run(const float* I0_ptr, const float* I1_ptr, float* r_ptr) const
   {
     int num_points = _interp_coeffs.size();
     if(num_points == 0)
       return;
 
-    auto I1_ptr = I1.ptr<const float>();
     int i = 0;
 
-    if(simd::isAligned<16>(r_ptr) && simd::isAligned<16>(I0_ptr))
+    if(simd::isAligned<DefaultAlignment>(r_ptr) && simd::isAligned<DefaultAlignment>(I0_ptr))
     {
       for(i = 0; i <= num_points - 8; i += 8)
       {
+#if defined(__AVX__)
+        _mm256_store_ps(r_ptr + i,
+                        _mm256_sub_ps(_mm256_setr_ps(
+                                this->operator()(I1_ptr, i + 0),
+                                this->operator()(I1_ptr, i + 1),
+                                this->operator()(I1_ptr, i + 2),
+                                this->operator()(I1_ptr, i + 3),
+                                this->operator()(I1_ptr, i + 4),
+                                this->operator()(I1_ptr, i + 5),
+                                this->operator()(I1_ptr, i + 6),
+                                this->operator()(I1_ptr, i + 7)), _mm256_load_ps(I0_ptr + i)));
+#else
         _mm_store_ps(r_ptr + i,
                      _mm_sub_ps(_mm_setr_ps(
                              this->operator()(I1_ptr, i + 0),
@@ -115,6 +126,7 @@ struct PhotoError::Impl
                              this->operator()(I1_ptr, i + 5),
                              this->operator()(I1_ptr, i + 6),
                              this->operator()(I1_ptr, i + 7)), _mm_load_ps(I0_ptr + i + 4)));
+#endif
       }
     } else {
       for(i = 0; i <= num_points - 8; i += 8)
@@ -137,6 +149,11 @@ struct PhotoError::Impl
 
     for( ; i < num_points; ++i)
       r_ptr[i] = this->operator()(I1_ptr, i) - I0_ptr[i];
+
+#if defined(__AVX__)
+    _mm256_zeroupper();
+#endif
+
   }
 
   void resize(size_t N)
@@ -201,10 +218,9 @@ void PhotoError::init(const Matrix34& P, const PointVector& X, ValidVector& vali
   _impl->init(P, X, valid, rows, cols);
 }
 
-void PhotoError::run(const float* I0_ptr, cv::InputArray I1_, float* r_ptr) const
+void PhotoError::run(const float* I0_ptr, const float* I1_ptr, float* r_ptr) const
 {
-  const cv::Mat_<float>& I1 = (const cv::Mat_<float>&) I1_.getMat();
-  _impl->run(I0_ptr, I1, r_ptr);
+  _impl->run(I0_ptr, I1_ptr, r_ptr);
 }
 
 #undef PHOTO_ERROR_WITH_OPENCV
