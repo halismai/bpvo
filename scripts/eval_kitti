@@ -1,0 +1,49 @@
+#!/bin/bash
+
+descriptor="intensity"
+
+for s in {0..10}; do
+  conf="
+DataSet = kitti
+DataSetRootDirectory = ~/data/kitti/dataset
+SequenceNumber = ${s}
+
+numPyramidLevels = 5
+Descriptor = ${descriptor}
+
+parameterTolerance = 1e-6
+functionTolerance = 1e-6
+
+verbosity = Silent
+
+lossFunction = Huber
+minSaliency = 0.01
+nonMaxSuppRadius = 1
+
+minTranslationMagToKeyFrame = 1.0
+minRotationMagToKeyFrame = 3.0
+maxFractionOfGoodPointsToKeyFrame = 0.6
+
+maxIterations = 100
+relaxTolerancesForCoarseLevels = 1
+
+StereoAlgorithm = BlockMatching
+SADWindowSize = 9
+minDisparity = 1
+numberOfDisparities = 96
+trySmallerWindows = 1
+ScaleBy = 1
+
+minValidDisparity = 1
+maxValidDisparity = 96
+
+maxTestLevel = 0
+"
+
+conf_fn=$(mktemp)
+echo "$conf" > $conf_fn
+
+prefix="kitti_${descriptor}_seq_${s}"
+./bin/vo -c $conf_fn -o $prefix -n -1 --store-timing --store-iterations -x
+
+done

@@ -46,6 +46,8 @@ int main(int argc, char** argv)
       ("numframes,n", int(100), "number of frames to process")
       ("buffersize,b", int(16), "buffer size to load images")
       ("points,p", "", "store the points to files with the given prefix")
+      ("store-timing", "store the timing information")
+      ("store-iterations", "store the number of iterations")
       ("dontshow,x", "do not show images")
       .parse(argc, argv);
 
@@ -58,6 +60,8 @@ int main(int argc, char** argv)
       options.hasOption("dontshow") ?
       VoApp::ViewerOptions::ImageDisplayMode::None :
       VoApp::ViewerOptions::ImageDisplayMode::ShowLeftAndDisparityOverlay;
+  vo_app_options.store_iter_time = options.hasOption("store-timing");
+  vo_app_options.store_iter_num = options.hasOption("store-iterations");
 
   const auto conf_fn = options.get<std::string>("config");
   VoApp vo_app(vo_app_options, conf_fn, Dataset::Create(conf_fn));

@@ -1,9 +1,12 @@
+#!/bin/bash
+
+conf="
 numPyramidLevels = 4
 maxTestLevel = 0
 withNormalization = 1
 
 sigmaPriorToCensusTransform = 0.75
-sigmaBitPlanes = 2
+sigmaBitPlanes = 1.6
 
 maxIterations = 100
 parameterTolerance = 1e-6
@@ -15,38 +18,33 @@ relaxTolerancesForCoarseLevels = 1
 lossFunction  = Huber
 verbosity     = Silent
 
-## this has to work with the minDisparity value below, should do something in
-## code to ensure that this is the case
-minValidDisparity = 8.1
-maxValidDisparity = 1000
-
-minSaliency = 0.001
-
 minTranslationMagToKeyFrame       = 0.1
 minRotationMagToKeyFrame          = 2.5
 maxFractionOfGoodPointsToKeyFrame = 0.7
-
-#minNumPixelsForNonMaximaSuppression = 10000000
 
 goodPointThreshold = 0.8
 
 DataSet = tsukuba_stereo
 DataSetRootDirectory = ~/data/NewTsukubaStereoDataset/
 Illumination = fluorescent
-#Illumination = lamps
 DisparityScale = 1.0
 
-DatasetName = tsukuba_stereo
-DatasetType = stereo
-
 StereoAlgorithm = BlockMatching
-#StereoAlgorithm = SemiGlobalBlockMatching
 SADWindowSize = 9
 minDisparity = 8
 numberOfDisparities = 96
 trySmallerWindows = 1
 ScaleBy = 1
 
-#Descriptor = BitPlanes
-Descriptor = Intensity
+minValidDisparity = 8.1
+maxValidDisparity = 96
+
+Descriptor = BitPlanes
+"
+
+conf_fn=$(mktemp)
+echo "$conf" > $conf_fn
+
+./bin/vo -c $conf_fn -o tsukuba_bitplanes_9_L2 -n 500 \
+  --store-timing --store-iterations -x
 

@@ -283,7 +283,7 @@ void VoApp::Impl::mainLoop()
   Result vo_result;
   int pc_idx = 0;
   double total_time = 0.0;
-  while(_is_running)
+  while(_is_running && _data_loader_thread.isRunning())
   {
     if(_options.max_num_frames > 0 && _num_frames_processed > _options.max_num_frames)
       break;
