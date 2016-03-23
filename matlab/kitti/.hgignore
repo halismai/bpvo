@@ -1,0 +1,20 @@
+syntax: glob
+
+*.asv
+*.o
+*.m~
+*.mex*
+
+figs/
+results/
+other/
+
+### vim ### from gitignore.io
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
+
