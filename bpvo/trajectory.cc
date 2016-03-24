@@ -41,10 +41,12 @@ Trajectory::Trajectory() {}
 
 void Trajectory::push_back(const Matrix44& T)
 {
+  const Matrix44 T_inv = InvertPose(T);
+
   if(!_poses.empty())
-    _poses.push_back( _poses.back() * T.inverse() );
+    _poses.push_back( _poses.back() * T_inv );
   else
-    _poses.push_back( T.inverse() );
+    _poses.push_back( T_inv );
 }
 
 const Matrix44& Trajectory::back() const { return _poses.back(); }

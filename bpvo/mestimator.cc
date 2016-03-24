@@ -435,10 +435,10 @@ void AutoScaleEstimator::reset()
 
 float AutoScaleEstimator::getScale() const { return _scale; }
 
-static inline float ScaleEstimator(const ResidualsVector& residuals,
-                                   const ValidVector& valid_flags,
-                                   Histogram<float>& hist)
-
+static inline
+float ScaleEstimator(const ResidualsVector& residuals,
+                     const ValidVector& valid_flags,
+                     Histogram<float>& hist)
 {
   hist.clear();
 
@@ -446,12 +446,13 @@ static inline float ScaleEstimator(const ResidualsVector& residuals,
     if(valid_flags[i] != 0)
       hist.add(std::fabs(residuals[i]));
 
-  return (1.4826 * (1.0 + 5 / (hist.numSamples()-6) )) * hist.median();
+  return (1.4826f * (1.0f + 5.0f / (hist.numSamples()-6) )) * hist.median();
 }
 
-static inline float ScaleEstimator(const ResidualsVector& residuals,
-                                  const ValidVector& valid_flags,
-                                  WeightsVector& buffer)
+static inline
+float ScaleEstimator(const ResidualsVector& residuals,
+                     const ValidVector& valid_flags,
+                     WeightsVector& buffer)
 {
   buffer.resize(0);
   buffer.reserve(residuals.size());
@@ -460,7 +461,7 @@ static inline float ScaleEstimator(const ResidualsVector& residuals,
     if(valid_flags[i] != 0)
       buffer.push_back( std::fabs(residuals[i]) );
 
-  return (1.4826 * (1.0 + 5 / (buffer.size()-6) )) * median(buffer);
+  return (1.4826f * (1.0f + 5.0f / (buffer.size()-6) )) * median(buffer);
 }
 
 float AutoScaleEstimator::estimateScale(const ResidualsVector& residuals,

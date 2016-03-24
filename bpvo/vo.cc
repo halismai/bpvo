@@ -171,6 +171,8 @@ addFrame(const uint8_t* I_ptr, const float* D_ptr)
 
       ret.pose = T_est *  _T_kf.inverse();
       _T_kf.setIdentity(); // reset intiialization
+      //_T_kf = ret.pose;
+      //_T_kf.block<3,3>(0,0).setIdentity();
     } else
     {
       std::swap(_prev_frame, _ref_frame);

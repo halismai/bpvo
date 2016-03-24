@@ -97,6 +97,9 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
   _pixels.resize( num_channels * num_points );
   _jacobians.resize( num_channels * num_points );
 
+  dprintf("\nnum_points %d (%d) [level %d] %f\n",
+         num_points, (int) inds.size()/2, _pyr_level, _params.minSaliency);
+
   typename AlignedVector<float>::type IxIy(2*num_points);
   for(int c = 0; c < num_channels; ++c)
   {

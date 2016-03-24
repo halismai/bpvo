@@ -315,7 +315,8 @@ run(const TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
 
   this->printHeader(f_norm, g_norm);
 
-  if(g_norm < _g_tol) {
+  if(g_norm < _g_tol)
+  {
     ret.status = PoseEstimationStatus::kGradientTolReached;
     ret.finalError = f_norm;
     ret.numIterations = 1;
@@ -323,6 +324,7 @@ run(const TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
     if(_params.verbosity != VerbosityType::kSilent) {
       fprintf(stdout, "Converged. Initial value is optimal [%g < %g]\n", g_norm, _g_tol);
     }
+
     return ret;
   }
 
@@ -353,8 +355,9 @@ run(const TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
   float dp_norm_prev = 0.0f;
   bool has_converged = false;
 
+  data.T *= tdata->warp().paramsToPose(-data.dp);
+
   do {
-    data.T *= tdata->warp().paramsToPose(-data.dp);
 
     float dp_norm = data.dp.norm();
     g_norm = data.gradientNorm();
@@ -371,6 +374,8 @@ run(const TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
         break;
       }
     }
+
+    data.T *= tdata->warp().paramsToPose(-data.dp);
 
   } while( ret.numIterations++ < _params.maxIterations && !has_converged &&
           _num_fun_evals < _params.maxFuncEvals );

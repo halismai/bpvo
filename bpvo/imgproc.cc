@@ -74,24 +74,6 @@ void gradientAbsoluteMagnitude(const float* src_ptr, int rows, int cols,
   std::fill_n(dst, cols, 0.0f);
 }
 
-/*
-template <bool Aligned> FORCE_INLINE
-void gradientAbsoluteMagnitude(const float* src_ptr, int rows, int cols, float* dst_ptr)
-{
-  for(int y = 0; y < rows; ++y)
-  {
-    auto s0 = src_ptr + (y > 0 ? y-1 : rows > 1 ? 1 : 0)*cols;
-    auto s1 = src_ptr + y*cols;
-    auto s2 = src_ptr - (y < rows - 1 ? y+1 : rows > 1 ? rows - 2 : 0);
-
-    int x = 0;
-    for( ; x <= cols - 4; x += 4)
-    {
-    }
-  }
-}
-*/
-
 
 void gradientAbsoluteMagnitude(const cv::Mat_<float>& src, cv::Mat_<float>& dst)
 {
@@ -154,6 +136,28 @@ void gradientAbsoluteMagnitudeAcc(const cv::Mat_<float>& src, float* dst)
   {
     gradientAbsoluteMagnitudeAcc<false>(src_ptr, rows, cols, dst);
   }
+}
+
+void gradientAbsoluteMagnitude(const float* src, int rows, int cols, uint16_t* dst,
+                               float a, float b)
+{
+  memset(dst, 0, sizeof(uint16_t)*cols);
+
+  for(int r = 1; r < rows - 1; ++r) {
+    auto srow = src + r*cols;
+    auto drow = dst + r*cols;
+    drow[0] = 0;
+    for(int c = 1; c < cols - 1; ++c)
+    {
+      float Ix = std::fabs(srow[c+1] - srow[c-1]);
+      float Iy = std::fabs(srow[c+cols] - srow[c-cols]);
+      drow[c] = a*(Ix + Iy) + b;
+    }
+
+    drow[cols-1] = 0;
+  }
+
+  memset(dst + (rows-1)*cols, 0, sizeof(uint16_t)*cols);
 }
 
 }; // bpvo

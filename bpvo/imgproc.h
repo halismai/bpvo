@@ -34,6 +34,20 @@ void gradientAbsoluteMagnitude(const cv::Mat_<float>& src, cv::Mat_<float>& dst)
 
 
 /**
+ * absolute gradient magnitude
+ *
+ * \param src pointer to single channel source image with size rows x cols
+ * \param rows number of image rows
+ * \param cols number of image cols
+ * \param dst pointer to the desintation (pre-allocated by the user)
+ * \param alpha multiplictive factor to apply to the abs gradient before storing
+ * \param beta additive factor
+ */
+void gradientAbsoluteMagnitude(const float* src, int rows, int cols, uint16_t* dst,
+                               float alpha = 1.0f, float beta = 0.0f);
+
+
+/**
  * accumulates the abs gradient magnitude into dst
  * dst must be allocated
  */
@@ -140,6 +154,41 @@ struct IsLocalMax
   const T* _ptr;
   int _stride, _radius;
 }; // IsLocalMax
+
+
+template <typename T>
+struct IsLocalMaxGeneric_
+{
+  IsLocalMaxGeneric_() : _ptr(nullptr), _stride(0), _radius(0) {}
+  IsLocalMaxGeneric_(const T* p, int s, int r) :
+      _ptr(p), _stride(s), _radius(r) {}
+
+  void setRadius(int r) { _radius = r; }
+  void setStride(int s) { _stride = s; }
+  void setPointer(const T* p) { _ptr = p; }
+
+  inline bool operator()(int row, int col) const
+  {
+    if(_radius > 0 && _stride > 0)
+    {
+      uint16_t v = *( _ptr + row*_stride + col );
+      for(int r = -_radius; r <= _radius; ++r)
+        for(int c = -_radius; c <= _radius; ++c)
+          if( (r || c) && *(_ptr + _stride*(row + r) + c + col) >= v)
+            return false;
+    }
+    return true;
+  }
+
+ protected:
+  const T* _ptr;
+  int _stride;
+  int _radius;
+}; // IsLocalMax_u16
+
+typedef IsLocalMaxGeneric_<uint16_t> IsLocalMax_u16;
+
+
 }; // bpvo
 
 #endif // BPVO_IMGPROC_H

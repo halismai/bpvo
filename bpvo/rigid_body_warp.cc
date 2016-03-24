@@ -72,7 +72,6 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
 
   static const __m128 SIGN_MASK = _mm_set1_ps(-0.0);
 
-
   {
     {
       float* p = &J(0,0);
