@@ -1,7 +1,7 @@
 load ~/code/mf/results/phovo_dspace_kitti_all_1x1.mat
 clearvars -except T
 
-err    = kitti_eval( T );
+err_intensity   = kitti_eval( T );
 e_viso = kitti.load_other('other/viso2');
 
 %kitti.plot_errors(len_err, speed_err);

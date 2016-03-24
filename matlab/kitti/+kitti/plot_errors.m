@@ -19,22 +19,26 @@ function h = plot_errors(errors, name, varargin)
 
   subplot(2, 2, 1);
   h(1) = plot(t_l(:, 1), t_l(:, 2), varargin{:});
-  xlabel('Translation Error [%]'); ylabel('Path Length [m]'); grid on; hold on;
+  xlabel('Path Length [m]'); ylabel('Translation [%]'); grid on; hold on;
+  axis tight;
   %legend(name);
 
   subplot(2, 2, 2);
   h(2) = plot(r_l(:, 1), r_l(:, 2), varargin{:});
-  xlabel('Rotation Error [deg/m]'); ylabel('Path Length [m]'); grid on; hold on;
+  xlabel('Path Length [m]'); ylabel('Rotation Error [deg/m]');grid on; hold on;
+  axis tight;
   %legend(name);
 
   subplot(2, 2, 3);
   h(3) = plot(t_s(:, 1), t_s(:, 2), varargin{:});
-  xlabel('Translation Error [%]'); ylabel('Speed [km/h]'); grid on; hold on;
+  xlabel('Speed [km/h]'); ylabel('Translation Error [%]'); grid on; hold on;
+  axis tight;
   %legend(name);
 
   subplot(2, 2, 4);
   h(4) = plot(r_s(:, 1), r_s(:, 2), varargin{:});
-  xlabel('Rotation Error [deg/m]'); ylabel('Speed [km/h]'); grid on; hold on;
+  xlabel('Speed [km/h]'); ylabel('Rotation Error [deg/m]'); grid on; hold on;
+  axis tight;
   %legend(name);
 
 end
