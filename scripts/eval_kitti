@@ -1,6 +1,6 @@
 #!/bin/bash
 
-descriptor="intensity"
+descriptor="bitplanes"
 
 for s in {0..10}; do
   conf="
@@ -12,38 +12,39 @@ numPyramidLevels = -1
 Descriptor = ${descriptor}
 
 parameterTolerance = 1e-6
-functionTolerance = 1e-6
+functionTolerance = 1e-5
 
 verbosity = Silent
 
-lossFunction = Tukey
-minSaliency = 0.01
+lossFunction = Huber
+minSaliency = 0.1
 nonMaxSuppRadius = 1
 
 minTranslationMagToKeyFrame = 0.25
 minRotationMagToKeyFrame = 2.0
 maxFractionOfGoodPointsToKeyFrame = 0.6
 
-maxIterations = 100
+maxIterations = 200
 relaxTolerancesForCoarseLevels = 1
 
 StereoAlgorithm = BlockMatching
 SADWindowSize = 9
-minDisparity = 1
-numberOfDisparities = 96
+minDisparity = 0
+numberOfDisparities = 128
 trySmallerWindows = 1
 ScaleBy = 1
 
 minValidDisparity = 1
-maxValidDisparity = 96
+maxValidDisparity = 128
 
-maxTestLevel = 2
+maxTestLevel = 0
+
 "
 
 conf_fn=$(mktemp)
 echo "$conf" > $conf_fn
 
-prefix="kitti_${descriptor}_seq_${s}_quarter_res"
+prefix="kitti_${descriptor}_seq_${s}_dense_no_kf"
 ./bin/vo -c $conf_fn -o $prefix -n -1 --store-timing --store-iterations -x
 
 done
