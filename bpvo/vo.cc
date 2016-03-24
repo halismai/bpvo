@@ -99,9 +99,11 @@ Impl(const Matrix33& K, float b, ImageSize s, AlgorithmParameters p)
   , _vo_pose(make_unique<VisualOdometryPoseEstimator>(p))
   , _T_kf(Matrix44::Identity())
 {
-  if(_params.numPyramidLevels <= 0)
+  if(_params.numPyramidLevels <= 0) {
     _params.numPyramidLevels = 1 + std::round(
         std::log2(std::min(s.rows, s.cols) / (double) p.minImageDimensionForPyramid));
+    Info("auto pyramid level set to %d\n", _params.numPyramidLevels);
+  }
 
   _ref_frame = make_unique<VisualOdometryFrame>(K, b, _params);
   _cur_frame = make_unique<VisualOdometryFrame>(K, b, _params);

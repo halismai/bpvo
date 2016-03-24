@@ -121,6 +121,19 @@ UniquePointer<DatasetFrame> StereoDataset::getFrame(int f_i) const
   toGray(frame.I_orig[0], frame.I[0]);
   toGray(frame.I_orig[1], frame.I[1]);
 
+  if(_scale_by > 1) {
+#if 0
+    cv::Size new_size = frame.I[0].size();
+    new_size.height /= (double) _scale_by;
+    new_size.width /= (double) _scale_by;
+    cv::pyrDown(frame.I[0], frame.I[0], new_size);
+    cv::pyrDown(frame.I[1], frame.I[1], new_size);
+#endif
+    double s = 1.0 / _scale_by;
+    cv::resize(frame.I[0], frame.I[0], cv::Size(), s, s);
+    cv::resize(frame.I[1], frame.I[1], cv::Size(), s, s);
+  }
+
   frame.fn = image_fn;
 
   _stereo_alg->run(frame.I[0], frame.I[1], frame.D);

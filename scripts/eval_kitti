@@ -37,13 +37,13 @@ ScaleBy = 1
 minValidDisparity = 1
 maxValidDisparity = 96
 
-maxTestLevel = 1
+maxTestLevel = 2
 "
 
 conf_fn=$(mktemp)
 echo "$conf" > $conf_fn
 
-prefix="kitti_${descriptor}_seq_${s}_half_res"
+prefix="kitti_${descriptor}_seq_${s}_quarter_res"
 ./bin/vo -c $conf_fn -o $prefix -n -1 --store-timing --store-iterations -x
 
 done

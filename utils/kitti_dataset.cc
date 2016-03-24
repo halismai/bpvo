@@ -89,9 +89,11 @@ bool KittiDataset::loadCalibration(std::string filename)
   _calib.baseline =  -P2(0,3) / P2(0,0);
 
   if(this->_scale_by > 1) {
+    printf("scaling the calibration by %d\n", this->_scale_by);
     float s = 1.0f / _scale_by;
     _calib.K *= s;
     _calib.K(2,2) = 1.0f;
+    _calib.baseline /= s;
   }
 
   return true;
