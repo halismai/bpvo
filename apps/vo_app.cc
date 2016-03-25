@@ -222,18 +222,14 @@ void VoApp::Impl::run()
   THROW_ERROR_IF(_is_running, "VoApp is already running");
   _is_running = true;
   _vo_thread = make_unique<std::thread>(&VoApp::Impl::mainLoop, this);
-  _vo_thread->detach();
+  //_vo_thread->detach();
 }
 
 void VoApp::Impl::stop()
 {
-  if(_is_running) {
-
-    _is_running = false;
-
-    if(_vo_thread && _vo_thread->joinable()) {
-      _vo_thread->join();
-    }
+  _is_running = false;
+  if(_vo_thread && _vo_thread->joinable()) {
+    _vo_thread->join();
   }
 }
 

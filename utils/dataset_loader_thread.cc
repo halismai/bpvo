@@ -15,20 +15,16 @@ bool DatasetLoaderThread::isRunning() const { return _is_running; }
 
 void DatasetLoaderThread::stop(bool empty_buffer)
 {
-  if(_is_running)
-  {
-    _stop_requested = true;
+  _stop_requested = true;
 
-    if(empty_buffer)
-    {
-      FramePointer frame;
-      while(_buffer.pop(&frame, 10))
-        ;
-    }
-
-    if(_thread.joinable())
-      _thread.join();
+  if(empty_buffer) {
+    FramePointer frame;
+    while(_buffer.pop(&frame, 10))
+      ;
   }
+
+  if(_thread.joinable())
+    _thread.join();
 }
 
 void DatasetLoaderThread::start()
