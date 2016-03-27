@@ -7,7 +7,7 @@ namespace bpvo {
 DatasetLoaderThread::DatasetLoaderThread(UniquePointer<Dataset> dataset,
                                          BufferType& buffer)
     : _dataset(std::move(dataset)), _buffer(buffer),
-    _thread([=] { this->start(); }) { /*_thread.detach();*/ }
+    _thread([=] { this->start(); }) { _is_running = true; }
 
 DatasetLoaderThread::~DatasetLoaderThread() { stop(); }
 
@@ -34,7 +34,6 @@ void DatasetLoaderThread::start()
 
   try
   {
-    _is_running = true;
     while(nullptr != (frame = _dataset->getFrame(f_i++)) && !_stop_requested)
     {
       _buffer.push(std::move(frame));
@@ -43,6 +42,7 @@ void DatasetLoaderThread::start()
 
   } catch(const std::exception& ex)
   {
+    Warn("problem '%s'\n", ex.what());
     _buffer.push(nullptr);
   }
 

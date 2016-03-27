@@ -29,6 +29,7 @@ set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "Installation directory")
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Config" FORCE)
 
 option(BUILD_STATIC   "Build static libraries" OFF)
+option(BUILD_MATLAB   "Build Matlab bindings"  OFF)
 option(WITH_PROFILER  "With Google Profiler"   OFF)
 option(WITH_TCMALLOC  "With Google TCMalloc"   OFF)
 option(WITH_SIMD      "Use SIMD instructions"  ON)
@@ -168,6 +169,10 @@ configure_file(
 add_subdirectory(bpvo)
 add_subdirectory(utils)
 
+if(BUILD_MATLAB)
+  #add_subdirectory(matlab)
+endif()
+
 if(BUILD_APPS)
   add_subdirectory(apps)
 endif()
@@ -175,4 +180,5 @@ endif()
 if(BUILD_TEST)
   add_subdirectory(test)
 endif()
+
 

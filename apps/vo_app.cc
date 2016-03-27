@@ -161,6 +161,10 @@ struct VoApp::Impl
   //
   float _max_point_depth = 5.0;
 
+
+  std::vector<float> _iter_time_ms;
+  std::vector<int> _iter_num;
+
 }; // VoApp::Impl
 
 VoApp::ViewerOptions::ViewerOptions()
@@ -178,7 +182,10 @@ VoApp::Options::Options()
 }
 
 VoApp::VoApp(Options options, std::string conf_fn, UniquePointer<Dataset> dataset)
-    : _impl(make_unique<Impl>(options, conf_fn, std::move(dataset))) {}
+    : _impl(make_unique<Impl>(options, conf_fn, std::move(dataset)))
+{
+  Sleep(100); // wait for things to start up
+}
 
 VoApp::~VoApp() { stop(); }
 
@@ -187,6 +194,21 @@ void VoApp::run() { _impl->run(); }
 void VoApp::stop() { _impl->stop(); }
 
 bool VoApp::isRunning() const { return _impl->isRunning(); }
+
+const Trajectory& VoApp::getTrajectory() const
+{
+  return _impl->_vo.trajectory();
+}
+
+const std::vector<float>& VoApp::getIterationTime() const
+{
+  return _impl->_iter_time_ms;
+}
+
+const std::vector<int>& VoApp::getNumIterations() const
+{
+  return _impl->_iter_num;
+}
 
 VoApp::Impl::
 Impl(Options options, std::string conf_fn, UniquePointer<Dataset> dataset)
@@ -220,9 +242,9 @@ VoApp::Impl::~Impl() { stop(); }
 void VoApp::Impl::run()
 {
   THROW_ERROR_IF(_is_running, "VoApp is already running");
+
   _is_running = true;
   _vo_thread = make_unique<std::thread>(&VoApp::Impl::mainLoop, this);
-  //_vo_thread->detach();
 }
 
 void VoApp::Impl::stop()
@@ -270,8 +292,8 @@ void VoApp::Impl::mainLoop()
 {
   _num_frames_processed = 0;
 
-  std::vector<float> iter_time_ms;
-  std::vector<int> iter_num;
+  _iter_time_ms.resize(0);
+  _iter_num.resize(0);
 
   _viewer->init();
 
@@ -287,6 +309,7 @@ void VoApp::Impl::mainLoop()
     if(_data_buffer.pop(&frame, 5))
     {
       if(!frame) {
+        Warn("no more data\n");
         break; // no more data
       }
 
@@ -313,10 +336,10 @@ void VoApp::Impl::mainLoop()
       fflush(stdout);
 
       if(_options.store_iter_num)
-        iter_num.push_back( num_iters );
+        _iter_num.push_back( num_iters );
 
       if(_options.store_iter_time)
-        iter_time_ms.push_back( tt );
+        _iter_time_ms.push_back( tt );
 
       if(!_viewer->showImages(frame.get()))
         break;
@@ -328,6 +351,8 @@ void VoApp::Impl::mainLoop()
         {
           Warn("Failed to write point cloud to: '%s'\n", point_cloud_fn.c_str());
         }
+
+        ++pc_idx;
       }
 
       ++_num_frames_processed;
@@ -351,13 +376,11 @@ void VoApp::Impl::mainLoop()
       Warn("Failed to write camera poses\n");
 
     if(_options.store_iter_num) {
-      WriteVector(Format("%s_iter_time.txt", _options.trajectory_prefix.c_str()),
-                  iter_time_ms);
+      WriteVector(Format("%s_iter_time.txt", _options.trajectory_prefix.c_str()), _iter_time_ms);
     }
 
     if(_options.store_iter_num) {
-      WriteVector(Format("%s_iter_num.txt", _options.trajectory_prefix.c_str()),
-                  iter_num);
+      WriteVector(Format("%s_iter_num.txt", _options.trajectory_prefix.c_str()), _iter_num);
     }
   }
 

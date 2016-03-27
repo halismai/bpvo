@@ -52,6 +52,16 @@ static inline bpvo::VerbosityType StringToVerbosityType(std::string s)
     mexError("unknown VerbosityType %s\n", s.c_str());
 }
 
+static inline bpvo::DescriptorType StringToDescriptorType(std::string s)
+{
+  if(bpvo::icompare("Intensity", s))
+    return bpvo::DescriptorType::kIntensity;
+  else if(bpvo::icompare("bitplanes", s))
+    return bpvo::DescriptorType::kBitPlanes;
+  else
+    mexError("unkonwn DescriptorType %s\n", s.c_str());
+}
+
 static inline bpvo::AlgorithmParameters ToAlgorithmParameters(const mex::Struct& params)
 {
   bpvo::AlgorithmParameters ret;
@@ -76,6 +86,9 @@ static inline bpvo::AlgorithmParameters ToAlgorithmParameters(const mex::Struct&
   ret.goodPointThreshold = GetOption<float>(params, "goodPointThreshold", 0.75);
 
   ret.maxTestLevel = GetOption<int>(params, "maxTestLevel", 0);
+
+  ret.descriptor = StringToDescriptorType(
+      GetOption<std::string>(params, "descriptor", "intensity"));
 
   return ret;
 }

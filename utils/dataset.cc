@@ -63,7 +63,8 @@ bool DisparityDataset::init(const ConfigFile& cf)
   try
   {
     auto root_dir = fs::expand_tilde(cf.get<std::string>("DataSetRootDirectory"));
-    THROW_ERROR_IF( !fs::exists(root_dir), "DataSetRootDirectory does not exist" );
+    THROW_ERROR_IF( !fs::exists(root_dir),
+                   Format("DataSetRootDirectory '%s' does not exist", root_dir.c_str()).c_str() );
 
     auto left_fmt = cf.get<std::string>("LeftImageFormat", "");
     auto dmap_fmt = cf.get<std::string>("DisparityMapFormat", "");

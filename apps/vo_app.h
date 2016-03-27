@@ -27,6 +27,7 @@
 namespace bpvo {
 
 class Dataset;
+class Trajectory;
 
 class VoApp
 {
@@ -95,6 +96,10 @@ class VoApp
    * \return true if VO is still running
    */
   bool isRunning() const;
+
+  const Trajectory& getTrajectory() const;
+  const std::vector<float>& getIterationTime() const;
+  const std::vector<int>& getNumIterations() const;
 
  protected:
   struct Impl;
