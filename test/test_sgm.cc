@@ -5,6 +5,8 @@
 #include "utils/dataset.h"
 #include "utils/program_options.h"
 #include "utils/sgm.h"
+#include "utils/rsgm.h"
+#include "utils/viz.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -26,26 +28,29 @@ int main()
   SgmStereo::Config sgm_config;
   sgm_config.numberOfDisparities = 128;
 
+  cv::Mat D0, D1;
+
   SgmStereo stereo(sgm_config);
+  stereo.compute(I0, I1, D0);
 
-  cv::Mat D;
-  stereo.compute(I0, I1, D);
+  RSGM rsgm;
+  rsgm.compute(I0, I1, D1);
 
-  FILE* fp = fopen("D.txt", "w");
-  for(int y = 0; y < D.rows; ++y)
-  {
-    for(int x = 0; x < D.cols; ++x)
-    {
-      fprintf(fp, "%f ", D.at<float>(y,x));
-    }
+  cv::Mat dimg0, dimg1;
 
-    fprintf(fp, "\n");
-  }
-  fclose(fp);
-  printf("done ... writing to file\n");
+  overlayDisparity(I0, D0, dimg0, 0.5, 0.0, 128.0);
+  overlayDisparity(I1, D1, dimg1, 0.5, 0.0, 128.0);
 
-  auto t = TimeCode(10, [&]() { stereo.compute(I0, I1, D); });
-  printf("time %f\n", t);
+  cv::imshow("D0", dimg0);
+  cv::imshow("D1", dimg1);
+
+  auto t = TimeCode(10, [&]() { stereo.compute(I0, I1, D0); });
+  printf("time SGM  %f\n", t);
+
+  t = TimeCode(10, [&]() { rsgm.compute(I0, I1, D0); });
+  printf("time rSGM %f\n", t);
+
+  cv::waitKey(0);
 
   return 0;
 }

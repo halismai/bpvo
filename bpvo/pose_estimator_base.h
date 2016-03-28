@@ -93,7 +93,23 @@ struct PoseEstimatorData_
   {
     //dp = H.ldlt().solve(G);
     dp = solver.compute(H).solve(G);
-    return (H*dp).isApprox(G);
+    bool ok =  (H*dp).isApprox(G);
+    if(!ok) {
+      Warn("Failed to solve system. Trying augmented\n");
+      std::cout << H << std::endl;
+      std::cout << G << std::endl;
+      std::cout << ((H * dp) - G).transpose() << std::endl;
+      ok = solve2Augmented(0.001);
+      if(!ok) {
+        Warn("Failed again!\n");
+        std::cout << H << std::endl;
+        std::cout << G << std::endl;
+      } else {
+        Warn("ok!");
+      }
+    }
+
+    return ok;
   }
 
   inline bool solveAugmented(float s)
@@ -112,7 +128,21 @@ struct PoseEstimatorData_
     Eigen::Matrix<double,N,N> H_ = H.template cast<double>();
     Eigen::Matrix<double,N,1> G_ = G.template cast<double>();
 
-    Eigen::Matrix<double,N,1> dp_ = H_.solve(G_);
+    Eigen::Matrix<double,N,1> dp_ = H_.ldlt().solve(G_);
+    bool ret = (H_ * dp_).isApprox(G_);
+
+    dp = dp_.template cast<float>();
+    return ret;
+  }
+
+  inline bool solve2Augmented(double s)
+  {
+    double u = s * H.diagonal().maxCoeff();
+    Eigen::Matrix<double,N,N> H_ = H.template cast<double>();
+    Eigen::Matrix<double,N,1> G_ = G.template cast<double>();
+
+    H_.diagonal().array() += u;
+    Eigen::Matrix<double,N,1> dp_ = H_.ldlt().solve(G_);
     bool ret = (H_ * dp_).isApprox(G_);
 
     dp = dp_.template cast<float>();
@@ -330,25 +360,9 @@ run(const TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
 
   if(!data.solve())
   {
-    Warn("Failed to solve system\n");
-    std::cout << data.H << std::endl;
-    std::cout << data.G << std::endl;
-
-    bool ok = false;
-    {
-      Warn("trying to solve it again\n");
-      float u = 0.01 * data.H.diagonal().maxCoeff();
-      data.H.diagonal().array() += u;
-      ok = data.solve();
-      if(!ok) {
-        Warn("failed again will bail\n");
-      }
-    }
-
-    if(!ok) {
-      ret.status = PoseEstimationStatus::kSolverError;
-      return ret;
-    }
+    Warn("Failed to solve system will bail\n");
+    ret.status = PoseEstimationStatus::kSolverError;
+    return ret;
   }
 
   _f_norm_prev = 0.0f;
@@ -358,7 +372,6 @@ run(const TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
   data.T *= tdata->warp().paramsToPose(-data.dp);
 
   do {
-
     float dp_norm = data.dp.norm();
     g_norm = data.gradientNorm();
 

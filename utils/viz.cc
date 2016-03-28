@@ -23,7 +23,7 @@ void colorizeDisparity(const cv::Mat& src, cv::Mat& dst, double min_d, double nu
 
   for(int y = 0; y < src.rows; ++y)
     for(int x = 0; x < src.cols; ++x)
-      if(src.at<float>(y,x) < min_d)
+      if(src.at<float>(y,x) <= min_d)
         dst.at<cv::Vec3b>(y,x) = cv::Vec3b(0,0,0);
 }
 

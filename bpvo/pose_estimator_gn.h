@@ -90,6 +90,8 @@ class PoseEstimatorGN : public PoseEstimatorBase< PoseEstimatorGN<TDataT> >
     if(!data.solve()) {
       if(this->_params.verbosity != VerbosityType::kSilent)
         Warn("solver failed");
+
+      Warn("Solver failed\n");
       status = PoseEstimationStatus::kSolverError;
       return false;
     }

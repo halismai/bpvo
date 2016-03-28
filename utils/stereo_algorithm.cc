@@ -2,7 +2,10 @@
 #include <opencv2/calib3d/calib3d.hpp>
 
 #include "bpvo/config_file.h"
+
 #include "utils/stereo_algorithm.h"
+#include "utils/sgm.h"
+#include "utils/rsgm.h"
 
 namespace bpvo {
 
@@ -11,7 +14,9 @@ struct StereoAlgorithm::Impl
   enum class Algorithm
   {
     BlockMatching,
-    SemiGlobalBlockMatching
+    SemiGlobalBlockMatching,
+    SemiGlobalMatching,
+    RapidSemiGlobalMatching
   }; // Algorithm
 
   Impl(const ConfigFile& cf)
@@ -32,7 +37,30 @@ struct StereoAlgorithm::Impl
           cf.get<int>("speckleWindowSize", 0),
           cf.get<int>("speckleRange", 0),
           (bool) cf.get<int>("fullDP", 0));
-    } else
+    }
+    else if(icompare("SGM", alg) || icompare("SemiGlobalMatching", alg))
+    {
+      _algorithm = Algorithm::SemiGlobalMatching;
+      SgmStereo::Config conf;
+
+      conf.numberOfDisparities = cf.get<int>("numberOfDisparities", 128);
+      conf.sobelCapValue = cf.get<int>("sobelCapValue", 15);
+      conf.censusRadius = cf.get<int>("censusRadius", 2);
+      conf.windowRadius = cf.get<int>("windowRadius", 2);
+      conf.smoothnessPenaltySmall = cf.get<int>("smoothnessPenaltySmall", 100);
+      conf.smoothnessPenaltyLarge = cf.get<int>("smoothnessPenaltyLarge", 1600);
+      conf.consistencyThreshold = cf.get<int>("consistencyThreshold", 1);
+      conf.disparityFactor = cf.get<double>("disparityFactor", 256.0);
+      conf.censusWeightFactor = cf.get<double>("censusWeightFactor", 1.0/6.0);
+
+      _sgm_stereo = make_unique<SgmStereo>(conf);
+    }
+    else if(icompare("RSGM", alg))
+    {
+      _algorithm = Algorithm::RapidSemiGlobalMatching;
+      _rsgm = make_unique<RSGM>();
+    }
+    else if(icompare("BlockMatching", alg) || icompare("BM", alg))
     {
       _algorithm = Algorithm::BlockMatching;
       _state = cvCreateStereoBMState();
@@ -51,6 +79,8 @@ struct StereoAlgorithm::Impl
       _state->speckleRange = cf.get<int>("speckleRange", 0);
       _state->trySmallerWindows = cf.get<int>("trySmallerWindows", 0);
       _state->disp12MaxDiff = cf.get<int>("disp12MaxDiff", -1);
+    } else {
+      THROW_ERROR(Format("Unknown stereo algorithm %s\n", alg.c_str()).c_str());
     }
   }
 
@@ -61,22 +91,47 @@ struct StereoAlgorithm::Impl
 
   inline void run(const cv::Mat& left, const cv::Mat& right, cv::Mat& dmap)
   {
-    _dmap_buffer.create(left.size(), CV_16SC1);
-
-    if(_state)
+    switch(_algorithm)
     {
-      const CvMat left_ = left;
-      const CvMat right_ = right;
-      CvMat dmap_ = _dmap_buffer;
+      case Algorithm::BlockMatching:
+        {
+          assert( _state );
+          const CvMat left_ = left;
+          const CvMat right_ = right;
 
-      cvFindStereoCorrespondenceBM(&left_, &right_, &dmap_, _state);
-    } else
-    {
-      _sgbm->operator()(left, right, _dmap_buffer);
+          _dmap_buffer.create(left.size(), CV_16SC1);
+          CvMat dmap_ = _dmap_buffer;
+          cvFindStereoCorrespondenceBM(&left_, &right_, &dmap_, _state);
+
+          _dmap_buffer.convertTo(dmap, CV_32FC1, 1.0 / 16.0, 0.0 );
+        } break;
+
+      case Algorithm::SemiGlobalBlockMatching:
+        {
+          assert(_sgbm);
+
+          _dmap_buffer.create(left.size(), CV_16SC1);
+          _sgbm->operator()(left, right, _dmap_buffer);
+
+          _dmap_buffer.convertTo(dmap, CV_32FC1, 1.0 / 16.0, 0.0 );
+        } break;
+
+      case Algorithm::RapidSemiGlobalMatching:
+        {
+          assert(_rsgm);
+
+          dmap.create(left.size(), CV_32FC1);
+          _rsgm->compute(left, right, dmap);
+        } break;
+
+      case Algorithm::SemiGlobalMatching:
+        {
+          assert(_sgm_stereo);
+
+          dmap.create(left.size(), CV_32FC1);
+          _sgm_stereo->compute(left, right, dmap);
+        } break;
     }
-
-    // convert to float
-    _dmap_buffer.convertTo(dmap, CV_32FC1, 1.0 / 16.0, 0.0 );
   }
 
 
@@ -93,6 +148,8 @@ struct StereoAlgorithm::Impl
   Algorithm _algorithm;
   CvStereoBMState* _state;
   UniquePointer<cv::StereoSGBM> _sgbm;
+  UniquePointer<SgmStereo> _sgm_stereo;
+  UniquePointer<RSGM> _rsgm;
   cv::Mat _dmap_buffer;
 }; // impl
 

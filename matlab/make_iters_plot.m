@@ -1,8 +1,8 @@
 output_prefix = 'tsukuba_bitplanes';
-num_iters = load(sprintf('../build/%s_iters.txt', output_prefix));
-time_ms = load(sprintf('../build/%s_time_ms.txt', output_prefix));
-C_est = load(sprintf('../build/%s_path.txt', output_prefix))';
-kf_inds = load(sprintf('../build/%s_kf_inds.txt', output_prefix));
+num_iters     = load(sprintf('../build/%s_iters.txt', output_prefix));
+time_ms       = load(sprintf('../build/%s_time_ms.txt', output_prefix));
+C_est         = load(sprintf('../build/%s_path.txt', output_prefix))';
+kf_inds       = load(sprintf('../build/%s_kf_inds.txt', output_prefix));
 
 C_gt = data.tsukuba.ground_truth;
 

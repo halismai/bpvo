@@ -24,10 +24,11 @@ UniquePointer<Dataset> GetKittiSequence(int s, int scale_by = 1)
   fprintf(fp, "SequenceNumber = %d\n", s);
   fprintf(fp, "ScaleBy = %d\n", scale_by);
 
-  fprintf(fp, "StereoAlgorithm = BlockMatching\n");
+  //fprintf(fp, "StereoAlgorithm = BlockMatching\n");
+  fprintf(fp, "StereoAlgorithm = SemiGlobalMatching\n");
   fprintf(fp, "SADWindowSize = 9\n");
   fprintf(fp, "minDisparity = 0\n");
-  fprintf(fp, "numberOfDisparities = 80\n");
+  fprintf(fp, "numberOfDisparities = 96\n");
   fprintf(fp, "textureThreshold = 5\n");
   fprintf(fp, "uniquenessRatio = 15\n");
   fprintf(fp, "trySmallerWindows = 1\n");
@@ -111,8 +112,6 @@ int main(int argc, char** argv)
         Format("%s/%02d_time.txt", output_dir.c_str(), i), vo_app.getIterationTime());
     WriteVector(
         Format("%s/%02d_iters.txt", output_dir.c_str(), i), vo_app.getNumIterations());
-
-    break;
   }
 
   return 0;

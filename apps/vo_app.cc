@@ -80,7 +80,7 @@ class Viewer
       case VoApp::ViewerOptions::ImageDisplayMode::ShowLeftAndDisparityOverlay:
         {
           overlayDisparity(frame->image(), frame->disparity(), _display_image,
-                           0.5f, _min_disparity, _max_dispartiy);
+                           0.5, _min_disparity, _max_dispartiy);
           cv::imshow("image", _display_image);
         } break;
       case VoApp::ViewerOptions::ImageDisplayMode::ShowLeftOnly:
@@ -110,8 +110,8 @@ class Viewer
  private:
   VoApp::ViewerOptions _options;
   cv::Mat _display_image;
-  float _min_disparity = 0.0f;
-  float _max_dispartiy = 64.f;
+  float _min_disparity = 1.0f;
+  float _max_dispartiy = 128.f;
 
   inline bool handleKey()
   {

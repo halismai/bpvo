@@ -164,9 +164,10 @@ void SgmStereo::compute(const cv::Mat& left, const cv::Mat& right, cv::Mat& D)
     throw std::runtime_error("left and right image sizes mismatch");
   if(left.type() != right.type())
     throw std::runtime_error("left and right image sizes mismatch");
-
   if(left.type() != CV_8UC1)
     throw std::runtime_error("image must CV_8UC1");
+  if(left.empty())
+    throw std::runtime_error("image is empty\n");
 
   _impl->compute(_config, left, right, D);
 }
@@ -265,6 +266,7 @@ void SGMStereo::compute(const cv::Mat& leftImage, const cv::Mat& rightImage,
 
   rightDisparityImage_.resize( width_ * height_ );
 	performSGM(rightCostImage_.data(), rightDisparityImage_.data());
+
 	enforceLeftRightConsistency(leftDisparityImage_.data(), rightDisparityImage_.data());
 
 	for (int y = 0; y < height_; ++y) {
@@ -316,7 +318,7 @@ void SGMStereo::computeCostImage(const cv::Mat& leftImage, const cv::Mat& rightI
   const unsigned char* leftGrayscaleImage = leftImage.ptr<unsigned char>();
   const unsigned char* rightGrayscaleImage = rightImage.ptr<unsigned char>();
 
-	//memset(leftCostImage_.data(), 0, width_*height_*disparityTotal_*sizeof(unsigned short));
+	memset(leftCostImage_.data(), 0, width_*height_*disparityTotal_*sizeof(unsigned short));
 	computeLeftCostImage(leftGrayscaleImage, rightGrayscaleImage);
 
 	computeRightCostImage();

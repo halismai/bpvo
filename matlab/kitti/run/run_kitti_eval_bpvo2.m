@@ -1,17 +1,27 @@
-e_bpvo = load_bpvo_results('/home/halismai/code/bpvo/build/kitti_eval');
-e_viso = kitti.load_other('other/viso2');
+%[T, timing] = load_bpvo_result_mat('kitti_intensity_bpvo.mat');
+load('kitti_intensity_bpvo.mat', 'T', 'timing', 'iters');
 
-for i = 0 : 10
-  files{i+1} = sprintf('/home/halismai/code/bpvo/results/intensity/%02d.txt', i);
-end
-T = load_kitti_pose_from_txt(files);
+T_intensity = T;
+timing_intensity = timing;
+iters_inensity = iters;
 
-err = kitti_eval(T);
+e_intensity = kitti_eval(T_intensity);
 
-kitti.plot_errors(e_bpvo, 'Raw Intensity', ...
+load('kitti_bitplanes_bpvo.mat', 'T', 'timing', 'iters');
+T_bitplanes = T;
+timing_bitplanes = timing;
+iters_bitplanes = iters;
+
+e_bitplanes = kitti_eval(T_bitplanes);
+
+kitti.plot_errors(e_intensity, 'Raw Intensity', ...
   'LineWidth', 1.0, 'Color', 'k', 'LineStyle', '-', 'Marker', '+');
 
+kitti.plot_errors(e_bitplanes, 'Bit-Planes', ...
+  'LineWidth', 1.0, 'Color', [0.3 0.3 0.3], 'LineStyle', '--', 'Marker', 'o');
+
+e_viso = kitti.load_other('other/viso2');
 kitti.plot_errors(e_viso, 'Viso2', ...
   'LineWidth', 1, 'Color', [0.7 0.7 0.7], 'LineStyle', '-.', 'Marker', 's');
 
-
+legend('Raw Intensity', 'Bit-Planes', 'Viso2', 'location', 'northeast')

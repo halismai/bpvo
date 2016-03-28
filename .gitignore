@@ -50,4 +50,6 @@ install_manifest.txt
 build/
 results/
 
+
+*.mat
 *.mexa*
