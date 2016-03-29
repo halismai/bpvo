@@ -36,6 +36,7 @@ option(WITH_SIMD      "Use SIMD instructions"  ON)
 option(WITH_TBB       "with Intel TBB"         OFF)
 option(WITH_OPENMP    "use OpenMP"             OFF)
 option(WITH_BOOST     "Use boost program_options & circular_buffer"  ON)
+option(WITH_GPL_CODE  "Use external code with GPL licenses or similar"  OFF)
 
 option(ENABLE_PROFILING "enable profiling" OFF)
 option(ENABLE_FAST_MATH "enable fast math" OFF)
@@ -137,6 +138,10 @@ if(TBB_FOUND)
   if(WITH_TBB)
     add_definitions(-DWITH_TBB)
   endif()
+endif()
+
+if(WITH_GPL_CODE)
+  add_definitions(-DWITH_GPL_CODE)
 endif()
 
 if(WITH_PROFILER)

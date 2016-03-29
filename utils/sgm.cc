@@ -32,6 +32,8 @@
 
 #include "sgm.h"
 #include "bpvo/types.h"
+#include "bpvo/utils.h"
+
 #include <opencv2/core/core.hpp>
 
 #include <limits>
@@ -51,6 +53,21 @@ SgmStereo::Config::Config()
   , disparityFactor(256.0)
   , censusWeightFactor(1.0 / 6.0) {}
 
+#if !defined(WITH_GPL_CODE)
+
+struct SgmStereo::Impl {};
+
+SgmStereo::SgmStereo(Config config)
+  : _config(config), _impl(new Impl) {}
+
+SgmStereo::~SgmStereo() { delete _impl; }
+
+void SgmStereo::compute(const cv::Mat&, const cv::Mat&, cv::Mat&)
+{
+  THROW_ERROR("compile WITH_GPL_CODE\n");
+}
+
+#else
 class SGMStereo {
 public:
 	SGMStereo();
@@ -992,3 +1009,5 @@ void SGMStereo::enforceLeftRightConsistency(unsigned short* leftDisparityImage, 
 		}
 	}
 }
+
+#endif // WITH_GPL_CODE

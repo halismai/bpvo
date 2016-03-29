@@ -18,6 +18,19 @@ Please use the software provided in this package at your own risk. The executabl
 
 #include "utils/rsgm.h"
 #include "bpvo/utils.h"
+
+#if !defined(WITH_GPL_CODE)
+struct RSGM::Impl {};
+
+RSGM::RSGM(Config conf) : _config(conf), _impl(bpvo::make_unique<Impl>()) {}
+RSGM::~RSGM() {}
+
+void RSGM::compute(const cv::Mat&, const cv::Mat&, cv::Mat&)
+{
+  THROW_ERROR("compile WITH_GPL_CODE\n");
+}
+
+#else
 #include "bpvo/debug.h"
 
 #include <opencv2/core/core.hpp>
@@ -3310,4 +3323,5 @@ void RSGM::compute(const cv::Mat& left, const cv::Mat& right, cv::Mat& disparity
     }
   }
 }
+#endif // WITH_GPL_CODE
 
