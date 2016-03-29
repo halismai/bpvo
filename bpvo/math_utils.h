@@ -148,7 +148,7 @@ TwistToMatrix(const Eigen::MatrixBase<Derived>& p)
   Matrix<T, 4, 4> ret(Matrix<T, 4, 4>::Identity());
 
   const T theta = (p.template head<3>()).norm();
-  if(theta > 1e-10) {
+  if(theta > 1e-8) {
     T a = ::sin(theta);
     T b = 1.0 - ::cos(theta);
     T t_i = 1.0 / theta;

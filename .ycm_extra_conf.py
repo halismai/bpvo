@@ -45,6 +45,7 @@ flags = [
     '-I/usr/local/include',
     '-I/usr/local/include/eigen3',
     '-I/usr/local/include/opencv',
+    '-I/home/halismai/code/mexmat',
     '-W',
     '-Wabi',
     '-Wall',

@@ -24,7 +24,7 @@
 
 #include <bpvo/types.h>
 
-#define DO_APPROX_MEDIAN 1
+#define DO_APPROX_MEDIAN 0
 
 #if DO_APPROX_MEDIAN
 #include <bpvo/histogram.h>

@@ -270,7 +270,7 @@ static inline void getValidResiduals(const std::vector<uint8_t>& valid,
 #define USE_ALL_DATA 0
   // residuals size is 8 times the size of valid
   // valid is stored per channel, so we loop 8 times!
-  valid_residuals.clear();
+  valid_residuals.resize(0);
 
 #if USE_ALL_DATA
   valid_residuals.reserve(residuals.size());

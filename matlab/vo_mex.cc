@@ -1,3 +1,24 @@
+/*
+   This file is part of bpvo.
+
+   bpvo is free software: you can redistribute it and/or modify
+   it under the terms of the Lesser GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   bpvo is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   Lesser GNU General Public License for more details.
+
+   You should have received a copy of the Lesser GNU General Public License
+   along with bpvo.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * Contributor: halismai@cs.cmu.edu
+ */
+
 #include <mexmat.h>
 
 #if !defined(MEXMAT_WITH_OPENCV) || !defined(MEXMAT_WITH_EIGEN)
@@ -66,29 +87,41 @@ static inline bpvo::AlgorithmParameters ToAlgorithmParameters(const mex::Struct&
 {
   bpvo::AlgorithmParameters ret;
 
-  ret.numPyramidLevels = GetOption<int>(params, "numPyramidLevels", -1);
+  ret.numPyramidLevels            = GetOption<int>(params, "numPyramidLevels", -1);
+  ret.minImageDimensionForPyramid = GetOption<int>(params, "minImageDimensionForPyramid", 40);
+
   ret.sigmaPriorToCensusTransform = GetOption<float>(params, "sigmaPriorToCensusTransform", 0.5f);
-  ret.sigmaBitPlanes = GetOption<float>(params, "sigmaBitPlanes", 1.0f);
+  ret.sigmaBitPlanes              = GetOption<float>(params, "sigmaBitPlanes", 1.0f);
 
-  ret.maxIterations = GetOption<int>(params, "maxIterations", 100);
-  ret.parameterTolerance = GetOption<float>(params, "parameterTolerance", 1e-6);
-  ret.functionTolerance = GetOption<float>(params, "functionTolerance", 1e-5);
-  ret.gradientTolerance = GetOption<float>(params, "gradientTolerance", 1e-7);
+  ret.maxIterations       = GetOption<int>(params, "maxIterations", 100);
+  ret.parameterTolerance  = GetOption<float>(params, "parameterTolerance", 1e-6);
+  ret.functionTolerance   = GetOption<float>(params, "functionTolerance", 1e-5);
+  ret.gradientTolerance   = GetOption<float>(params, "gradientTolerance", 1e-7);
 
-  ret.relaxTolerancesForCoarseLevels = GetOption<int>(params,"relaxTolerancesForCoarseLevels",1);
-  ret.lossFunction = StringToLossFunctionType(
-      GetOption<std::string>(params,"LossFunction", "Huber"));
+  ret.relaxTolerancesForCoarseLevels = GetOption<int>(params,"relaxTolerancesForCoarseLevels", 1);
+
+  ret.lossFunction = StringToLossFunctionType(GetOption<std::string>(params,"LossFunction", "Huber"));
+
   ret.verbosity = StringToVerbosityType(GetOption<std::string>(params,"verbosity", "Silent"));
 
-  ret.minTranslationMagToKeyFrame = GetOption<float>(params, "minTranslationMagToKeyFrame", 0.1);
-  ret.minRotationMagToKeyFrame = GetOption<float>(params, "minRotationMagToKeyFrame", 2.5);
-  ret.maxFractionOfGoodPointsToKeyFrame = GetOption<float>(params, "maxFractionOfGoodPointsToKeyFrame", 0.5);
-  ret.goodPointThreshold = GetOption<float>(params, "goodPointThreshold", 0.75);
+  ret.minTranslationMagToKeyFrame = GetOption<float>(params, "minTranslationMagToKeyFrame", 0.1f);
+  ret.minRotationMagToKeyFrame    = GetOption<float>(params, "minRotationMagToKeyFrame", 2.5f);
+  ret.maxFractionOfGoodPointsToKeyFrame = GetOption<float>(params, "maxFractionOfGoodPointsToKeyFrame", 0.5f);
+  ret.goodPointThreshold                = GetOption<float>(params, "goodPointThreshold", 0.9f);
+
+  ret.minNumPixelsForNonMaximaSuppression = GetOption<int>(params, "minNumPixelsForNonMaximaSuppression", 320*240);
 
   ret.maxTestLevel = GetOption<int>(params, "maxTestLevel", 0);
 
   ret.descriptor = StringToDescriptorType(
       GetOption<std::string>(params, "descriptor", "intensity"));
+
+  ret.minSaliency = GetOption<float>(params, "minSaliency", 0.01);
+
+  ret.minValidDisparity = GetOption<float>(params, "minValidDisparity", 0.001f);
+  ret.maxValidDisparity = GetOption<float>(params, "maxValidDisparity", 1024.0f);
+
+  ret.withNormalization = GetOption<int>(params, "withNormalization", 1);
 
   return ret;
 }
