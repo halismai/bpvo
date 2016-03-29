@@ -1,0 +1,233 @@
+% This file was created by matlab2tikz.
+%
+%The latest updates can be retrieved from
+%  http://www.mathworks.com/matlabcentral/fileexchange/22022-matlab2tikz-matlab2tikz
+%where you can also make suggestions and rate matlab2tikz.
+%
+\begin{tikzpicture}
+
+\begin{axis}[%
+width=0.412\fwidth,
+height=0.417\fheight,
+at={(0\fwidth,0.583\fheight)},
+scale only axis,
+xmin=100,
+xmax=800,
+xlabel={Path Length [m]},
+xmajorgrids,
+ymin=1.4245,
+ymax=5.2866,
+ylabel={Translation [\%]},
+ymajorgrids,
+axis background/.style={fill=white}
+]
+\addplot [color=black,solid,line width=1.0pt,mark=+,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+100	2.1686\\
+200	2.4059\\
+300	2.6252\\
+400	2.7927\\
+500	2.9074\\
+600	2.966\\
+700	2.9501\\
+800	3.0137\\
+};
+\addplot [color=white!30!black,dashed,line width=1.0pt,mark=o,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+100	2.5984\\
+200	3.0791\\
+300	3.5648\\
+400	4.01\\
+500	4.4326\\
+600	4.7414\\
+700	4.9874\\
+800	5.2866\\
+};
+\addplot [color=white!70!black,solid,line width=1.0pt,mark=square,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+100	1.4245\\
+200	1.7086\\
+300	2.1131\\
+400	2.4794\\
+500	2.8073\\
+600	3.0865\\
+700	3.2694\\
+800	3.4543\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=0.412\fwidth,
+height=0.417\fheight,
+at={(0.542\fwidth,0.583\fheight)},
+scale only axis,
+xmin=100,
+xmax=800,
+xlabel={Path Length [m]},
+xmajorgrids,
+ymin=0.00412529612494193,
+ymax=0.0138082828626528,
+ylabel={Rotation Error [deg/m]},
+ymajorgrids,
+axis background/.style={fill=white}
+]
+\addplot [color=black,solid,line width=1.0pt,mark=+,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+100	0.00509932437666433\\
+200	0.00521391593569049\\
+300	0.00509932437666433\\
+400	0.00475554969958583\\
+500	0.00446907080202042\\
+600	0.00429718346348117\\
+700	0.00412529612494193\\
+800	0.00418259190445501\\
+};
+\addplot [color=white!30!black,dashed,line width=1.0pt,mark=o,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+100	0.00922462050160625\\
+200	0.0101413529738156\\
+300	0.0106570149894333\\
+400	0.0107716065484595\\
+500	0.0107716065484595\\
+600	0.0106570149894333\\
+700	0.0103705360918679\\
+800	0.0103705360918679\\
+};
+\addplot [color=white!70!black,solid,line width=1.0pt,mark=square,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+100	0.0138082828626528\\
+200	0.012547775713365\\
+300	0.011860226359208\\
+400	0.0111726770050511\\
+500	0.0105997192099202\\
+600	0.0101986487533287\\
+700	0.00991216985576324\\
+800	0.009740282517224\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=0.412\fwidth,
+height=0.417\fheight,
+at={(0\fwidth,0\fheight)},
+scale only axis,
+xmin=14.4,
+xmax=86.4,
+xlabel={Speed [km/h]},
+xmajorgrids,
+ymin=1.4806,
+ymax=33.3811,
+ylabel={Translation Error [\%]},
+ymajorgrids,
+axis background/.style={fill=white}
+]
+\addplot [color=black,solid,line width=1.0pt,mark=+,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+14.4	3.4907\\
+21.6	2.2341\\
+28.8	1.9044\\
+36	1.8664\\
+43.2	2.1872\\
+50.4	2.3598\\
+57.6	2.3967\\
+64.8	8.8362\\
+72	12.8054\\
+79.2	13.6943\\
+86.4	18.0474\\
+};
+\addplot [color=white!30!black,dashed,line width=1.0pt,mark=o,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+14.4	3.3174\\
+21.6	2.6947\\
+28.8	2.4045\\
+36	2.3943\\
+43.2	2.5942\\
+50.4	2.1298\\
+57.6	2.7886\\
+64.8	11.8856\\
+72	19.3349\\
+79.2	22.8833\\
+86.4	33.3811\\
+};
+\addplot [color=white!70!black,solid,line width=1.0pt,mark=square,mark options={solid},forget plot]
+  table[row sep=crcr]{%
+14.4	1.4806\\
+21.6	2.6249\\
+28.8	2.4264\\
+36	2.2185\\
+43.2	1.9242\\
+50.4	1.7607\\
+57.6	1.7809\\
+64.8	2.6994\\
+72	2.773\\
+79.2	2.7473\\
+86.4	2.4187\\
+};
+\end{axis}
+
+\begin{axis}[%
+width=0.412\fwidth,
+height=0.417\fheight,
+at={(0.542\fwidth,0\fheight)},
+scale only axis,
+xmin=14.4,
+xmax=86.4,
+xlabel={Speed [km/h]},
+xmajorgrids,
+ymin=0.00326585943224569,
+ymax=0.0678954987230026,
+ylabel={Rotation Error [deg/m]},
+ymajorgrids,
+axis background/.style={fill=white},
+legend style={legend cell align=left,align=left,draw=white!15!black}
+]
+\addplot [color=black,solid,line width=1.0pt,mark=+,mark options={solid}]
+  table[row sep=crcr]{%
+14.4	0.0154698604685322\\
+21.6	0.00635983152595214\\
+28.8	0.00469825392007275\\
+36	0.00366692988883727\\
+43.2	0.00360963410932419\\
+50.4	0.00441177502250734\\
+57.6	0.00326585943224569\\
+64.8	0.00624523996692597\\
+72	0.00635983152595214\\
+79.2	0.00538580327422974\\
+86.4	0.00762033867523995\\
+};
+\addlegendentry{Raw Intensity};
+
+\addplot [color=white!30!black,dashed,line width=1.0pt,mark=o,mark options={solid}]
+  table[row sep=crcr]{%
+14.4	0.0203400017271442\\
+21.6	0.0101413529738156\\
+28.8	0.00784952179329228\\
+36	0.00618794418741289\\
+43.2	0.00572957795130823\\
+50.4	0.00504202859715124\\
+57.6	0.00968298673771091\\
+64.8	0.0373568482425297\\
+72	0.0482430463500153\\
+79.2	0.0521391593569049\\
+86.4	0.0678954987230026\\
+};
+\addlegendentry{Bit-Planes};
+
+\addplot [color=white!70!black,solid,line width=1.0pt,mark=square,mark options={solid}]
+  table[row sep=crcr]{%
+14.4	0.0139801702011921\\
+21.6	0.011860226359208\\
+28.8	0.0105997192099202\\
+36	0.0100840571943025\\
+43.2	0.0115164516821295\\
+50.4	0.0103705360918679\\
+57.6	0.0087662542655016\\
+64.8	0.00928191628111934\\
+72	0.0140947617602183\\
+79.2	0.0143239448782706\\
+86.4	0.0116310432411557\\
+};
+\addlegendentry{Viso2};
+
+\end{axis}
+\end{tikzpicture}%
