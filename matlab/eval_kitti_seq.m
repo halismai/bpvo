@@ -40,6 +40,7 @@ function [T, timing, iters] = eval_kitti_seq(data_loader, vo, T_gt, do_show)
     timing(i) = toc(t_s) * 1000;
     iters(i) = result.optimizerStatistics(1).numIterations;
 
+    result
     result.optimizerStatistics(1)
 
     cprintf.green('frame %d/%d %0.2f ms\n', i, nf, timing(i));
@@ -50,7 +51,9 @@ function [T, timing, iters] = eval_kitti_seq(data_loader, vo, T_gt, do_show)
     if i == 1
       T(:,:,i) = inv(T_i);
     else
-      T(:,:,i) = T(:,:,i-1) * inv(T_i);
+      R_i = T_i(1:3,1:3).';
+      T_inv = [R_i -R_i*T_i(1:3,end); 0 0 0 1];
+      T(:,:,i) = T(:,:,i-1) * T_inv;
     end
 
 

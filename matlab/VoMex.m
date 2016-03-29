@@ -18,6 +18,7 @@ classdef VoMex < handle
       assert(isa(I, 'uint8'));
       assert(isa(D, 'single'));
       result = vo_mex('add_frame', this.hdle_, I, D);
+      result.pose = double(result.pose);
     end
   end
 

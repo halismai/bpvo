@@ -49,7 +49,7 @@ AlgorithmParameters::AlgorithmParameters()
     , nonMaxSuppRadius(1)
     , minNumPixelsToWork(256)
     , minSaliency(0.1)
-    , minValidDisparity(1.0)
+    , minValidDisparity(0.001)
     , maxValidDisparity(512.0f)
     , maxTestLevel(0)
     , withNormalization(true) {}

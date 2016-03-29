@@ -12,6 +12,14 @@ T_bitplanes = T;
 timing_bitplanes = timing;
 iters_bitplanes = iters;
 
+load('kitti_intensity2_bpvo.mat', 'T', 'timing', 'iters');
+T_intensity2 = T;
+e_intensity2 = kitti_eval(T_intensity2);
+
+kitti.plot_errors(e_intensity2, 'Raw Intensity', ...
+  'LineWidth', 1.0, 'Color', 'r', 'LineStyle', '-', 'Marker', '+');
+
+
 e_bitplanes = kitti_eval(T_bitplanes);
 
 kitti.plot_errors(e_intensity, 'Raw Intensity', ...
@@ -24,4 +32,4 @@ e_viso = kitti.load_other('other/viso2');
 kitti.plot_errors(e_viso, 'Viso2', ...
   'LineWidth', 1, 'Color', [0.7 0.7 0.7], 'LineStyle', '-.', 'Marker', 's');
 
-legend('Raw Intensity', 'Bit-Planes', 'Viso2', 'location', 'northeast')
+legend('Raw Intensity2', 'Raw Intensity', 'Bit-Planes', 'Viso2', 'location', 'northeast')

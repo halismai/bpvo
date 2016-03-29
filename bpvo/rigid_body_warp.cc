@@ -46,7 +46,7 @@ auto RigidBodyWarp::warpPoints(const PointVector& points) const -> ImagePointVec
 
 FORCE_INLINE __m128 div_ps(__m128 a, __m128 b)
 {
-#define USE_RCP 0
+#define USE_RCP 1
 
 #if USE_RCP
   return _mm_mul_ps(a, _mm_rcp_ps(b));
