@@ -53,3 +53,4 @@ results/
 
 *.mat
 *.mexa*
+*.ply
