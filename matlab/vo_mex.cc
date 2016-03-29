@@ -29,6 +29,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, mxArray const* prhs[])
 #else
 
 #include <bpvo/vo.h>
+#include <bpvo/point_cloud.h>
 #include <bpvo/utils.h>
 
 #include <memory>
@@ -83,6 +84,35 @@ static inline bpvo::DescriptorType StringToDescriptorType(std::string s)
     mexError("unkonwn DescriptorType %s\n", s.c_str());
 }
 
+static inline
+mex::Struct PointCloudToMatalb(const bpvo::UniquePointer<bpvo::PointCloud>& point_cloud)
+{
+  // X 3D points
+  // C RGB color
+  // w point weight
+  // T the pose
+  mex::Struct ret(std::vector<std::string>{"X", "C", "w", "T"});
+  if(point_cloud) {
+    const auto n = point_cloud->size();
+    mex::Mat<float> X(3, n);
+    mex::Mat<uint8_t> C(3, n);
+    mex::Mat<float> w(1, n);
+    for(size_t i = 0; i < point_cloud->size(); ++i) {
+      const auto& p = point_cloud->operator[](i);
+      memcpy(X.col(i), p.xyzw().data(), 3*sizeof(float));
+      memcpy(C.col(i), p.rgba().data(), 3*sizeof(uint8_t));
+      w[i] = p.weight();
+    }
+
+    ret.set("X", X);
+    ret.set("C", C);
+    ret.set("w", w);
+    ret.set("T", mex::Mat<float>(point_cloud->pose()));
+  }
+
+  return ret;
+}
+
 static inline bpvo::AlgorithmParameters ToAlgorithmParameters(const mex::Struct& params)
 {
   bpvo::AlgorithmParameters ret;
@@ -109,6 +139,7 @@ static inline bpvo::AlgorithmParameters ToAlgorithmParameters(const mex::Struct&
   ret.maxFractionOfGoodPointsToKeyFrame = GetOption<float>(params, "maxFractionOfGoodPointsToKeyFrame", 0.5f);
   ret.goodPointThreshold                = GetOption<float>(params, "goodPointThreshold", 0.9f);
 
+  ret.nonMaxSuppRadius = GetOption<int>(params, "nonMaxSuppRadius", 1);
   ret.minNumPixelsForNonMaximaSuppression = GetOption<int>(params, "minNumPixelsForNonMaximaSuppression", 320*240);
 
   ret.maxTestLevel = GetOption<int>(params, "maxTestLevel", 0);
@@ -129,7 +160,7 @@ static inline bpvo::AlgorithmParameters ToAlgorithmParameters(const mex::Struct&
 static inline mex::Struct ResultToMex(const bpvo::Result result)
 {
   const std::vector<std::string> fields{
-    "pose", "covariance", "isKeyFrame", "optimizerStatistics", "keyFramingReason"};
+    "pose", "covariance", "isKeyFrame", "optimizerStatistics", "keyFramingReason", "pointCloud"};
   mex::Struct ret(fields);
 
   ret.set("pose", mex::Mat<float>(result.pose));
@@ -149,6 +180,7 @@ static inline mex::Struct ResultToMex(const bpvo::Result result)
   }
 
   ret.set("optimizerStatistics", stats.release());
+  ret.set("pointCloud", PointCloudToMatalb(result.pointCloud).release());
 
   return ret;
 }
