@@ -21,8 +21,8 @@
 /** DO NOT EDIT auto generated header */
 #define BPVO_VERSION_MAJOR "0"
 #define BPVO_VERSION_MINOR "9"
-#define BPVO_VERSION_PATCH "9-v0.9.9-41-g3e277c3-Tune"
-#define BPVO_BUILD_DATE    "Wed Apr  6 23:42:39 EDT 2016"
+#define BPVO_VERSION_PATCH "9-v0.9.9-42-g479980c-Tune"
+#define BPVO_BUILD_DATE    "Wed Apr  6 23:43:09 EDT 2016"
 #define BPVO_BUILD_STR \
     "BPVO version: " BPVO_VERSION_MAJOR "." BPVO_VERSION_MINOR "." BPVO_VERSION_PATCH \
     "\nBuilt on: " BPVO_BUILD_DATE
