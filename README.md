@@ -108,6 +108,20 @@ The parameters for the algorithm are documented in `bpvo/types.h`. It is importa
 
 * `minSaliency` minimum saliency to use a pixel. If you want to use all pixels irrespective of their saliency, set this to a negative value.
 
+
+### For Intensity descriptor
+If you want to use intensity only, disable parallisim. Compile the code with
+```
+cmake .. -DWITH_TBB=OFF -DWITH_SIMD=OFF
+```
+
+Or in your code
+```
+bpvo::setNumThreads(1);
+```
+
+The overhead of threads with intensity is not worth it for medium resolution images.
+
 ### Keyframing
 
 * `minTranslationMagToKeyFrame`
