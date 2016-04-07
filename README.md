@@ -30,7 +30,11 @@ See `CMakeLists.txt` for additional flags and configurations. You may also confi
 
 
 ## Building the Matlab interface
-Get [mexmat](https://github.com/halismai/mexmat) and install it on your system. It is a header-only library, so no compilation is needed. Then, until the matlab interface is integrated into the build system,
+Get [mexmat](https://github.com/halismai/mexmat) and install it on your system.
+```
+git clone https://github.com/halismai/mexmat.git
+```
+It is a header-only library, so no compilation is needed. Then, until the matlab interface is integrated into the build system,
 ```
 cd matlab && make
 ```
