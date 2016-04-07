@@ -2,6 +2,10 @@
 
 A library for (semi-dense) real-time visual odometry using direct alignment of feature descriptors. There are descriptors implemented. First, is raw intensity (no descriptor), which runs in  _real-time_  or faster. Second, is an implementation of the Bit-Planes descriptor designed for robust performance under challenging illumination conditions as described [here][bp] and [here][bpvo].
 
+If you run into any issues, or have questions contact
+```
+halismai @ cs . cmu . edu
+```
 
 ## Building
 
@@ -159,6 +163,8 @@ or
   year={2016}
 }
 ```
+
+Keep an eye on [http://www.cs.cmu.edu/~halismai/] for additional data
 
 [bp]: http://arxiv.org/abs/1602.00307
 [bpvo]: http://arxiv.org/abs/1604.00990
