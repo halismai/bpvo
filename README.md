@@ -29,6 +29,20 @@ mkdir build && cmake .. && make -j2
 See `CMakeLists.txt` for additional flags and configurations. You may also configure the library using `cmake-gui`
 
 
+## Building the Matlab interface
+Get [mexmat](https://github.com/halismai/mexmat) and install it on your system. It is a header-only library, so no compilation is needed. Then, until the matlab interface is integrated into the build system,
+```
+cd matlab && make
+```
+
+You might need to modify `matlab/Makefile` to point to the right location of Matlab and the c++ compiler. As of the date of writing (04/2016) Matlab R2015a supports up to g++-4.7. The code will require `g++4.8+`
+
+If you get issues with Matlab GLIB_xxx not found, start matlab as
+```
+LD_PRELOAD=`g++-4.8+ -print-file-name=libstdc++.so` matlab
+```
+
+
 ## Examples
 A complete example is provided in `apps/vo.cc`
 
