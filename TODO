@@ -1,0 +1,2 @@
+- implement LM in bpvo/pose_estimator_lm.h
+- clean up the DataLoader code in utils/
