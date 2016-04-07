@@ -13,7 +13,7 @@
 # You should have received a copy of the Lesser GNU General Public License
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
 project(bpvo C CXX)
 
