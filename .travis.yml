@@ -1,20 +1,53 @@
+# Use new trusty images, should yield newer compilers and packages
+sudo: required
+# from http://genbattle.bitbucket.org/blog/2016/01/17/c++-travis-ci/
+dist: precise
 language: cpp
-compiler: g++
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env: COMPILER=g++-4.9
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env: COMPILER=g++-5
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+      env: COMPILER=clang++-3.6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+      env: COMPILER=clang++-3.7
 
 before_install:
-- sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-- sudo apt-get install software-properties-common
-- sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
-- sudo apt-get update -qq
-- sudo apt-get upgrade
-
-install:
-- sudo apt-get install -qq g++-4.9
-- sudo apt-get install -qq libopencv-dev
-- sudo apt-get install -qq libeigen3-dev
-- sudo apt-get install -qq libtbb-dev
-- sudo apt-get install -qq cmake
-- export CXX="g++-4.9"
-
-script: "bash -c ./.travis_build.sh"
-
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libopencv-dev
+  - sudo apt-get install -y libtbb-dev
+  - sudo apt-get install -y libeigen3-dev
+script:
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_CXX_COMPILER=$COMPILER .. && make
+  
