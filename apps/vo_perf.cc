@@ -26,7 +26,7 @@
 #include "bpvo/config.h"
 #include "bpvo/trajectory.h"
 #include "bpvo/utils.h"
-#include "bpvo/vo_kf.h"
+#include "bpvo/vo.h"
 #include "bpvo/timer.h"
 
 #include <opencv2/highgui/highgui.hpp>
@@ -34,35 +34,6 @@
 #include <fstream>
 
 using namespace bpvo;
-
-class Vo
-{
- public:
-  inline Vo(const Matrix33& K, float b, ImageSize imsize, AlgorithmParameters p)
-      : _impl(make_unique<VisualOdometryWithKeyFraming>(K, b, imsize, p)) {}
-
-  template <class DatasetPtr> inline
-  Vo(const DatasetPtr* p, AlgorithmParameters params)
-    : _impl(make_unique<VisualOdometryWithKeyFraming>(
-            p->calibration().K,
-            p->calibration().baseline,
-            p->imageSize(),
-            params)) {}
-
-  inline Result addFrame(const uint8_t* I, const float* D)
-  {
-    return _impl->addFrame(I, D);
-  }
-
-  inline Result addFrame(const DatasetFrame* frame)
-  {
-    return addFrame(frame->image().ptr<const uint8_t>(),
-                    frame->disparity().ptr<const float>());
-  }
-
- protected:
-  UniquePointer<VisualOdometryWithKeyFraming> _impl;
-}; // Vo
 
 int main(int argc, char** argv)
 {
@@ -82,8 +53,7 @@ int main(int argc, char** argv)
 
   AlgorithmParameters params(conf_fn);
   auto maxTestLevel = params.maxTestLevel;
-  auto vo = Vo(dataset.get(), params);
-
+  auto vo = VisualOdometry(dataset.get(), params);
 
   Trajectory trajectory;
   UniquePointer<DatasetFrame> frame;

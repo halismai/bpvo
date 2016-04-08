@@ -54,6 +54,10 @@ LD_PRELOAD=`g++-4.8+ -print-file-name=libstdc++.so` matlab
 ## Examples
 A complete example is provided in `apps/vo.cc`
 
+A simple example in `apps/vo_example.cc`
+
+For real-time timting looin in `apps/vo_perf.cc` On my machine a dual core i7 from 2011, `vo_perf.cc` runs at 100+ Hz
+
 A minimal example is as follows:
 ```cpp
 #include <bpvo/vo.h>
