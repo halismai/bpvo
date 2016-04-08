@@ -119,9 +119,7 @@ inline bool ToPlyFile(std::string filename, const PointCloud& pc, std::string co
   return ToPlyFile(filename, pc.points(), comment);
 }
 
-
-
-
 }; // bpvo
 
 #endif // BPVO_POINT_CLOUD_H
+
