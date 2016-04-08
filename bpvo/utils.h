@@ -220,6 +220,8 @@ struct Error : public std::logic_error
 
 #define THROW_ERROR_IF(cond, msg) if( !!(cond) ) THROW_ERROR( (msg) )
 
+#define DIE_IF(cond, msg) if( !!(cond) ) Fatal((msg))
+
 template <typename Iterator> static inline typename
 Iterator::value_type median(Iterator first, Iterator last)
 {

@@ -28,14 +28,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 set(CMAKE_INSTALL_PREFIX "/usr/local" CACHE PATH "Installation directory")
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Config" FORCE)
 
-option(BUILD_STATIC   "Build static libraries" OFF)
+option(BUILD_STATIC   "Build static libraries" ON)
 option(BUILD_MATLAB   "Build Matlab bindings"  OFF)
 option(WITH_PROFILER  "With Google Profiler"   OFF)
 option(WITH_TCMALLOC  "With Google TCMalloc"   OFF)
 option(WITH_SIMD      "Use SIMD instructions"  ON)
 option(WITH_TBB       "with Intel TBB"         OFF)
 option(WITH_OPENMP    "use OpenMP"             OFF)
-option(WITH_BOOST     "Use boost program_options & circular_buffer"  ON)
+# boost is needed for the utils library
+option(WITH_BOOST     "Use boost program_options & circular_buffer"     ON)
 option(WITH_GPL_CODE  "Use external code with GPL licenses or similar"  OFF)
 
 option(ENABLE_PROFILING "enable profiling" OFF)
