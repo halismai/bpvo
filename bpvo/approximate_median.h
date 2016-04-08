@@ -76,8 +76,6 @@ approximate_median(const Container& c,
 }
 
 
-
-
 }; // bpvo
 
 #endif // BPVO_APPROXIMATE_MEDIAN_H

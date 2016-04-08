@@ -17,7 +17,7 @@ namespace bpvo {
 #endif
 
 #define USE_FLOOR 1
-#define USE_RCP 0
+#define USE_RCP   0
 
 #if !USE_FLOOR || !defined(__SSE4_1__)
 struct SseRoundingMode
@@ -89,15 +89,6 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
 
   constexpr int S = 4;
   int n = N & ~(S-1), i = 0;
-#if 0 && defined(WITH_OPENMP)
-  bool use_parallel = n > 10*1000;
-#else
-  bool use_parallel = false;
-#endif
-
-#if 0 && defined(WITH_OPENMP)
-#pragma omp parallel for if(use_parallel)
-#endif
   for(i = 0; i < n; i += 4)
   {
     {
@@ -175,9 +166,6 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
     }
   }
 
-  if(use_parallel)
-    i = n;
-
   for( ; i < N; ++i)
   {
     Eigen::Vector4f xw = Eigen::Map<const Eigen::Matrix4f,Eigen::Aligned>(P) *
@@ -209,3 +197,4 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
 #undef USE_FLOOR
 
 }; // bpvo
+

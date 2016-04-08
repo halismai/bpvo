@@ -21,11 +21,6 @@
 
 #include <bpvo/types.h>
 
-namespace cv {
-class _InputArray;
-typedef const _InputArray& InputArray;
-}; // cv
-
 namespace bpvo {
 
 class PhotoError

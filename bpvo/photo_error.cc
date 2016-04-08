@@ -8,10 +8,14 @@
 
 namespace bpvo {
 
+//
+// doing the interpolation with opencv's optimization is really fast. But, the
+// reduction in accuracy due to the use of fixed floating point affects
+// performance severely. We recommend not enabling this options here
+//
 #define PHOTO_ERROR_WITH_OPENCV 0
 
 #if PHOTO_ERROR_WITH_OPENCV
-
 #include <opencv2/imgproc/imgproc.hpp>
 
 struct PhotoError::Impl
