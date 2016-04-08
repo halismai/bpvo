@@ -31,8 +31,10 @@
 static const char* LEFT_IMAGE_PREFIX =
 "/home/halismai/data/NewTsukubaStereoDataset/illumination/fluorescent/left/tsukuba_fluorescent_L_%05d.png";
 
+/*
 static const char* RIGHT_IMAGE_PREFIX =
 "/home/halismai/data/NewTsukubaStereoDataset/illumination/fluorescent/right/tsukuba_fluorescent_R_%05d.png";
+*/
 
 static const char* DMAP_PREFIX =
 "/home/halismai/data/NewTsukubaStereoDataset/groundtruth/disparity_maps/left/tsukuba_disparity_L_%05d.png";
