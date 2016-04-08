@@ -3,3 +3,4 @@
 - support for Mono?
 - simple viewer (using QGLViewer or pangolin)
 - DenseDescriptor interface could be improved
+- ARM?
