@@ -4,6 +4,7 @@
 
 echo "Environment: `uname -a`"
 echo "Compiler: `$CXX --version`"
+echo "CMake: `cmake --version`"
 
 cmake .
 make -j2
