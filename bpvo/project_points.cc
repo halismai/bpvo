@@ -211,7 +211,6 @@ void projectPoints(const Matrix34& P, const float* xyzw, int N, const ImageSize&
     C[4*i + 2] = yf - xfyf;
     C[4*i + 3] = xfyf;
   }
-
 }
 
 }; // bpvo
