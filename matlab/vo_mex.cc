@@ -24,7 +24,7 @@
 #if !defined(MEXMAT_WITH_OPENCV) || !defined(MEXMAT_WITH_EIGEN)
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, mxArray const* prhs[])
 {
-  mex::error("compile with opencv and eigen\n");
+  mexError("compile with opencv and eigen\n");
 }
 #else
 
@@ -72,6 +72,8 @@ static inline bpvo::VerbosityType StringToVerbosityType(std::string s)
     return bpvo::VerbosityType::kDebug;
   else
     mexError("unknown VerbosityType %s\n", s.c_str());
+
+  return bpvo::VerbosityType::kSilent;
 }
 
 static inline bpvo::DescriptorType StringToDescriptorType(std::string s)
@@ -82,6 +84,8 @@ static inline bpvo::DescriptorType StringToDescriptorType(std::string s)
     return bpvo::DescriptorType::kBitPlanes;
   else
     mexError("unkonwn DescriptorType %s\n", s.c_str());
+
+  return bpvo::DescriptorType::kIntensity;
 }
 
 static inline

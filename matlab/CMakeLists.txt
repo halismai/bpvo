@@ -1,15 +1,50 @@
 file(GLOB src "*_mex.cc")
-set(MEX_FLAGS "${CMAKE_CXX_FLAGS}")
 
-foreach(var ${MEX_FLAGS})
-  message(STATUS "flags: ${var}")
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+separate_arguments(MEX_FLAGS UNIX_COMMAND "${CMAKE_CXX_FLAGS}")
+
+foreach(d ${dirs})
+  list(APPEND MEX_FLAGS "-I${d}")
 endforeach()
 
-add_custom_command(
-  OUTPUT vo_mex.mexa64
-  COMMAND mex
-  ARGS -cxx -output vo_mex.mexa64 ${src} CXX_FLAGS=${MEX_FLAGS}
-  DEPENDS bpvo bpvo_utils
-  COMMENT "building mex")
 
-add_custom_target(vo_mex ALL DEPENDS vo_mex.mexa64 SOURCES ${src})
+## Need to set the memxat directory
+## TODO integerate this in the build system
+list(APPEND MEX_FLAGS "-I/home/halismai/code/mexmat")
+
+list(APPEND MEX_FLAGS "-DMEXMAT_WITH_EIGEN")
+list(APPEND MEX_FLAGS "-DMEXMAT_WITH_OPENCV")
+list(APPEND MEX_FLAGS "-DMEXMAT_NO_INIT_ARRAY=0")
+
+set(FLAGS -O -largeArrayDims CXXFLAGS='-fPIC ${MEX_FLAGS}')
+
+set(MEX_OUT_DIR ${CMAKE_BINARY_DIR}/bin)
+set(MEXEXT mexa64)
+
+set(MEX_COMPILER /usr/local/MATLAB/R2015a/bin/mex)
+
+# will only append the ones needed by the bpvo core
+list(APPEND MEX_LIBS -lopencv_core -lopencv_imgproc)
+
+if(WITH_TBB)
+  list(APPEND MEX_LIBS ${TBB_LIBRARIES})
+endif()
+
+if(WITH_OPENMP)
+  list(APPEND MEX_LIBS ${OPENMP})
+endif()
+
+foreach(f ${src})
+  get_filename_component(bname ${f} NAME_WE)
+
+  add_custom_command(
+    OUTPUT ${MEX_OUT_DIR}/${bname}.${MEXEXT}
+    COMMAND ${MEX_COMPILER}
+    ARGS -output ${MEX_OUT_DIR}/${bname}.${MEXEXT} ${FLAGS} ${src}
+    -L$<TARGET_FILE_DIR:bpvo> $<TARGET_FILE:bpvo> ${LIBS}
+    DEPENDS bpvo ${f}
+    COMMENT "building MEX file ${f}")
+
+  add_custom_target(mex ALL DEPENDS ${MEX_OUT_DIR}/${bname}.${MEXEXT} SOURCES ${src})
+
+endforeach()
