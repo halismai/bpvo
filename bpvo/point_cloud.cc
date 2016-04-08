@@ -28,7 +28,7 @@
 
 namespace bpvo {
 
-PointWithInfo::PointWithInfo() {}
+PointWithInfo::PointWithInfo() : _w(0.0f) {}
 
 PointWithInfo::PointWithInfo(const Point& xyzw, const Color& rgba, float w)
     : _xyzw(xyzw), _rgba(rgba), _w(w) {}

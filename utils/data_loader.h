@@ -34,6 +34,8 @@ struct DataLoader
    */
   static UniquePointer<DataLoader> FromConfig(std::string);
 
+  virtual ~DataLoader() {}
+
  protected:
   int _first_frame_number = 0;
 }; // DataLoader

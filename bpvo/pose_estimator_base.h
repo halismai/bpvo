@@ -362,6 +362,7 @@ run(const TemplateData* tdata, const DenseDescriptor* desc, Matrix44& T)
   {
     Warn("Failed to solve system will bail\n");
     ret.status = PoseEstimationStatus::kSolverError;
+    ret.finalError = f_norm;
     return ret;
   }
 
