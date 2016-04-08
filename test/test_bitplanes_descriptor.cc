@@ -2,7 +2,6 @@
 #include "bpvo/timer.h"
 #include "bpvo/census.h"
 #include "bpvo/utils.h"
-#include "bpvo/rank.h"
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -56,7 +55,6 @@ int main()
   {
     WriteImage<float>(Format("C%d", i), desc.getChannel(i));
   }
-
 
   return 0;
 }
