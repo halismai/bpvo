@@ -16,10 +16,11 @@ int main(int argc, char** argv)
   auto gt_dir = options.get<std::string>("groundtruth");
   auto results_dir = options.get<std::string>("results");
 
-  THROW_ERROR_IF( gt_dir.empty(), "need groundtruth directory"  );
-  THROW_ERROR_IF( results_dir.empty(), "need results directory" );
+  DIE_IF( gt_dir.empty(), "need groundtruth directory"  );
+  DIE_IF( results_dir.empty(), "need results directory" );
 
   RunKittiEvaluation(gt_dir, results_dir, options.get<std::string>("output"));
 
   return 0;
 }
+

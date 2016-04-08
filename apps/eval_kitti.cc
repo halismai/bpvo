@@ -43,7 +43,7 @@ static inline
 void WriteTrajectoryKittiFormat(std::string filename, const Trajectory& trajectory)
 {
   FILE* fp = fopen(filename.c_str(), "w");
-  THROW_ERROR_IF( fp == nullptr, Format("Failed to open '%s'", filename.c_str()).c_str() );
+  DIE_IF( fp == nullptr, Format("Failed to open '%s'", filename.c_str()).c_str() );
 
   for(size_t i = 0; i < trajectory.size(); ++i)
   {
@@ -62,7 +62,7 @@ template <typename T> static inline
 void WriteVector(std::string filename, const std::vector<T>& data)
 {
   std::ofstream ofs(filename);
-  THROW_ERROR_IF( !ofs.is_open(), Format("Failed to open '%s'", filename.c_str()).c_str() );
+  DIE_IF( !ofs.is_open(), Format("Failed to open '%s'", filename.c_str()).c_str() );
 
   for(const auto& v : data)
     ofs << v << "\n";
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 
   const auto config = options.get<std::string>("config");
   const auto output_dir = options.get<std::string>("output");
-  THROW_ERROR_IF( config.empty(), "need config file" );
+  DIE_IF( config.empty(), "need config file" );
 
   for(int i = 1; i <= 10; ++i)
   {
