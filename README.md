@@ -98,6 +98,22 @@ int main()
 }
 ```
 
+### Matlab Example
+```matlab
+params = VoMex.DefaultParameters;
+vo = VoMex(K, baseline, image_size, params);
+
+T = eye(4); % the accumulated camera poses
+% get images and disparities
+% the image must be uint8_t and disparity float
+% this assertion must hold
+% assert( isa(I, 'uint8') && isa(D, 'single') );
+result = vo.addFrame(I, D);
+
+% accumulate the pose
+T(:,:,end+1) = T(:,:,end) * inv( result.pose );
+```
+
 ## AlgorithmParameters
 The parameters for the algorithm are documented in `bpvo/types.h`. It is important to get the parameters right for the type of data. Below are additional comments
 
