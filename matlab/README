@@ -1,0 +1,8 @@
+To build the matlab interface, you need mexmat from Github
+
+git clone https://github.com/halismai/mexmat
+
+The bpvo library should be built as a static lib!
+
+Modify the Makefile accordingly
+

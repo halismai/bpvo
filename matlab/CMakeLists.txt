@@ -1,4 +1,4 @@
-file(GLOB src vo_mex.cc)
+file(GLOB src "*_mex.cc")
 set(MEX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 foreach(var ${MEX_FLAGS})

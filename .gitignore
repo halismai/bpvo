@@ -50,6 +50,8 @@ install_manifest.txt
 build/
 results/
 
+matlab/results
+
 
 *.mat
 *.mexa*

@@ -17,9 +17,7 @@ INCLUDES = -I/home/halismai/code/mexmat \
 LD_FLAGS = /home/halismai/code/bpvo/build/bin/libbpvo.a \
 					 /home/halismai/code/bpvo/build/bin/libbpvo_utils.a \
 					 -lgomp -ltbb -lopencv_core \
-					 -L/usr/local/lib/ -lopencv_core -lopencv_imgproc#
-					 #-lopencv_calib3d -lopencv_contrib -ltbb -lgomp \
-					 -L/usr/local/MATLAB/R2015a/bin/glnxa64/
+					 -L/usr/local/lib/ -lopencv_core -lopencv_imgproc
 
 CXX_FLAGS = -fPIC -O2 -fopenmp -DMEXMAT_WITH_EIGEN -DMEXMAT_WITH_OPENCV -mtune=native -funroll-loops -std=c++11 -DNDEBUG
 
