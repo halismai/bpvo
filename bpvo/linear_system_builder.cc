@@ -201,7 +201,6 @@ rankUpdatePoint(int i, float* data, float* G, float& res_norm)
 #endif
 
   res_norm += wR * _R[i];
-
 }
 
 auto LinearSystemBuilderReduction::toEigen(const float* data) -> Hessian
@@ -353,5 +352,4 @@ float LinearSystemBuilder::Run(const JacobianVector& J, const ResidualsVector& r
 
 #undef DO_PARALLEL
 #undef LINEAR_SYSTEM_PARALLEL
-
 
