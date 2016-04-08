@@ -55,6 +55,14 @@ If you get issues with Matlab GLIB_xxx not found, start matlab as
 LD_PRELOAD=`g++-4.8+ -print-file-name=libstdc++.so` matlab
 ```
 
+There is an experimental support for building the Matlab interface directly from the CMake build system. To try it out configure the build as:
+```
+cmake -DBUILD_MATLAB=ON ..
+```
+If that does not work, try the manual makefile above.
+
+In either case, you will have to manually edit the location of mexmat and the Matlab path. The process will be fully automated in the future.
+
 
 ## Examples
 A complete example is provided in `apps/vo.cc`
