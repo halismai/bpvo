@@ -7,17 +7,10 @@
 
 int main()
 {
-#if 0
-  cv::Mat I0 = cv::imread("/home/halismai/data/NewTsukubaStereoDataset/illumination/fluorescent/left/tsukuba_fluorescent_L_00001.png", cv::IMREAD_GRAYSCALE);
-
-  cv::Mat I1 = cv::imread("/home/halismai/data/NewTsukubaStereoDataset/illumination/fluorescent/right/tsukuba_fluorescent_R_00001.png", cv::IMREAD_GRAYSCALE);
-#else
   cv::Mat I0 = cv::imread("/home/halismai/data/kitti/dataset/sequences/00/image_0/000000.png",
                           cv::IMREAD_GRAYSCALE);
   cv::Mat I1 = cv::imread("/home/halismai/data/kitti/dataset/sequences/00/image_1/000000.png",
                           cv::IMREAD_GRAYSCALE);
-#endif
-
   cv::Mat D;
 
   THROW_ERROR_IF( I0.empty() || I1.empty(), "Failed to read images");
