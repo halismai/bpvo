@@ -114,6 +114,8 @@ result = vo.addFrame(I, D);
 T(:,:,end+1) = T(:,:,end) * inv( result.pose );
 ```
 
+See also the code in side `matlab/`
+
 ## AlgorithmParameters
 The parameters for the algorithm are documented in `bpvo/types.h`. It is important to get the parameters right for the type of data. Below are additional comments
 
