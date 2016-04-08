@@ -24,6 +24,7 @@
 
 #include <bpvo/types.h>
 #include <bpvo/imwarp.h>
+#include <bpvo/utils.h>
 #include <iostream>
 
 namespace bpvo {
@@ -45,58 +46,6 @@ class BilinearInterp
    * \param points a vector of 3D points
    * \param rows, cols the size of the image
    */
-#if 0
-  template <class Warp, class PointVector> inline
-  void init(const Warp& warp, const PointVector& points, int rows, int cols)
-  {
-    _stride = cols;
-    resize(points.size());
-
-    size_t N = points.size(), i = 0;
-    constexpr int S = 8;
-    size_t n = N & ~(S-1);
-
-    int max_cols = cols - 1,
-        max_rows = rows - 1;
-
-#if defined(__AVX__)
-    _mm256_zeroupper();
-#endif
-
-#define PROCESS_POINT_AT( index )          \
-    {                                      \
-      auto p = warp( points[i + index ] ); \
-      float xf = p.x(), yf = p.y();        \
-      int xi = static_cast<int>(xf), yi = static_cast<int>(yf);         \
-      xf -= xi; yf -= yi;                                               \
-      _valid[i + index] = xi>=0 && xi<max_cols && yi>=0 && yi<max_rows; \
-      _inds[i + index] = yi*cols + xi;                                  \
-      float xfyf = xf*yf;                                               \
-      _interp_coeffs[i + index] = Vector4(xfyf - yf - xf + 1.0f, xf - xfyf, yf - xfyf, xfyf); \
-    }
-
-    for(i=0; i < n; i += S)
-    {
-      PROCESS_POINT_AT( 0 );
-      PROCESS_POINT_AT( 1 );
-      PROCESS_POINT_AT( 2 );
-      PROCESS_POINT_AT( 3 );
-      PROCESS_POINT_AT( 4 );
-      PROCESS_POINT_AT( 5 );
-      PROCESS_POINT_AT( 6 );
-      PROCESS_POINT_AT( 7 );
-      PROCESS_POINT_AT( 8 );
-    }
-
-    for( ; i < N; ++i)
-    {
-      PROCESS_POINT_AT( 0 );
-    }
-
-#undef PROCESS_POINT_AT
-  }
-#endif
-
   template <class Warp, class PointVector> inline
   void init(const Warp& warp, const PointVector& points, int rows, int cols)
   {
@@ -109,12 +58,7 @@ class BilinearInterp
 
     for(size_t i = 0; i < points.size(); ++i)
     {
-      auto p = warp(points[i]);
-
-      /*if(i == 72) {
-        std::cout << "GOT : " << p.transpose() << std::endl;
-      }*/
-
+      const auto p = warp(points[i]);
       float xf = p.x(), yf = p.y();
       int xi = static_cast<int>(xf), yi = static_cast<int>(yf);
       xf -= xi;
@@ -130,6 +74,8 @@ class BilinearInterp
   template <class Warp, class PointVector> inline
   void initFast(const Warp& warp, const PointVector& points, int rows, int cols)
   {
+    THROW_ERROR("function is broken, use init() instead");
+
     Matrix44 pose(Matrix44::Identity());
     pose.block<3,4>(0,0) = warp.pose();
 
@@ -137,9 +83,6 @@ class BilinearInterp
                   "matrix must be in ColMajor");
 
     resize(points.size());
-    /*
-    imwarp_precomp(ImageSize(rows, cols), pose.data(), points[0].data(),
-                   points.size(), _inds.data(), _valid.data(), _interp_coeffs[0].data());*/
     imwarp_init_sse4(ImageSize(rows, cols), pose.data(), points[0].data(), points.size(),
                      _inds.data(), _valid.data(), _interp_coeffs[0].data());
   }
@@ -204,11 +147,6 @@ class BilinearInterp
       r_ptr[i + 6] = this->operator()(I1_ptr, i + 6) - I0_ptr[i + 6];
       r_ptr[i + 7] = this->operator()(I1_ptr, i + 7) - I0_ptr[i + 7];
 #endif
-      /*
-      printf("got %f %f %f %f %f %f %f %f\n",
-             r_ptr[i + 0], r_ptr[i + 1], r_ptr[i + 2], r_ptr[i + 3],
-             r_ptr[i + 4], r_ptr[i + 5], r_ptr[i + 6], r_ptr[i + 7]);
-             */
     }
 
 #if defined(WITH_SIMD) && defined(__AVX__)

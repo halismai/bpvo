@@ -49,6 +49,7 @@ class AlignedAllocator : public std::allocator<T>
 
   inline pointer allocate(size_type n, const_pointer = nullptr)
   {
+    // TODO some systems might not have posix_memalign
     void* ret = nullptr;
     if(posix_memalign(&ret, Alignment, n*sizeof(T)))
       throw std::bad_alloc();

@@ -1,12 +1,17 @@
 #ifndef BPVO_INTERP_UTIL_CV_H
 #define BPVO_INTERP_UTIL_CV_H
 
+#include <bpvo/types.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <vector>
 
 namespace bpvo {
 
+//
+// OpenCV's fixed point implementation is fast. But, its effects on accuracy and
+// convergence (number of iterations) are signficant. It might be ok for a dense
+// implementation
+//
 template <typename T = float>
 class BilinearInterpCv
 {
@@ -47,6 +52,9 @@ class BilinearInterpCv
 
     auto I1_ptr = I1.ptr<float>();
     int n = (int) _x.size();
+#if defined(WITH_OPENMP)
+#pragma omp simd
+#endif
     for(int i = 0; i < n; ++i) {
       r_ptr[i] = I1_ptr[i] - I0_ptr[i];
     }

@@ -128,14 +128,6 @@ void imwarp_init_sse4(const ImageSize& image_size, const float* P_matrix,
 
     xf0 = proj(p);
 
-    /*
-    if(i > 70 && i < 74) {
-      alignas(16) float tmp[4];
-      _mm_store_ps(tmp, xf0);
-      printf("got: %f %f %f %f\n", tmp[0], tmp[1], tmp[2], tmp[3]);
-    }
-    */
-
     xi0 = _mm_floor_ps(xf0);
     xf0 = _mm_sub_ps(xf0, xi0);
 
@@ -173,15 +165,6 @@ void imwarp_init_sse4(const ImageSize& image_size, const float* P_matrix,
     inds[i+1] = buf[2] + buf[3]*stride;
     inds[i+2] = buf[4] + buf[5]*stride;
     inds[i+3] = buf[6] + buf[7]*stride;
-
-    /*
-    if(i > 70 && i < 80) {
-      printf("point %f %f %f %f\n", p[0], p[1], p[2], p[3]);
-      printf("%d: %d %d %d %d %d %d %d %d\n",
-             i, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
-      printf("  : %d %d %d %d\n", inds[i+0], inds[i+1], inds[i+2], inds[i+3]);
-    }
-    */
 
     valid[i+0] = buf[0] >= 0 && buf[0] < max_cols && buf[1] >= 0 && buf[1] < max_rows;
     valid[i+1] = buf[2] >= 0 && buf[2] < max_cols && buf[3] >= 0 && buf[3] < max_rows;

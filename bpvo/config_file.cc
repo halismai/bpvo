@@ -94,6 +94,5 @@ bool ConfigFile::save(std::string filename) const
   return !ofs.bad();
 }
 
-
 } // bpvo
 
