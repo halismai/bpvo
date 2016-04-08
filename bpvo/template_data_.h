@@ -27,8 +27,6 @@
 #include <bpvo/utils.h>
 #include <bpvo/imgproc.h>
 #include <bpvo/math_utils.h>
-#include <bpvo/interp_util.h>
-#include <bpvo/interp_util_cv.h>
 #include <bpvo/parallel.h>
 #include <bpvo/photo_error.h>
 
