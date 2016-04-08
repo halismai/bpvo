@@ -4,6 +4,7 @@ sudo: required
 dist: precise
 language: cpp
 
+
 matrix:
   include:
     - compiler: gcc
@@ -11,16 +12,20 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - kalakris-cmake
           packages:
             - g++-4.9
+            - cmake
       env: COMPILER=g++-4.9
     - compiler: gcc
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - kalakris-cmake
           packages:
             - g++-5
+            - cmake
       env: COMPILER=g++-5
     - compiler: clang
       addons:
@@ -28,8 +33,10 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.6
+            - kalakris-cmake
           packages:
             - clang-3.6
+            - cmake
       env: COMPILER=clang++-3.6
     - compiler: clang
       addons:
@@ -37,8 +44,10 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.7
+            - kalakris-cmake
           packages:
             - clang-3.7
+            - cmake
       env: COMPILER=clang++-3.7
 
 before_install:
