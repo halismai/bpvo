@@ -12,7 +12,7 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - kalakris-cmake
+            - george-edison55
           packages:
             - g++-4.9
             - cmake
@@ -22,7 +22,7 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - kalakris-cmake
+            - george-edison55
           packages:
             - g++-5
             - cmake
@@ -33,7 +33,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.6
-            - kalakris-cmake
+            - george-edison55
           packages:
             - clang-3.6
             - cmake
@@ -44,7 +44,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.7
-            - kalakris-cmake
+            - george-edison55
           packages:
             - clang-3.7
             - cmake
