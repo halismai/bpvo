@@ -25,6 +25,7 @@
 namespace bpvo {
 
 #if defined(__AVX__)
+#include <immintrin.h>
 #define V_LOAD( a ) _mm256_load_ps( (a) )
 #define V_SET1( a ) _mm256_set1_ps( (a) )
 #define V_STORE( dst, expr ) _mm256_store_ps( (dst), (expr) )

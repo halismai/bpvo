@@ -31,8 +31,9 @@
 #endif
 
 #if defined(WITH_SIMD)
-#include <pmmintrin.h>
+#include <immintrin.h>
 #endif
+
 
 namespace bpvo {
 
@@ -242,14 +243,14 @@ Run(const JacobianVector& J, const ResidualsVector& R, const ResidualsVector& W,
     float* h_data = nullptr;
 
 #if defined(WITH_SIMD)
-    alignas(16) float data[24];
+    ALIGNED(16) float data[24];
     std::fill_n(data, 24, 0.0f);
     h_data = data;
 #else
     h_data = H->data();
 #endif
 
-    alignas(16) float G_data[8];
+    ALIGNED(16) float G_data[8];
     std::fill_n(G_data, 8, 0.0f);
 
     for(size_t i = 0; i < R.size(); ++i) {

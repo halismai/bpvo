@@ -119,7 +119,7 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
       yy = _mm_shuffle_ps(wx, xf, _MM_SHUFFLE(3,3,3,3));
       _mm_store_ps(coeffs + 4*i + 4, _mm_mul_ps(xx, yy));
 
-      alignas(16) int xi_buf[4];
+      ALIGNED(16) int xi_buf[4];
       _mm_store_si128((__m128i*) xi_buf, xi);
 
       inds[i + 0] = xi_buf[0] + xi_buf[1]*w;
@@ -156,7 +156,7 @@ void imwarp_precomp(const ImageSize& im_size, const float* P, const float* xyzw,
       yy = _mm_shuffle_ps(wx, xf, _MM_SHUFFLE(3,3,3,3));
       _mm_store_ps(coeffs + 4*i + 12, _mm_mul_ps(xx, yy));
 
-      alignas(16) int xi_buf[4];
+      ALIGNED(16) int xi_buf[4];
       _mm_store_si128((__m128i*) xi_buf, xi);
 
       inds[i + 2] = xi_buf[0] + xi_buf[1]*w;
