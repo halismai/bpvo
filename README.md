@@ -5,6 +5,9 @@
        src="https://scan.coverity.com/projects/8506/badge.svg"/>
 </a>
 
+[![Build Status](https://api.travis-ci.org/halismai/bpvo.svg?branch=master)](https://github.com/halismai/bpvo)
+
+
 A library for (semi-dense) real-time visual odometry from stereo data using direct alignment of feature descriptors. There are descriptors implemented. First, is raw intensity (no descriptor), which runs in  _real-time_  or faster. Second, is an implementation of the Bit-Planes descriptor designed for robust performance under challenging illumination conditions as described [here][bp] and [here][bpvo].
 
 If you run into any issues, or have questions contact
