@@ -44,7 +44,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGCXX)
   #machines where integers can only be accessed at two- or four-byte boundaries.
   addExtraCompilerOptions(-Wcast-align)
   addExtraCompilerOptions(-fdiagnostics-show-option)
-  addExtraCompilerOptions(-fdiagnostics-color=auto)
+  # incompatiable with gcc-4.8
+  #addExtraCompilerOptions(-fdiagnostics-color=auto)
   addExtraCompilerOptions(-ftree-vectorize)
   addExtraCompilerOptions(-pthread)
   addExtraCompilerOptions(-Wabi)
