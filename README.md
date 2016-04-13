@@ -1,10 +1,6 @@
 # BPVO
 
-<a href="https://scan.coverity.com/projects/halismai-bpvo">
-  <img alt="Coverity Scan Build Status"
-       src="https://scan.coverity.com/projects/8506/badge.svg"/>
-</a>
-
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/8506/badge.svg)](https://scan.coverity.com/projects/halismai-bpvo)
 [![Build Status](https://api.travis-ci.org/halismai/bpvo.svg?branch=master)](https://github.com/halismai/bpvo)
 
 
