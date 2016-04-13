@@ -1,7 +1,7 @@
 # Use new trusty images, should yield newer compilers and packages
 sudo: required
 # from http://genbattle.bitbucket.org/blog/2016/01/17/c++-travis-ci/
-dist: precise
+dist: trusty
 language: cpp
 
 
