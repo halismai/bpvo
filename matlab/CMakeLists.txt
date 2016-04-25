@@ -1,4 +1,3 @@
-file(GLOB src "*_mex.cc")
 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 separate_arguments(MEX_FLAGS UNIX_COMMAND "${CMAKE_CXX_FLAGS}")
@@ -34,6 +33,7 @@ if(WITH_OPENMP)
   list(APPEND MEX_LIBS ${OPENMP})
 endif()
 
+file(GLOB src "*_mex.cc")
 foreach(f ${src})
   get_filename_component(bname ${f} NAME_WE)
 
@@ -41,10 +41,10 @@ foreach(f ${src})
     OUTPUT ${MEX_OUT_DIR}/${bname}.${MEXEXT}
     COMMAND ${MEX_COMPILER}
     ARGS -output ${MEX_OUT_DIR}/${bname}.${MEXEXT} ${FLAGS} ${src}
-    -L$<TARGET_FILE_DIR:bpvo> $<TARGET_FILE:bpvo> ${LIBS}
+    -L$<TARGET_FILE_DIR:bpvo> $<TARGET_FILE:bpvo> ${MEX_LIBS}
     DEPENDS bpvo ${f}
     COMMENT "building MEX file ${f}")
 
-  add_custom_target(mex ALL DEPENDS ${MEX_OUT_DIR}/${bname}.${MEXEXT} SOURCES ${src})
+  add_custom_target(${bname} ALL DEPENDS ${MEX_OUT_DIR}/${bname}.${MEXEXT} SOURCES ${src})
 
 endforeach()

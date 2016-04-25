@@ -58,6 +58,8 @@ static inline bpvo::LossFunctionType StringToLossFunctionType(std::string s)
     return bpvo::LossFunctionType::kL2;
   else
     mexError("bad loss function %s\n", s.c_str());
+
+  return bpvo::LossFunctionType::kHuber; // -Wreturn-value
 }
 
 static inline bpvo::VerbosityType StringToVerbosityType(std::string s)
@@ -231,6 +233,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, mxArray const* prhs[])
   {
     static const char* USAGE = "fn('delete', hdle)";
     mex::nargchk(2, 2, nrhs, USAGE);
+    mex::nargchk(0, 0, nlhs, USAGE);
     mex::DeleteClass<VisualOdometryWrapper>(prhs[1]);
   }
   else if(bpvo::icompare("add_frame", command))
