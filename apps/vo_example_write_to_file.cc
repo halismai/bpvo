@@ -58,11 +58,18 @@ bool GetImageAndDisparity(ImageAndDisparity& ret, int f_i)
   }
 }
 
-
+/**
+ * Example of using VO and storing the output to a text file.
+ *
+ * We only store the trajectory (in the KITTI format) as well as the (X,Y,Z)
+ * camera path.
+ *
+ * To store the point cloud as well as other statistics see apps/vo_app.cc
+ */
 int main(int argc, char** argv)
 {
   ProgramOptions options;
-  options("output,o", "", "output file")
+  options("output,o", "", "output prefix file")
       ("numframes,n", int(500), "number of frames to process").parse(argc, argv);
 
   Matrix33 K; K << 615.0, 0.0, 320.0, 0.0, 615.0, 240.0, 0.0, 0.0, 1.0;
@@ -79,8 +86,7 @@ int main(int argc, char** argv)
       break;
 
     Timer timer;
-    auto result = vo.addFrame(frame.image.ptr<uint8_t>(),
-                              frame.disparity.ptr<float>());
+    auto result = vo.addFrame(frame.image.ptr<uint8_t>(), frame.disparity.ptr<float>());
     auto tt = timer.stop().count();
     total_time += ( tt / 1000.0f);
 
@@ -94,9 +100,9 @@ int main(int argc, char** argv)
 
   auto output_fn = options.get<std::string>("output");
   if(!output_fn.empty()) {
-    trajectory.write(output_fn); // store all the poses as 4x4 matrices
+    trajectory.write(output_fn + ".txt"); // store all the poses as 4x4 matrices
     // write the camera center patch (x,y,z) only wrt to the first added frame
-    trajectory.writeCameraPath(output_fn + "path.txt");
+    trajectory.writeCameraPath(output_fn + "_path.txt");
   }
 
   return 0;
