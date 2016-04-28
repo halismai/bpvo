@@ -74,7 +74,7 @@ class DenseDescriptor
   /**
    * Copies that data into another DenseDescriptor
    */
-  virtual void copyTo(DenseDescriptor* other) const = 0;
+  virtual void copyTo(DenseDescriptor* other) const;
 
   /**
    * \return the number of channels

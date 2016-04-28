@@ -20,6 +20,8 @@
  */
 
 #include "bpvo/gradient_descriptor.h"
+#include "bpvo/utils.h"
+
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include <type_traits>
@@ -128,9 +130,13 @@ void GradientDescriptor::compute(const cv::Mat& image)
   ygradient(I.ptr<float>(), _rows, _cols, _channels[2].ptr<float>());
 }
 
-void GradientDescriptor::computeSaliencyMap(cv::Mat& dst) const
+void GradientDescriptor::copyTo(DenseDescriptor* dst_) const
 {
-  dst.create(_channels[0].size(), cv::DataType<float>::type);
+  auto dst = reinterpret_cast<GradientDescriptor*>(dst_);
+  THROW_ERROR_IF(nullptr == dst, "bad cast");
+
+  for(size_t i = 0; i < _channels.size(); ++i)
+    _channels[i].copyTo(dst->_channels[i]);
 }
 
 } // bpvo

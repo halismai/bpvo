@@ -53,11 +53,19 @@ DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int pyr_l
 void DenseDescriptor::computeSaliencyMap(cv::Mat& dst) const
 {
   dst.create( this->getChannel(0).size(), cv::DataType<float>::type );
-  cv::Mat_<float>& d = (cv::Mat_<float>&) dst;
 
+  cv::Mat_<float>& d = (cv::Mat_<float>&) dst;
   gradientAbsoluteMagnitude(this->getChannel(0), d);
   for(int i = 1; i < this->numChannels(); ++i)
     gradientAbsoluteMagnitudeAcc(this->getChannel(i), dst.ptr<float>());
+}
+
+
+void DenseDescriptor::copyTo(DenseDescriptor* dst) const
+{
+  int nchannels = this->numChannels();
+  for(int i = 0; i < nchannels; ++i)
+    this->getChannel(i).copyTo( dst->getChannel(i) );
 }
 
 }; // bpvo

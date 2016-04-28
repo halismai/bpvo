@@ -90,25 +90,5 @@ void BitPlanesDescriptor::compute(const cv::Mat& I_)
   parallel_for(Range(0, 8), func);
 }
 
-void BitPlanesDescriptor::computeSaliencyMap(cv::Mat& dst) const
-{
-  dst.create( _channels[0].size(), cv::DataType<float>::type );
-
-  cv::Mat_<float>& d = (cv::Mat_<float>&) dst;
-  gradientAbsoluteMagnitude(_channels[0], d);
-  auto dst_ptr = dst.ptr<float>();
-  for(int i = 1; i < 8; ++i)
-    gradientAbsoluteMagnitudeAcc(_channels[i], dst_ptr);
-}
-
-void BitPlanesDescriptor::copyTo(DenseDescriptor* dst_) const
-{
-  auto dst = reinterpret_cast<BitPlanesDescriptor*>(dst_);
-  THROW_ERROR_IF(nullptr == dst, "badness");
-
-  for(size_t i = 0; i < _channels.size(); ++i)
-    _channels[i].copyTo(dst->_channels[i]);
-}
-
 } // bpvo
 
