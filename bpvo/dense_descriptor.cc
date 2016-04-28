@@ -22,7 +22,9 @@
 #include "bpvo/dense_descriptor.h"
 #include "bpvo/intensity_descriptor.h"
 #include "bpvo/bitplanes_descriptor.h"
+#include "bpvo/imgproc.h"
 #include "bpvo/utils.h"
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace bpvo {
 
@@ -48,4 +50,15 @@ DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int pyr_l
   }
 }
 
+void DenseDescriptor::computeSaliencyMap(cv::Mat& dst) const
+{
+  dst.create( this->getChannel(0).size(), cv::DataType<float>::type );
+  cv::Mat_<float>& d = (cv::Mat_<float>&) dst;
+
+  gradientAbsoluteMagnitude(this->getChannel(0), d);
+  for(int i = 1; i < this->numChannels(); ++i)
+    gradientAbsoluteMagnitudeAcc(this->getChannel(i), dst.ptr<float>());
+}
+
 }; // bpvo
+

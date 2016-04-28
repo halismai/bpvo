@@ -58,7 +58,7 @@ class DenseDescriptor
    *
    * compute() should be called prior to calling this function
    */
-  virtual void computeSaliencyMap(cv::Mat& smap) const = 0;
+  virtual void computeSaliencyMap(cv::Mat& smap) const;
 
   /**
    * \return the i-th channel, the index must be less than the number of
