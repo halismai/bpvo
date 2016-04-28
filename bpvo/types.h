@@ -141,8 +141,9 @@ enum VerbosityType
 
 enum DescriptorType
 {
-  kIntensity = 0x30, //< raw intensity (fast)
-  kBitPlanes         //< bit-planes (robust)
+  kIntensity = 0x30,      //< raw intensity (fast)
+  kIntensityAndGradient,  //< intensity + gradient constraint
+  kBitPlanes              //< bit-planes (robust)
 }; // DescriptorType
 
 struct AlgorithmParameters
