@@ -63,15 +63,56 @@ void GradientDescriptor::compute(const cv::Mat& image)
   ygradient(I.ptr<float>(), _rows, _cols, _channels[2].ptr<float>());
 }
 
-void GradientDescriptor::copyTo(DenseDescriptor* dst_) const
-{
-  auto dst = reinterpret_cast<GradientDescriptor*>(dst_);
-  THROW_ERROR_IF(nullptr == dst, "bad cast");
+DescriptorFields::DescriptorFields(float s1, float s2)
+  : _sigma1(s1),  _sigma2(s2) {}
 
-  for(size_t i = 0; i < _channels.size(); ++i)
-    _channels[i].copyTo(dst->_channels[i]);
+DescriptorFields::DescriptorFields(const DescriptorFields& other)
+  : DenseDescriptor(other), _rows(other._rows), _cols(other._cols),
+    _sigma1(other._sigma1), _sigma2(other._sigma2), _channels(other._channels) {}
+
+DescriptorFields::~DescriptorFields() {}
+
+static void splitPosNeg(const cv::Mat& src, cv::Mat& pos, cv::Mat& neg, float sigma)
+{
+  pos.create(src.size(), CV_32FC1);
+  neg.create(src.size(), CV_32FC1);
+
+  for(int r = 0; r < src.rows; ++r) {
+    auto srow = src.ptr<float>(r);
+    auto prow = pos.ptr<float>(r), nrow = neg.ptr<float>(r);
+    for(int c = 0; c < src.cols; ++c) {
+      prow[c] = srow[c] >= 0 ? srow[c] : 0.0f;
+      nrow[c] = srow[c] < 0  ? srow[c] : 0.0f;
+    }
+  }
+
+  if(sigma > 0.0f) {
+    cv::GaussianBlur(pos, pos, cv::Size(), sigma, sigma);
+    cv::GaussianBlur(neg, neg, cv::Size(), sigma, sigma);
+  }
+}
+
+void DescriptorFields::compute(const cv::Mat& image)
+{
+  _rows = image.rows;
+  _cols = image.cols;
+
+  image.convertTo(_channels[0], CV_32F);
+
+  cv::Mat I;
+  if(_sigma1 > 0.0)
+    cv::GaussianBlur(_channels[0], I, cv::Size(), _sigma1, _sigma1);
+  else
+    I = _channels[0];
+
+  cv::Mat buffer(_channels[0].size(), CV_32FC1);
+
+  xgradient(I.ptr<float>(), _rows, _cols, buffer.ptr<float>());
+  splitPosNeg(buffer, _channels[1], _channels[2], _sigma2);
+
+  ygradient(I.ptr<float>(), _rows, _cols, buffer.ptr<float>());
+  splitPosNeg(buffer, _channels[3], _channels[4], _sigma2);
 }
 
 } // bpvo
-
 

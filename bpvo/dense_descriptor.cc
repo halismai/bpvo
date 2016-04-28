@@ -22,6 +22,7 @@
 #include "bpvo/dense_descriptor.h"
 #include "bpvo/intensity_descriptor.h"
 #include "bpvo/bitplanes_descriptor.h"
+#include "bpvo/gradient_descriptor.h"
 #include "bpvo/imgproc.h"
 #include "bpvo/utils.h"
 #include <opencv2/imgproc/imgproc.hpp>
@@ -39,11 +40,21 @@ DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int pyr_l
         return new IntensityDescriptor();
       } break;
 
+    case DescriptorType::kIntensityAndGradient:
+      {
+        return new GradientDescriptor(p.sigmaPriorToCensusTransform);
+      } break;
+
     case DescriptorType::kBitPlanes:
       {
         return new BitPlanesDescriptor(p.sigmaPriorToCensusTransform,
                                        pyr_level >= p.maxTestLevel ? p.sigmaBitPlanes : -1.0f);
       } break;
+
+    case DescriptorType::kDescriptorFieldsFirstOrder:
+      {
+        return new DescriptorFields(p.sigmaPriorToCensusTransform, p.sigmaBitPlanes);
+      }
 
     default:
       THROW_ERROR("unknown DescriptorType\n");

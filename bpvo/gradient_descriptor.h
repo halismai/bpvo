@@ -56,13 +56,42 @@ class GradientDescriptor : public DenseDescriptor
     return Pointer(new GradientDescriptor(*this));
   }
 
-  void copyTo(DenseDescriptor*) const;
-
  private:
   int _rows, _cols;
   float _sigma;
   std::array<cv::Mat,3> _channels;
 }; // GradientDescriptor
+
+/**
+ */
+class DescriptorFields : public DenseDescriptor
+{
+ public:
+  /**
+   * \param sigma1 applied before computing gradients
+   * \param sigma2 applied after creating channels
+   */
+  DescriptorFields(float sigma1 = 0.5, float sigma2 = 1.5);
+  DescriptorFields(const DescriptorFields&);
+  virtual ~DescriptorFields();
+
+  void compute(const cv::Mat&);
+
+  inline const cv::Mat& getChannel(int i) const { return _channels[i]; }
+  inline int numChannels() const { return 5; }
+  inline int rows() const { return _channels[0].rows; }
+  inline int cols() const { return _channels[0].cols; }
+
+  inline void setSigma1(float s) { _sigma1 = s; }
+  inline void setSigma2(float s) { _sigma2 = s; }
+
+  inline Pointer clone() const { return Pointer(new DescriptorFields(*this)); }
+
+ private:
+  int _rows, _cols;
+  float _sigma1, _sigma2;
+  std::array<cv::Mat, 5> _channels;
+}; // DescriptorFields
 
 }; // bpvo
 

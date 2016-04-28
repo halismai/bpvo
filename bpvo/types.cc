@@ -114,6 +114,10 @@ DescriptorType DescriptorTypeFromString(std::string s)
     return kIntensity;
   else if(icompare("BitPlanes", s))
     return kBitPlanes;
+  else if(icompare("Gradient", s))
+    return kIntensityAndGradient;
+  else if(icompare("DescriptorFields", s))
+    return kDescriptorFieldsFirstOrder;
   else
     THROW_ERROR("unknown DescriptorType");
 }
