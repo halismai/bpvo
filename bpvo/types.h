@@ -143,6 +143,7 @@ enum DescriptorType
 {
   kIntensity = 0x30,      //< raw intensity (fast)
   kIntensityAndGradient,  //< intensity + gradient constraint
+  kDescriptorFieldsFirstOrder, //< 1-st order descriptor fields
   kBitPlanes              //< bit-planes (robust)
 }; // DescriptorType
 
