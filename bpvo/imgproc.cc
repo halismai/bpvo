@@ -22,6 +22,9 @@
 #include "bpvo/imgproc.h"
 #include "bpvo/debug.h"
 #include "bpvo/simd.h"
+
+#include <opencv2/imgproc.hpp>
+
 #include <string.h>
 #include <algorithm>
 
@@ -160,5 +163,20 @@ void gradientAbsoluteMagnitude(const float* src, int rows, int cols, uint16_t* d
   memset(dst + (rows-1)*cols, 0, sizeof(uint16_t)*cols);
 }
 
+void imsmooth(const cv::Mat& src, cv::Mat& dst, double sigma)
+{
+  int k = std::max(5, 2*static_cast<int>(std::round(sigma))+1);
+  cv::Size ks(k, k);
+  cv::GaussianBlur(src, dst, ks, sigma, sigma);
+}
+
+cv::Mat imsmooth(const cv::Mat& src, double sigma)
+{
+  cv::Mat ret;
+  imsmooth(src, ret, sigma);
+  return ret;
+}
+
 }; // bpvo
+
 

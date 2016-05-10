@@ -38,6 +38,9 @@ class GradientDescriptor : public DenseDescriptor
    */
   GradientDescriptor(float sigma = -1.0);
 
+  /**
+   * copy ctor
+   */
   GradientDescriptor(const GradientDescriptor& other);
 
   virtual ~GradientDescriptor();

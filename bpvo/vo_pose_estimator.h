@@ -37,6 +37,7 @@ class VisualOdometryPoseEstimator
 
   /**
    * Estimate the pose of the cur_frame wrt to ref_frame
+   *
    * \return optimizerStatistics per pyrmaid level
    *
    * \param T_init pose initialization
@@ -62,3 +63,4 @@ class VisualOdometryPoseEstimator
 }; // bpvo
 
 #endif // BPVO_VO_POSE_ESTIMATOR_H
+

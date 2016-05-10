@@ -48,7 +48,7 @@ void GradientDescriptor::compute(const cv::Mat& image)
 
   //
   // we will keep the original intennsities unsmoothed, the smoothing will
-  // affect the gradient computation only
+  // affect the gradient channels computation only
   //
   cv::Mat I;
   if(_sigma > 0)
@@ -99,11 +99,7 @@ void DescriptorFields::compute(const cv::Mat& image)
 
   image.convertTo(_channels[0], CV_32F);
 
-  cv::Mat I;
-  if(_sigma1 > 0.0)
-    cv::GaussianBlur(_channels[0], I, cv::Size(), _sigma1, _sigma1);
-  else
-    I = _channels[0];
+  cv::Mat I = _sigma1 > 0.0 ? imsmooth(_channels[0], _sigma1) : _channels[0];
 
   cv::Mat buffer(_channels[0].size(), CV_32FC1);
 

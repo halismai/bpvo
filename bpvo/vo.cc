@@ -273,8 +273,7 @@ getPointCloudFromRefFrame() const
 
   const auto& image = *_ref_frame->imagePointer();
   const auto& warp = _ref_frame->getTemplateDataAtLevel(_params.maxTestLevel)->warp();
-  for(size_t i = 0; i < n; ++i)
-  {
+  for(size_t i = 0; i < n; ++i) {
     auto color = GetColor(image, warp, points[i]);
     ret->operator[](i) = PointWithInfo(points[i], color, weights[i]);
   }

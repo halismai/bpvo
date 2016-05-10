@@ -28,13 +28,11 @@ VisualOdometryFrame::VisualOdometryFrame(const Matrix33& K, float b, const Algor
   }
 }
 
-VisualOdometryFrame::~VisualOdometryFrame()
-{
-}
+VisualOdometryFrame::~VisualOdometryFrame() {}
 
 const DenseDescriptor* VisualOdometryFrame::getDenseDescriptorAtLevel(size_t l) const
 {
-  assert( l  < (size_t) _desc_pyr->size() );
+  assert( l < (size_t) _desc_pyr->size() );
   return _desc_pyr->operator[](l);
 }
 

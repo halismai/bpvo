@@ -56,6 +56,12 @@ void gradientAbsoluteMagnitude(const float* src, int rows, int cols, uint16_t* d
  */
 void gradientAbsoluteMagnitudeAcc(const cv::Mat_<float>& src, float* dst);
 
+/**
+ * Smooth an image using a Gaussian with std. dev sigma
+ */
+void imsmooth(const cv::Mat& src, cv::Mat& dst, double sigma);
+cv::Mat imsmooth(const cv::Mat& src, double sigma);
+
 
 /**
  * allows to subsample the disparities using a pyramid level
@@ -257,6 +263,7 @@ void ygradient(const TSrc* src, int rows, int cols, TDst* dst)
   Iy.row(rows - 1) = S * (I.row(rows - 1).template cast<TDst>() -
                           I.row(rows - 2).template cast<TDst>());
 }
+
 
 }; // bpvo
 
