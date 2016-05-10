@@ -177,6 +177,16 @@ struct AlgorithmParameters
    */
   float sigmaBitPlanes;
 
+  /**
+   * std. deviation of Gaussian to apply before computing the gradient for DF
+   */
+  float dfSigma1;
+
+  /**
+   * std. deviation of a Gaussian to apply ont he DF
+   */
+  float dfSigma2;
+
 
   //
   // optimization

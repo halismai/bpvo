@@ -33,6 +33,8 @@ AlgorithmParameters::AlgorithmParameters()
     , minImageDimensionForPyramid(40)
     , sigmaPriorToCensusTransform(-1.0f)
     , sigmaBitPlanes(0.5)
+    , dfSigma1(0.75)
+    , dfSigma2(1.75)
     , maxIterations(50)
     , parameterTolerance(1e-7)
     , functionTolerance(1e-6)
@@ -53,7 +55,6 @@ AlgorithmParameters::AlgorithmParameters()
     , maxValidDisparity(512.0f)
     , maxTestLevel(0)
     , withNormalization(true) {}
-
 
 AlgorithmParameters::AlgorithmParameters(std::string filename)
 {

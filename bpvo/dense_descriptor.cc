@@ -53,7 +53,7 @@ DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int pyr_l
 
     case DescriptorType::kDescriptorFieldsFirstOrder:
       {
-        return new DescriptorFields(p.sigmaPriorToCensusTransform, p.sigmaBitPlanes);
+        return new DescriptorFields(p.dfSigma1, p.dfSigma2);
       }
 
     default:
