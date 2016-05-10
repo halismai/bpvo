@@ -64,6 +64,8 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   minImageDimensionForPyramid = cf.get<int>("minImageDimensionForPyramid", 40);
   sigmaPriorToCensusTransform = cf.get<float>("sigmaPriorToCensusTransform", 0.5f);
   sigmaBitPlanes = cf.get<float>("sigmaBitPlanes", 0.5f);
+  dfSigma1 = cf.get<float>("dfSigma1", 0.75);
+  dfSigma2 = cf.get<float>("dfSigma2", 1.75);
   maxIterations = cf.get<int>("maxIterations", 50);
   parameterTolerance = cf.get<float>("parameterTolerance", 1e-7);
   functionTolerance = cf.get<float>("functionTolerance", 1e-6);
@@ -170,6 +172,18 @@ std::string ToString(KeyFramingReason r)
     case KeyFramingReason::kSmallFracOfGoodPoints: return "SmallFracOfGoodPoints";
     case KeyFramingReason::kNoKeyFraming: return "NoKeyFraming";
     case KeyFramingReason::kFirstFrame: return "FirstFrame";
+  }
+
+  return "Unknown";
+}
+
+std::string ToString(DescriptorType t)
+{
+  switch(t) {
+    case DescriptorType::kIntensity: return "Intensity"; break;
+    case DescriptorType::kIntensityAndGradient: return "IntensityAndGradient"; break;
+    case DescriptorType::kDescriptorFieldsFirstOrder: return "DescriptorFields"; break;
+    case DescriptorType::kBitPlanes: return "BitPlanes"; break;
   }
 
   return "Unknown";

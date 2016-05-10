@@ -524,6 +524,7 @@ std::string ToString(LossFunctionType);
 std::string ToString(VerbosityType);
 std::string ToString(PoseEstimationStatus);
 std::string ToString(KeyFramingReason);
+std::string ToString(DescriptorType);
 
 LossFunctionType LossFunctionTypeFromString(std::string);
 DescriptorType DescriptorTypeFromString(std::string);
