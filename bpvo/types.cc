@@ -41,6 +41,7 @@ AlgorithmParameters::AlgorithmParameters()
     , centralDifferenceRadius(3)
     , centralDifferenceSigmaBefore(0.75)
     , centralDifferenceSigmaAfter(1.75)
+    , laplacianKernelSize(1)
     , maxIterations(50)
     , parameterTolerance(1e-7)
     , functionTolerance(1e-6)
@@ -78,6 +79,7 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   centralDifferenceRadius = cf.get<int>("centralDifferenceRadius", 3);
   centralDifferenceSigmaBefore = cf.get<float>("centralDifferenceSigmaBefore", 0.75);
   centralDifferenceSigmaAfter = cf.get<float>("CenteralDifferenceSigmaAfter", 1.75);
+  laplacianKernelSize = cf.get<int>("laplacianKernelSize", 1);
   maxIterations = cf.get<int>("maxIterations", 50);
   parameterTolerance = cf.get<float>("parameterTolerance", 1e-7);
   functionTolerance = cf.get<float>("functionTolerance", 1e-6);
@@ -129,16 +131,18 @@ DescriptorType DescriptorTypeFromString(std::string s)
     return kIntensity;
   else if(icompare("BitPlanes", s))
     return kBitPlanes;
-  else if(icompare("Gradient", s))
+  else if(icompare("Gradient", s) || icompare("IntensityAndGradient", s))
     return kIntensityAndGradient;
   else if(icompare("DescriptorFields", s))
     return kDescriptorFieldsFirstOrder;
   else if(icompare("Latch", s))
     return kLatch;
-  else if(icompare("CenteralDifference", s))
+  else if(icompare("CentralDifference", s))
     return kCentralDifference;
+  else if(icompare("Laplacian", s))
+    return kLaplacian;
   else
-    THROW_ERROR("unknown DescriptorType");
+    THROW_ERROR(Format("unknown DescriptorType %s", s.c_str()).c_str());
 }
 
 std::string ToString(VerbosityType v)
@@ -202,6 +206,7 @@ std::string ToString(DescriptorType t)
     case DescriptorType::kBitPlanes: return "BitPlanes"; break;
     case DescriptorType::kLatch: return "Latch"; break;
     case DescriptorType::kCentralDifference: return "CenteralDifference"; break;
+    case DescriptorType::kLaplacian: return "Laplacian"; break;
   }
 
   return "Unknown";
@@ -221,6 +226,7 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   os << "centralDifferenceRadius = " << p.centralDifferenceRadius << "\n";
   os << "centralDifferenceSigmaBefore = " << p.centralDifferenceSigmaBefore << "\n";
   os << "centralDifferenceSigmaAfter = " << p.centralDifferenceSigmaAfter << "\n";
+  os << "laplacianKernelSize = " << p.laplacianKernelSize << "\n";
   os << "maxIterations = " << p.maxIterations << "\n";
   os << "parameterTolerance = " << p.parameterTolerance << "\n";
   os << "functionTolerance = " << p.functionTolerance << "\n";

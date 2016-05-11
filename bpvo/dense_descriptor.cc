@@ -67,6 +67,11 @@ DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int /*pyr
                                    p.latchHalfSsdSize);
       }
 
+    case DescriptorType::kLaplacian:
+      {
+        return new LaplacianDescriptor(p.laplacianKernelSize);
+      }
+
     case DescriptorType::kCentralDifference:
       {
         return new CentralDifferenceDescriptor(p.centralDifferenceRadius,

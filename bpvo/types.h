@@ -146,6 +146,7 @@ enum DescriptorType
   kDescriptorFieldsFirstOrder, //< 1-st order descriptor fields
   kLatch,                      //< The latch descriptor
   kCentralDifference,          //< central diff (see paper)
+  kLaplacian,                  //< Laplacian
   kBitPlanes                   //< bit-planes (robust)
 }; // DescriptorType
 
@@ -209,7 +210,6 @@ struct AlgorithmParameters
    */
   int centralDifferenceRadius;
 
-
   /**
    * sigma before computing the descriptor
    */
@@ -220,6 +220,11 @@ struct AlgorithmParameters
    * TODO (we only need a single variable, maybe call it sigmaChannel)
    */
   float centralDifferenceSigmaAfter;
+
+  /**
+   * Kernel size for the Laplacian
+   */
+  int laplacianKernelSize;
 
   //
   // optimization

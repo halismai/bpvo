@@ -49,6 +49,8 @@ int main()
   THROW_ERROR_IF(I.empty(), "failed to read image");
 
   AlgorithmParameters p;
+  p.centralDifferenceRadius = 1;
+
   /*
   Run(I, p, DescriptorType::kIntensity);
   Run(I, p, DescriptorType::kIntensityAndGradient);

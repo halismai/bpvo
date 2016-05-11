@@ -65,6 +65,36 @@ class GradientDescriptor : public DenseDescriptor
   std::array<cv::Mat,3> _channels;
 }; // GradientDescriptor
 
+class LaplacianDescriptor : public DenseDescriptor
+{
+ public:
+  inline LaplacianDescriptor(int ks = 1)
+      : DenseDescriptor(), _kernel_size(ks) {}
+
+  inline LaplacianDescriptor(const LaplacianDescriptor& other)
+      : DenseDescriptor(other)
+        , _kernel_size(other._kernel_size)
+        , _desc(other._desc) {}
+
+  virtual ~LaplacianDescriptor() {}
+
+  void compute(const cv::Mat&);
+
+  inline int numChannels() const { return 1; }
+  inline int rows() const { return _desc.rows; }
+  inline int cols() const { return _desc.cols; }
+  inline const cv::Mat& getChannel(int) const { return _desc; }
+
+  inline Pointer clone() const
+  {
+    return Pointer(new LaplacianDescriptor(*this));
+  }
+
+ private:
+  float _kernel_size;
+  cv::Mat _desc;
+}; // LaplacianDescriptor
+
 /**
  */
 class DescriptorFields : public DenseDescriptor

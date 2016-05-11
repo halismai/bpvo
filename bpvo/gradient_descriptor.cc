@@ -63,6 +63,11 @@ void GradientDescriptor::compute(const cv::Mat& image)
   ygradient(I.ptr<float>(), _rows, _cols, _channels[2].ptr<float>());
 }
 
+void LaplacianDescriptor::compute(const cv::Mat& image)
+{
+  cv::Laplacian(image, _desc, CV_32F, _kernel_size);
+}
+
 DescriptorFields::DescriptorFields(float s1, float s2)
   : _sigma1(s1),  _sigma2(s2) {}
 
