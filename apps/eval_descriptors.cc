@@ -92,7 +92,7 @@ static void Run(std::string conf_fn, std::string prefix, int numframes, std::str
       Warn("max iterations reached at frame %d\n", f_i);
     }
 
-    fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d '%s'\r",
+    fprintf(stdout, "Frame %05d %*.2f ms @ %*.2f Hz %03d iters %20s num_points %-*d %s\r",
               f_i-1, 6, tt, 5, (f_i - 1) / total_time,  num_iters,
               ToString(result.keyFramingReason).c_str(), 8, 0/*vo.numPointsAtLevel()*/,
               desc_name.c_str());
@@ -115,6 +115,8 @@ static void Run(std::string conf_fn, std::string prefix, int numframes, std::str
   trajectory.writeCameraPath(path_file);
   WriteContainer(time_file, time_ms);
   WriteContainer(num_iters_file, num_iterations);
+
+  fprintf(stdout, "\n");
 }
 
 //
