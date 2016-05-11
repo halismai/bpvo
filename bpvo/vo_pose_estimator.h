@@ -29,11 +29,13 @@
 namespace bpvo {
 
 class VisualOdometryFrame;
+class OptimizerLM;
 
 class VisualOdometryPoseEstimator
 {
  public:
   VisualOdometryPoseEstimator(const AlgorithmParameters&);
+  ~VisualOdometryPoseEstimator();
 
   /**
    * Estimate the pose of the cur_frame wrt to ref_frame
@@ -58,6 +60,8 @@ class VisualOdometryPoseEstimator
   PoseEstimatorGN<TemplateData> _pose_estimator;
   PoseEstimatorParameters _pose_est_params;
   PoseEstimatorParameters _pose_est_params_low_res;
+
+  //UniquePointer<OptimizerLM> _optimizer;
 }; // VisualOdometryPoseEstimator
 
 }; // bpvo

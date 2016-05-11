@@ -35,6 +35,12 @@ AlgorithmParameters::AlgorithmParameters()
     , sigmaBitPlanes(0.5)
     , dfSigma1(0.75)
     , dfSigma2(1.75)
+    , latchNumBytes(1)
+    , latchRotationInvariance(false)
+    , latchHalfSsdSize(1)
+    , centralDifferenceRadius(3)
+    , centralDifferenceSigmaBefore(0.75)
+    , centralDifferenceSigmaAfter(1.75)
     , maxIterations(50)
     , parameterTolerance(1e-7)
     , functionTolerance(1e-6)
@@ -66,6 +72,12 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   sigmaBitPlanes = cf.get<float>("sigmaBitPlanes", 0.5f);
   dfSigma1 = cf.get<float>("dfSigma1", 0.75);
   dfSigma2 = cf.get<float>("dfSigma2", 1.75);
+  latchNumBytes = cf.get<int>("latchNumBytes", 1);
+  latchRotationInvariance = cf.get<int>("latchRotationInvariance", 0);
+  latchHalfSsdSize = cf.get<int>("latchHalfSsdSize", 1);
+  centralDifferenceRadius = cf.get<int>("centralDifferenceRadius", 3);
+  centralDifferenceSigmaBefore = cf.get<float>("centralDifferenceSigmaBefore", 0.75);
+  centralDifferenceSigmaAfter = cf.get<float>("CenteralDifferenceSigmaAfter", 1.75);
   maxIterations = cf.get<int>("maxIterations", 50);
   parameterTolerance = cf.get<float>("parameterTolerance", 1e-7);
   functionTolerance = cf.get<float>("functionTolerance", 1e-6);
@@ -121,6 +133,10 @@ DescriptorType DescriptorTypeFromString(std::string s)
     return kIntensityAndGradient;
   else if(icompare("DescriptorFields", s))
     return kDescriptorFieldsFirstOrder;
+  else if(icompare("Latch", s))
+    return kLatch;
+  else if(icompare("CenteralDifference", s))
+    return kCentralDifference;
   else
     THROW_ERROR("unknown DescriptorType");
 }
@@ -184,6 +200,8 @@ std::string ToString(DescriptorType t)
     case DescriptorType::kIntensityAndGradient: return "IntensityAndGradient"; break;
     case DescriptorType::kDescriptorFieldsFirstOrder: return "DescriptorFields"; break;
     case DescriptorType::kBitPlanes: return "BitPlanes"; break;
+    case DescriptorType::kLatch: return "Latch"; break;
+    case DescriptorType::kCentralDifference: return "CenteralDifference"; break;
   }
 
   return "Unknown";
@@ -195,6 +213,14 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   os << "minImageDimensionForPyramid = " << p.minImageDimensionForPyramid << "\n";
   os << "sigmaPriorToCensusTransform = " << p.sigmaPriorToCensusTransform << "\n";
   os << "sigmaBitPlanes = " << p.sigmaBitPlanes << "\n";
+  os << "dfSigma1 = " << p.dfSigma1 << "\n";
+  os << "dfSigma2 = " << p.dfSigma2 << "\n";
+  os << "latchNumBytes = " << p.latchNumBytes << "\n";
+  os << "latchRotationInvariance = " << p.latchRotationInvariance << "\n";
+  os << "latchHalfSsdSize = " << p.latchHalfSsdSize << "\n";
+  os << "centralDifferenceRadius = " << p.centralDifferenceRadius << "\n";
+  os << "centralDifferenceSigmaBefore = " << p.centralDifferenceSigmaBefore << "\n";
+  os << "centralDifferenceSigmaAfter = " << p.centralDifferenceSigmaAfter << "\n";
   os << "maxIterations = " << p.maxIterations << "\n";
   os << "parameterTolerance = " << p.parameterTolerance << "\n";
   os << "functionTolerance = " << p.functionTolerance << "\n";
@@ -270,5 +296,5 @@ std::ostream& operator<<(std::ostream& os, const ImageSize& s)
   return os;
 }
 
-}
+} // bpvo
 

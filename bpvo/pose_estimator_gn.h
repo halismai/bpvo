@@ -54,7 +54,7 @@ class PoseEstimatorGN : public PoseEstimatorBase< PoseEstimatorGN<TDataT> >
   }
 
   /**
-   * \return the )ame of the algorithm
+   * \return the name of the algorithm
    */
   inline std::string name() const { return "PoseEstimatorGN"; }
 

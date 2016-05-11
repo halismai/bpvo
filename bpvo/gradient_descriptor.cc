@@ -87,8 +87,8 @@ static void splitPosNeg(const cv::Mat& src, cv::Mat& pos, cv::Mat& neg, float si
   }
 
   if(sigma > 0.0f) {
-    cv::GaussianBlur(pos, pos, cv::Size(), sigma, sigma);
-    cv::GaussianBlur(neg, neg, cv::Size(), sigma, sigma);
+    imsmooth(pos, pos, sigma);
+    imsmooth(neg, neg, sigma);
   }
 }
 

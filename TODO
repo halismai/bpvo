@@ -3,4 +3,8 @@
 - support for Mono?
 - simple viewer (using QGLViewer or pangolin)
 - DenseDescriptor interface could be improved
+  - DenseDescriptor interface must be improved
+    - clean up the configurations for difference descriptors
+    - factor as much as possible of the common code inside the base class
 - ARM?
+

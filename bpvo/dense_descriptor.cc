@@ -23,15 +23,19 @@
 #include "bpvo/intensity_descriptor.h"
 #include "bpvo/bitplanes_descriptor.h"
 #include "bpvo/gradient_descriptor.h"
+#include "bpvo/latch_descriptor.h"
+#include "bpvo/central_difference_descriptor.h"
+
 #include "bpvo/imgproc.h"
 #include "bpvo/utils.h"
+
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace bpvo {
 
 DenseDescriptor::~DenseDescriptor() {}
 
-DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int pyr_level)
+DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int /*pyr_level*/)
 {
   switch(p.descriptor)
   {
@@ -48,12 +52,26 @@ DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int pyr_l
     case DescriptorType::kBitPlanes:
       {
         return new BitPlanesDescriptor(p.sigmaPriorToCensusTransform,
-                                       pyr_level >= p.maxTestLevel ? p.sigmaBitPlanes : -1.0f);
+                                       p.sigmaBitPlanes);
+                                       //pyr_level >= p.maxTestLevel ? p.sigmaBitPlanes : -1.0f);
       } break;
 
     case DescriptorType::kDescriptorFieldsFirstOrder:
       {
         return new DescriptorFields(p.dfSigma1, p.dfSigma2);
+      }
+
+    case DescriptorType::kLatch:
+      {
+        return new LatchDescriptor(p.latchNumBytes, p.latchRotationInvariance,
+                                   p.latchHalfSsdSize);
+      }
+
+    case DescriptorType::kCentralDifference:
+      {
+        return new CentralDifferenceDescriptor(p.centralDifferenceRadius,
+                                               p.centralDifferenceSigmaBefore,
+                                               p.centralDifferenceSigmaAfter);
       }
 
     default:
@@ -70,7 +88,6 @@ void DenseDescriptor::computeSaliencyMap(cv::Mat& dst) const
   for(int i = 1; i < this->numChannels(); ++i)
     gradientAbsoluteMagnitudeAcc(this->getChannel(i), dst.ptr<float>());
 }
-
 
 void DenseDescriptor::copyTo(DenseDescriptor* dst) const
 {

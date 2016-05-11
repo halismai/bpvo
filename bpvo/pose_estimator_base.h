@@ -58,9 +58,7 @@ class PoseEstimatorTraits< PoseEstimatorGN<TDataT> >
 
 template <class TDataT>
 class PoseEstimatorTraits< PoseEstimatorLM<TDataT> >
-  : public PoseEstimatorTraits< PoseEstimatorGN<TDataT> >
-{
-}; // PoseEstimatorTraits
+  : public PoseEstimatorTraits< PoseEstimatorGN<TDataT> > {}; // PoseEstimatorTraits
 
 /**
  * templated with 'N' the number of parameters we are solving for (i.e. 6)

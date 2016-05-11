@@ -141,10 +141,12 @@ enum VerbosityType
 
 enum DescriptorType
 {
-  kIntensity = 0x30,      //< raw intensity (fast)
-  kIntensityAndGradient,  //< intensity + gradient constraint
+  kIntensity = 0x30,           //< raw intensity (fast)
+  kIntensityAndGradient,       //< intensity + gradient constraint
   kDescriptorFieldsFirstOrder, //< 1-st order descriptor fields
-  kBitPlanes              //< bit-planes (robust)
+  kLatch,                      //< The latch descriptor
+  kCentralDifference,          //< central diff (see paper)
+  kBitPlanes                   //< bit-planes (robust)
 }; // DescriptorType
 
 struct AlgorithmParameters
@@ -187,6 +189,37 @@ struct AlgorithmParameters
    */
   float dfSigma2;
 
+  /**
+   * Number of bytes for the latch descriptor
+   */
+  int latchNumBytes;
+
+  /**
+   * rotation invariance for the latch descriptor
+   */
+  bool latchRotationInvariance;
+
+  /**
+   * Half ssd size for the latch descriptor
+   */
+  int latchHalfSsdSize;
+
+  /**
+   * Patch radius to use when computing the central difference descriptor
+   */
+  int centralDifferenceRadius;
+
+
+  /**
+   * sigma before computing the descriptor
+   */
+  float centralDifferenceSigmaBefore;
+
+  /**
+   * sigma after
+   * TODO (we only need a single variable, maybe call it sigmaChannel)
+   */
+  float centralDifferenceSigmaAfter;
 
   //
   // optimization
@@ -305,6 +338,7 @@ struct AlgorithmParameters
    * maximum disparity to use
    */
   float maxValidDisparity;
+
 
   //
   // other
