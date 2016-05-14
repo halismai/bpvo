@@ -103,7 +103,7 @@ struct PoseEstimatorData_
         std::cout << H << std::endl;
         std::cout << G << std::endl;
       } else {
-        Warn("ok!");
+        Warn("ok!\n");
       }
     }
 

@@ -86,6 +86,17 @@ if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
   add_definitions(-DIS_64BIT)
 endif()
 
+If(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(IS_OSX ON)
+  add_definitions(-DIS_OSX)
+  message(STATUS "building for OS X")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  message(STATUS "Building for linux")
+  set(IS_LINUX ON)
+  add_definitions(-DIS_LINUX)
+endif()
+
+
 # add a 'tuning' build type
 set(CMAKE_CXX_FLAGS_TUNE "-O3 -g -DNDEBUG"
   CACHE STRING "Flags for code tuning" FORCE)
@@ -167,6 +178,7 @@ endif()
 if(WITH_SIMD)
   add_definitions(-DWITH_SIMD)
 endif()
+
 
 configure_file(
   "${PROJECT_SOURCE_DIR}/bpvo_config.h.in"

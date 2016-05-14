@@ -2,6 +2,7 @@
 #include "bpvo/imwarp.h"
 #include "bpvo/project_points.h"
 #include "bpvo/simd.h"
+#include "bpvo/eigen.h"
 
 #include <opencv2/core/core.hpp>
 #include <vector>
@@ -14,6 +15,7 @@ namespace bpvo {
 // performance severely. We recommend not enabling this options here
 //
 #define PHOTO_ERROR_WITH_OPENCV 0
+#define PHOTO_ERROR_OPT 1 // optimized version
 
 #if PHOTO_ERROR_WITH_OPENCV
 #include <opencv2/imgproc/imgproc.hpp>
@@ -72,7 +74,7 @@ struct PhotoError::Impl
   cv::Mat _map1, _map2;
 }; // PhotoError
 
-#else
+#elif PHOTO_ERROR_OPT
 
 struct PhotoError::Impl
 {
@@ -223,13 +225,83 @@ struct PhotoError::Impl
   std::vector<int> _inds;
   const typename ValidVector::value_type* _valid_ptr = nullptr;
 }; // PhotoError::Impl
+#else
+
+inline int Floor(float v)
+{
+  int i = static_cast<int>(v);
+  return i - (i > v);
+}
+
+inline int Floor(double v)
+{
+  int i = static_cast<int>(v);
+  return i - (i > v);
+}
+
+struct PhotoError::Impl
+{
+  typedef Eigen::Matrix<double,2,1> Point2;
+  typedef typename EigenAlignedContainer<Point2>::type Point2Vector;
+
+  inline void init(const Matrix34& P_, const PointVector& X, ValidVector& valid,
+                   int rows, int cols)
+  {
+    _x.resize(X.size());
+    valid.resize(X.size());
+    const Eigen::Matrix<double,3,4> P = P_.cast<double>();
+    for(size_t i = 0; i < X.size(); ++i)
+    {
+      _x[i] = normHomog( (P * X[i].cast<double>()) );
+      int xi = Floor(_x[i].x());
+      int yi = Floor(_x[i].y());
+      valid[i] = xi >= 0 && xi < cols-1 && yi >= 0 && yi < rows-1;
+    }
+
+    _valid_ptr = valid.data();
+    _stride = cols;
+  }
+
+  inline void run(const float* I0_ptr, const float* I1_ptr, float* r_ptr) const
+  {
+    for(size_t i = 0; i < _x.size(); ++i)
+    {
+      if(_valid_ptr[i])
+      {
+        double xf = _x[i].x();
+        double yf = _x[i].y();
+
+        int xi = Floor(xf);
+        int yi = Floor(yf);
+
+        xf -= (double) xi;
+        yf -= (double) yi;
+
+        int ii = yi*_stride + xi;
+
+        double wx = (1.0 - xf);
+        double Iw = (1.0 - yf) * (I1_ptr[ii        ]*wx + I1_ptr[ii+1        ]*xf) +
+                           yf  * (I1_ptr[ii+_stride]*wx + I1_ptr[ii+_stride+1]*xf);
+        r_ptr[i] = float( Iw - (double) I0_ptr[i] );
+      } else
+      {
+        r_ptr[i] = 0.0f;
+      }
+    }
+  }
+
+ protected:
+  int _stride;
+  const typename ValidVector::value_type* _valid_ptr = NULL;
+  Point2Vector _x;
+}; // PhotoError::Impl
 
 #endif
 
 PhotoError::PhotoError()
   : _impl(new PhotoError::Impl) {}
 
-  PhotoError::~PhotoError() {}
+PhotoError::~PhotoError() {}
 
 void PhotoError::init(const Matrix34& P, const PointVector& X, ValidVector& valid, int rows, int cols)
 {
@@ -242,5 +314,6 @@ void PhotoError::run(const float* I0_ptr, const float* I1_ptr, float* r_ptr) con
 }
 
 #undef PHOTO_ERROR_WITH_OPENCV
+#undef PHOTO_ERROR_OPT
 
 }; // bpvo

@@ -39,7 +39,7 @@ void ExtractChannel(const cv::Mat& src, cv::Mat& dst, int bit, float sigma)
 {
   dst.create(src.size(),  cv::DataType<TDst>::type);
 
-  constexpr TDst Scale = TDst(255.0); // to keeep thresholds the same
+  constexpr TDst Scale = TDst(1.0); // to keeep thresholds the same
   constexpr TDst Bias  = TDst(0.0);
 
   auto src_ptr = src.ptr<const uint8_t>();

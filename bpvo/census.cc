@@ -59,8 +59,8 @@ static FORCE_INLINE void censusOp(const uint8_t* src, int stride, uint8_t* dst)
 cv::Mat census(const cv::Mat& src, float s)
 {
   assert( src.type() == CV_8UC1 && src.channels() == 1 && src.isContinuous() );
-  cv::Mat image = src;
 
+  cv::Mat image = src;
   if(s > 0.0f)
     cv::GaussianBlur(src, image, cv::Size(3,3), s, s);
 
