@@ -23,7 +23,7 @@
 #include "bpvo/debug.h"
 #include "bpvo/simd.h"
 
-#include <opencv2/imgproc.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <string.h>
 #include <algorithm>
