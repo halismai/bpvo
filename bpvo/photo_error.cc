@@ -15,7 +15,7 @@ namespace bpvo {
 // performance severely. We recommend not enabling this options here
 //
 #define PHOTO_ERROR_WITH_OPENCV 0
-#define PHOTO_ERROR_OPT 1 // optimized version
+#define PHOTO_ERROR_OPT         1 // optimized version
 
 #if PHOTO_ERROR_WITH_OPENCV
 #include <opencv2/imgproc/imgproc.hpp>
@@ -317,3 +317,4 @@ void PhotoError::run(const float* I0_ptr, const float* I1_ptr, float* r_ptr) con
 #undef PHOTO_ERROR_OPT
 
 }; // bpvo
+
