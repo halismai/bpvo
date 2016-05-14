@@ -55,7 +55,7 @@ if(CMAKE_GENERATOR MATCHES "Makefiles|Ninja" AND "${CMAKE_BUILD_TYPE}" STREQUAL 
 endif()
 
 include(cmake/MakeVersion.cmake)
-MakeVersion(BPVO 1 2 0)
+MakeVersion(BPVO 1 2 1)
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Direct Visual Odometry")
 set(CPACK_PACKAGE_VENDOR              "halismai")
@@ -126,7 +126,8 @@ find_package(Eigen  REQUIRED)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
 
-list(APPEND MY_LIBRARIES ${OpenCV_LIBS} ${CERES_LIBRARIES})
+list(APPEND MY_LIBRARIES ${OpenCV_LIBS})
+list(APPEND MY_LIBRARIES_CORE ${OpenCV_LIBS})
 
 set(Boost_USE_STATIC_LIBS     ON)
 set(Boost_USE_STATIC_RUNTIME  ON)
@@ -147,6 +148,7 @@ find_package(GooglePerfTools)
 if(TBB_FOUND)
   include_directories(${TBB_INCLUDE_DIRS})
   list(APPEND MY_LIBRARIES ${TBB_LIBRARIES})
+  list(APPEND MY_LIBRARIES_CORE ${TBB_LIBRARIES})
   if(WITH_TBB)
     add_definitions(-DWITH_TBB)
   endif()
