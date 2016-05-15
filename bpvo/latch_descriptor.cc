@@ -1025,7 +1025,8 @@ class LATCHDescriptorExtractorImpl
 
 LatchDescriptor::LatchDescriptor(int bytes, bool rotationInvariance, int half_ssd_size)
  : DenseDescriptor(),
-    _impl(new LATCHDescriptorExtractorImpl(bytes, rotationInvariance, half_ssd_size)) {}
+    _impl(new LATCHDescriptorExtractorImpl(bytes, rotationInvariance, half_ssd_size)),
+    _rows(0), _cols(0) {}
 
 LatchDescriptor::LatchDescriptor(const LatchDescriptor& other)
     : DenseDescriptor(other),

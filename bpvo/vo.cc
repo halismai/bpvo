@@ -31,7 +31,7 @@ namespace bpvo {
 class VisualOdometry::Impl
 {
  public:
-  inline Impl(const Matrix33&, float, ImageSize, AlgorithmParameters p);
+  inline Impl(const Matrix33&, float, ImageSize, const AlgorithmParameters& p);
 
   inline Result addFrame(const uint8_t*, const float*);
 
@@ -59,7 +59,7 @@ class VisualOdometry::Impl
 
 
 VisualOdometry::VisualOdometry(const Matrix33& K, float baseline,
-                               ImageSize image_size, AlgorithmParameters params)
+                               ImageSize image_size, const AlgorithmParameters& params)
     : _impl(new Impl(K, baseline, image_size, params)) {}
 
 VisualOdometry::~VisualOdometry() { delete _impl; }
@@ -93,7 +93,7 @@ auto VisualOdometry::pointsAtLevel(int level) const -> const PointVector&
 //
 
 VisualOdometry::Impl::
-Impl(const Matrix33& K, float b, ImageSize s, AlgorithmParameters p)
+Impl(const Matrix33& K, float b, ImageSize s, const AlgorithmParameters& p)
   : _params(p)
   , _image_size(s)
   , _vo_pose(make_unique<VisualOdometryPoseEstimator>(p))

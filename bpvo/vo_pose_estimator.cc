@@ -211,6 +211,7 @@ OptimizerLM::run(const TemplateData* tdata, const DenseDescriptor* channels,
     ret.numIterations = 1;
     ret.firstOrderOptimality = g_norm;
     ret.status = PoseEstimationStatus::kGradientTolReached;
+    ret.finalError = f_norm;
     return ret;
   }
 

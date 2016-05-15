@@ -415,6 +415,8 @@ enum KeyFramingReason
  */
 struct OptimizerStatistics
 {
+  OptimizerStatistics();
+
   /**
    * Number of iterations it took to converge. If this is unsually high, it may
    * indicate a problem. For example, motion was too large, or the optimizer got

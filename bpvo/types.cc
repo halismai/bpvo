@@ -249,6 +249,12 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   return os;
 }
 
+OptimizerStatistics::OptimizerStatistics()
+  : numIterations(0)
+  , finalError(-1.0f)
+  , firstOrderOptimality(-1.0f)
+  , status(PoseEstimationStatus::kSolverError) {}
+
 std::ostream& operator<<(std::ostream& os, const OptimizerStatistics& s)
 {
   os << "numIterations: " << s.numIterations << "\n"

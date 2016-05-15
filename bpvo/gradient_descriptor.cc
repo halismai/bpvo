@@ -69,7 +69,7 @@ void LaplacianDescriptor::compute(const cv::Mat& image)
 }
 
 DescriptorFields::DescriptorFields(float s1, float s2)
-  : _sigma1(s1),  _sigma2(s2) {}
+  : _rows(0), _cols(0), _sigma1(s1),  _sigma2(s2) {}
 
 DescriptorFields::DescriptorFields(const DescriptorFields& other)
   : DenseDescriptor(other), _rows(other._rows), _cols(other._cols),

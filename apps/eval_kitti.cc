@@ -72,46 +72,51 @@ void WriteVector(std::string filename, const std::vector<T>& data)
 
 int main(int argc, char** argv)
 {
-  ProgramOptions options;
-  options
-      ("config,c", "", "config file")
-      ("output,o", ".", "output dir").parse(argc, argv);
+  try {
+    ProgramOptions options;
+    options
+        ("config,c", "", "config file")
+        ("output,o", ".", "output dir").parse(argc, argv);
 
-  const auto config = options.get<std::string>("config");
-  const auto output_dir = options.get<std::string>("output");
-  DIE_IF( config.empty(), "need config file" );
+    const auto config = options.get<std::string>("config");
+    const auto output_dir = options.get<std::string>("output");
+    DIE_IF( config.empty(), "need config file" );
 
-  for(int i = 1; i <= 10; ++i)
-  {
-    Info("Running sequence number %d\n", i);
+    for(int i = 1; i <= 10; ++i)
+    {
+      Info("Running sequence number %d\n", i);
 
-    VoApp::Options vo_app_options;
+      VoApp::Options vo_app_options;
 
-    vo_app_options.store_iter_time = true;
-    vo_app_options.store_iter_num = true;
-    vo_app_options.data_buffer_size = 16;
-    vo_app_options.max_num_frames = -1;
+      vo_app_options.store_iter_time = true;
+      vo_app_options.store_iter_num = true;
+      vo_app_options.data_buffer_size = 16;
+      vo_app_options.max_num_frames = -1;
 
-    VoApp::ViewerOptions viewer_options;
-    viewer_options.image_display_mode = VoApp::ViewerOptions::ImageDisplayMode::None;
-    vo_app_options.viewer_options = viewer_options;
+      VoApp::ViewerOptions viewer_options;
+      viewer_options.image_display_mode = VoApp::ViewerOptions::ImageDisplayMode::None;
+      vo_app_options.viewer_options = viewer_options;
 
-    auto dataset = GetKittiSequence(i);
+      auto dataset = GetKittiSequence(i);
 
-    printf("\n\n\n");
-    Info("Starting VO\n");
-    VoApp vo_app( vo_app_options, config, std::move(dataset));
-    vo_app.run();
-    while(vo_app.isRunning())
-      Sleep(100);
+      printf("\n\n\n");
+      Info("Starting VO\n");
+      VoApp vo_app( vo_app_options, config, std::move(dataset));
+      vo_app.run();
+      while(vo_app.isRunning())
+        Sleep(100);
 
-    Info("done .. writing results\n");
-    WriteTrajectoryKittiFormat(
-        Format("%s/%02d.txt", output_dir.c_str(), i), vo_app.getTrajectory());
-    WriteVector(
-        Format("%s/%02d_time.txt", output_dir.c_str(), i), vo_app.getIterationTime());
-    WriteVector(
-        Format("%s/%02d_iters.txt", output_dir.c_str(), i), vo_app.getNumIterations());
+      Info("done .. writing results\n");
+      WriteTrajectoryKittiFormat(
+          Format("%s/%02d.txt", output_dir.c_str(), i), vo_app.getTrajectory());
+      WriteVector(
+          Format("%s/%02d_time.txt", output_dir.c_str(), i), vo_app.getIterationTime());
+      WriteVector(
+          Format("%s/%02d_iters.txt", output_dir.c_str(), i), vo_app.getNumIterations());
+    }
+
+  } catch(const std::exception& ex) {
+    fprintf(stderr, "ERROR: %s\n", ex.what());
   }
 
   return 0;

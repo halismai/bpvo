@@ -12,6 +12,8 @@ CentralDifferenceDescriptor(int radius, float sigma_before, float sigma_after)
     , _radius(radius)
     , _sigma_before(sigma_before)
     , _sigma_after(sigma_after)
+    , _rows(0)
+    , _cols(0)
     , _channels(math::sq(2*radius+1) - 1)
 {
   THROW_ERROR_IF(_radius <= 0, "invalid radius");
@@ -19,7 +21,12 @@ CentralDifferenceDescriptor(int radius, float sigma_before, float sigma_after)
 
 CentralDifferenceDescriptor::
 CentralDifferenceDescriptor(const CentralDifferenceDescriptor& other)
-    : DenseDescriptor(other), _radius(other._radius), _rows(other._rows), _cols(other._cols),
+    : DenseDescriptor(other),
+    _radius(other._radius),
+    _sigma_before(other._sigma_before),
+    _sigma_after(other._sigma_after),
+    _rows(other._rows),
+    _cols(other._cols),
     _channels(other._channels) {}
 
 CentralDifferenceDescriptor::~CentralDifferenceDescriptor() {}
