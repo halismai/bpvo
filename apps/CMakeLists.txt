@@ -1,7 +1,7 @@
 add_library(bpvo_apps ${LIBRARY_TYPE} vo_app.cc)
 
 if(IS_OSX)
-  target_link_libraries(bpvo_apps ${MY_LIBRARIES})
+  target_link_libraries(bpvo_apps ${MY_LIBRARIES} bpvo_utils bpvo)
 endif()
 
 file(GLOB src "*.cc")
