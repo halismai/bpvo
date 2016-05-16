@@ -145,17 +145,17 @@ void DescriptorFields2ndOrder::compute(const cv::Mat& image)
   xgradient(buffer1.ptr<float>(), _rows, _cols, buffer2.ptr<float>());
   splitPosNeg(buffer2, _channels[2], _channels[3], _sigma2);
 
+  // Ixy
+  ygradient(buffer2.ptr<float>(), _rows, _cols, buffer1.ptr<float>());
+  splitPosNeg(buffer2, _channels[4], _channels[5], _sigma2);
+
   // Iy
   ygradient(I.ptr<float>(), _rows, _cols, buffer1.ptr<float>());
-  splitPosNeg(buffer1, _channels[4], _channels[5], _sigma2);
+  splitPosNeg(buffer1, _channels[6], _channels[7], _sigma2);
 
   // Iyy
   ygradient(buffer1.ptr<float>(), _rows, _cols, buffer2.ptr<float>());
-  splitPosNeg(buffer2, _channels[6], _channels[7], _sigma2);
-
-  // Ixy
-  cv::Sobel(I, buffer1, CV_32F, 1, 1, 1.0/4.0);
-  splitPosNeg(buffer1, _channels[8], _channels[9], _sigma2);
+  splitPosNeg(buffer2, _channels[8], _channels[9], _sigma2);
 }
 
 } // bpvo
