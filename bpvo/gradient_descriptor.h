@@ -126,6 +126,32 @@ class DescriptorFields : public DenseDescriptor
   std::array<cv::Mat, 5> _channels;
 }; // DescriptorFields
 
+class DescriptorFields2ndOrder : public DenseDescriptor
+{
+ public:
+  DescriptorFields2ndOrder(float sigma1 = 0.5, float sigma2 = 1.5);
+  DescriptorFields2ndOrder(const DescriptorFields2ndOrder&);
+  virtual ~DescriptorFields2ndOrder();
+
+  void compute(const cv::Mat&);
+
+  inline const cv::Mat& getChannel(int i) const { return _channels[i]; }
+
+  inline int numChannels() const { return 10; }
+  inline int rows() const { return _rows; }
+  inline int cols() const { return _cols; }
+
+  inline void setSigma1(float s) { _sigma1 = s; }
+  inline void setSigma2(float s) { _sigma2 = s; }
+
+  inline Pointer clone() const { return Pointer(new DescriptorFields2ndOrder(*this)); }
+
+ private:
+  int _rows, _cols;
+  float _sigma1, _sigma2;
+  std::array<cv::Mat, 10> _channels;
+}; // DescriptorFields2ndOrder
+
 }; // bpvo
 
 #endif // BPVO_GRADIENT_DESCRIPTOR_H

@@ -203,6 +203,7 @@ std::string ToString(DescriptorType t)
     case DescriptorType::kIntensity: return "Intensity"; break;
     case DescriptorType::kIntensityAndGradient: return "IntensityAndGradient"; break;
     case DescriptorType::kDescriptorFieldsFirstOrder: return "DescriptorFields"; break;
+    case DescriptorType::kDescriptorFieldsSecondOrder: return "DescriptorFields2ndOrder"; break;
     case DescriptorType::kBitPlanes: return "BitPlanes"; break;
     case DescriptorType::kLatch: return "Latch"; break;
     case DescriptorType::kCentralDifference: return "CenteralDifference"; break;

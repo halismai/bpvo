@@ -115,5 +115,48 @@ void DescriptorFields::compute(const cv::Mat& image)
   splitPosNeg(buffer, _channels[3], _channels[4], _sigma2);
 }
 
+DescriptorFields2ndOrder::DescriptorFields2ndOrder(float s1, float s2)
+  : DenseDescriptor(), _rows(0), _cols(0), _sigma1(s1), _sigma2(s2) {}
+
+DescriptorFields2ndOrder::DescriptorFields2ndOrder(const DescriptorFields2ndOrder& o)
+  : DenseDescriptor(o), _rows(o._rows), _cols(o._cols)
+  , _sigma1(o._sigma1), _sigma2(o._sigma2), _channels(o._channels) {}
+
+DescriptorFields2ndOrder::~DescriptorFields2ndOrder() {}
+
+void DescriptorFields2ndOrder::compute(const cv::Mat& image)
+{
+  _rows = image.rows;
+  _cols = image.cols;
+
+  cv::Mat I;
+  image.convertTo(I, CV_32F);
+
+  I = _sigma1 > 0.0 ? imsmooth(I, _sigma1) : I;
+
+  cv::Mat buffer1(I.size(), I.type());
+  cv::Mat buffer2(I.size(), I.type());
+
+  // Ix
+  xgradient(I.ptr<float>(), _rows, _cols, buffer1.ptr<float>());
+  splitPosNeg(buffer1, _channels[0], _channels[1], _sigma2);
+
+  // Ixx
+  xgradient(buffer1.ptr<float>(), _rows, _cols, buffer2.ptr<float>());
+  splitPosNeg(buffer2, _channels[2], _channels[3], _sigma2);
+
+  // Iy
+  ygradient(I.ptr<float>(), _rows, _cols, buffer1.ptr<float>());
+  splitPosNeg(buffer1, _channels[4], _channels[5], _sigma2);
+
+  // Iyy
+  ygradient(buffer1.ptr<float>(), _rows, _cols, buffer2.ptr<float>());
+  splitPosNeg(buffer2, _channels[6], _channels[7], _sigma2);
+
+  // Ixy
+  cv::Sobel(I, buffer1, CV_32F, 1, 1, 1.0/4.0);
+  splitPosNeg(buffer1, _channels[8], _channels[9], _sigma2);
+}
+
 } // bpvo
 

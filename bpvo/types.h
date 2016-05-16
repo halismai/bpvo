@@ -144,6 +144,7 @@ enum DescriptorType
   kIntensity = 0x30,           //< raw intensity (fast)
   kIntensityAndGradient,       //< intensity + gradient constraint
   kDescriptorFieldsFirstOrder, //< 1-st order descriptor fields
+  kDescriptorFieldsSecondOrder,//< 1-nd order df
   kLatch,                      //< The latch descriptor
   kCentralDifference,          //< central diff (see paper)
   kLaplacian,                  //< Laplacian

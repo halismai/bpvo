@@ -61,6 +61,11 @@ DenseDescriptor* DenseDescriptor::Create(const AlgorithmParameters& p, int /*pyr
         return new DescriptorFields(p.dfSigma1, p.dfSigma2);
       }
 
+    case DescriptorType::kDescriptorFieldsSecondOrder:
+      {
+        return new DescriptorFields2ndOrder(p.dfSigma1, p.dfSigma2);
+      }
+
     case DescriptorType::kLatch:
       {
         return new LatchDescriptor(p.latchNumBytes, p.latchRotationInvariance,
