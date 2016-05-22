@@ -1,7 +1,7 @@
 # BPVO
 
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/8506/badge.svg)](https://scan.coverity.com/projects/halismai-bpvo)
-[![Build Status](https://api.travis-ci.org/halismai/bpvo.svg?branch=master)](https://github.com/halismai/bpvo)
+[![Build Status](https://api.travis-ci.org/halismai/bpvo.svg?branch=master)](https://travis-ci.org/halismai/bpvo)
 [![Code Health](https://landscape.io/github/halismai/bpvo/master/landscape.svg?style=flat)](https://landscape.io/github/halismai/bpvo/master)
 
 
