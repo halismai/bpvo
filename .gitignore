@@ -56,3 +56,5 @@ matlab/results
 *.mat
 *.mexa*
 *.ply
+
+matlab/kitti

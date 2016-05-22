@@ -41,11 +41,25 @@ static inline void RunAll(const cv::Mat& I)
   printf("\n");
 }
 
+
+
 int main()
 {
   auto I = cv::imread("/home/halismai/data/NewTsukubaStereoDataset/illumination/fluorescent/left/tsukuba_fluorescent_L_00001.png", cv::IMREAD_GRAYSCALE);
 
-  RunAll(I);
+  {
+    cv::Mat tmp;
+    cv::resize(I, tmp, cv::Size(320/4, 240/4));
+    RunAll(tmp);
+
+    cv::resize(I, tmp, cv::Size(320/2, 240/2));
+    RunAll(tmp);
+
+    cv::resize(I, tmp, cv::Size(320, 240));
+    RunAll(tmp);
+    return 0;
+  }
+
 
   cv::resize(I, I, cv::Size(2*I.cols, 2*I.rows));
   RunAll(I);
