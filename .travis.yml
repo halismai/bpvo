@@ -1,9 +1,9 @@
 # Use new trusty images, should yield newer compilers and packages
 sudo: required
+
 # from http://genbattle.bitbucket.org/blog/2016/01/17/c++-travis-ci/
 dist: trusty
 language: cpp
-
 
 matrix:
   include:
@@ -26,7 +26,7 @@ before_install:
   - sudo apt-get install -y libeigen3-dev
   # get boost
   # See https://github.com/lambdafu/grakopp/blob/master/.travis.yml
-  - wget --no-verbose --output-document=boost.tar.bz2 https://sourceforge.net/projects/boost/files/boost/1.59.0/boost_1_59_0.tar.bz2/download
+  - wget --output-document=boost.tar.bz2 https://sourceforge.net/projects/boost/files/boost/1.59.0/boost_1_59_0.tar.bz2/download
   - export BOOST_ROOT="$TRAVIS_BUILD_DIR/../boost/"
   - mkdir -p $BOOST_ROOT
   - tar xf boost.tar.bz2 --strip-components=1 -C $BOOST_ROOT
@@ -36,5 +36,5 @@ before_install:
 script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$COMPILER .. && make VERBOSE=1
+  - cmake -DCMAKE_CXX_COMPILER=$COMPILER .. && make -j2 VERBOSE=1
 
