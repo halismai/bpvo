@@ -62,7 +62,7 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
   int N = points.size();
   Eigen::Matrix<float, Eigen::Dynamic, 6> J(N, 6);
 
-  float fx = 0.5f * _K(0,0), fy = 0.5f * _K(1,1);
+  float fx = _K(0,0), fy = _K(1,1);
   float s = _T(0,0), c1 = _T_inv(0,3), c2 = _T_inv(1,3), c3 = _T_inv(2,3);
 
   const __m128 FX = _mm_set1_ps(fx);
@@ -315,3 +315,4 @@ int RigidBodyWarp::computeJacobian(const PointVector& points, const float* IxIy,
 }
 
 } // bpvo
+

@@ -151,6 +151,15 @@ enum DescriptorType
   kBitPlanes                   //< bit-planes (robust)
 }; // DescriptorType
 
+/**
+ * Algorithm to use to estimate the gradient of the image
+ */
+enum GradientEstimationType
+{
+  kCentralDifference_3, // 3-tap central difference [1 0 -1] / 2
+  kCentralDifference_5, // 5-tap central difference [-1 8 0 -8 1] / 18
+}; // GradientEstimationType
+
 struct AlgorithmParameters
 {
   //
@@ -255,6 +264,11 @@ struct AlgorithmParameters
    * If true, converge thresholds will be reduced for coarse pyramid levels
    */
   bool relaxTolerancesForCoarseLevels;
+
+  /**
+   * Gradient estimation
+   */
+  GradientEstimationType gradientEstimation;
 
   /**
    * The loss function to use
@@ -567,10 +581,12 @@ std::string ToString(VerbosityType);
 std::string ToString(PoseEstimationStatus);
 std::string ToString(KeyFramingReason);
 std::string ToString(DescriptorType);
+std::string ToString(GradientEstimationType);
 
 LossFunctionType LossFunctionTypeFromString(std::string);
 DescriptorType DescriptorTypeFromString(std::string);
 VerbosityType VerbosityTypeFromString(std::string);
+GradientEstimationType GradientEstimationTypeFromString(std::string);
 
 }; // bpvo
 

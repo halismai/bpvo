@@ -127,3 +127,4 @@ void VisualOdometryFrame::setDataAndTemplate(const cv::Mat& image, const cv::Mat
 }
 
 }; // bpvo
+

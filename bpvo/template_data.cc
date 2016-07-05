@@ -48,7 +48,7 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
     is_local_max.setRadius( _params.nonMaxSuppRadius );
   }
 
-  const int border = std::max(_params.nonMaxSuppRadius, 2);
+  const int border = std::max(_params.nonMaxSuppRadius, 3);
 
   std::vector<uint16_t> inds;
   inds.reserve( saliency_map.rows * saliency_map.cols * 0.5 );
@@ -99,17 +99,35 @@ void TemplateData::setData(const DenseDescriptor* desc, const cv::Mat& D)
   dprintf("\nnum_points %d (%d) [level %d] %f\n",
          num_points, (int) inds.size()/2, _pyr_level, _params.minSaliency);
 
+  constexpr float NN = 1.0f / 18.0f;
+
   typename AlignedVector<float>::type IxIy(2*num_points);
   for(int c = 0; c < num_channels; ++c)
   {
     auto c_ptr = desc->getChannel(c).ptr<const float>();
     auto P_ptr = _pixels.data() + c*num_points;
+
     for(int i = 0; i < num_points; ++i)
     {
       auto ii = valid_inds[i];
       P_ptr[i] = c_ptr[ii];
-      IxIy[2*i+0] = c_ptr[ii+1] - c_ptr[ii-1];
-      IxIy[2*i+1] = c_ptr[ii+cols] - c_ptr[ii-cols];
+
+      auto* cc = c_ptr + ii;
+
+      switch(_params.gradientEstimation)
+      {
+        case kCentralDifference_3:
+          {
+            IxIy[2*i+0] = 0.5f * ( *(cc+1) - *(cc-1) );
+            IxIy[2*i+1] = 0.5f * ( *(cc+cols) - *(cc-cols) );
+          } break;
+
+        case kCentralDifference_5:
+          {
+            IxIy[2*i+0] = NN * (1.0f*cc[-2] - 8.0f*cc[-1] + 8.0f*cc[1] - 1.0f*cc[2]);
+            IxIy[2*i+1] = NN * (1.0f*cc[-2*cols] - 8.0f*cc[-1*cols] + 8.0f*cc[+1*cols] - 1.0f*cc[2*cols]);
+          } break;
+      }
     }
 
     auto J_ptr = _jacobians.data() + c*num_points;

@@ -60,7 +60,6 @@ class VisualOdometryPoseEstimator
   PoseEstimatorGN<TemplateData> _pose_estimator;
   PoseEstimatorParameters _pose_est_params;
   PoseEstimatorParameters _pose_est_params_low_res;
-
   //UniquePointer<OptimizerLM> _optimizer;
 }; // VisualOdometryPoseEstimator
 

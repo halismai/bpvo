@@ -54,7 +54,6 @@ class VisualOdometry::Impl
   KeyFramingReason shouldKeyFrame(const Matrix44&) const;
 
   UniquePointer<PointCloud> getPointCloudFromRefFrame() const;
-
 }; // VisualOdometry::Impl
 
 

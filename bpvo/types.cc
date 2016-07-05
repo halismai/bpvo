@@ -47,6 +47,7 @@ AlgorithmParameters::AlgorithmParameters()
     , functionTolerance(1e-6)
     , gradientTolerance(1e-8)
     , relaxTolerancesForCoarseLevels(true)
+    , gradientEstimation(GradientEstimationType::kCentralDifference_3)
     , lossFunction(LossFunctionType::kTukey)
     , descriptor(DescriptorType::kIntensity)
     , verbosity(VerbosityType::kIteration)
@@ -85,6 +86,7 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   functionTolerance = cf.get<float>("functionTolerance", 1e-6);
   gradientTolerance = cf.get<float>("gradientTolerance", 1e-6);
   relaxTolerancesForCoarseLevels = cf.get<int>("relaxTolerancesForCoarseLevels", 1);
+  gradientEstimation = GradientEstimationTypeFromString(cf.get<std::string>("GradientEstimation", "CD3"));
   lossFunction = LossFunctionTypeFromString(cf.get<std::string>("lossFunction", "Huber"));
   descriptor = DescriptorTypeFromString(cf.get<std::string>("descriptor", "Intensity"));
   verbosity = VerbosityTypeFromString(cf.get<std::string>("Verbosity", "Iteration"));
@@ -171,6 +173,16 @@ VerbosityType VerbosityTypeFromString(std::string s)
     THROW_ERROR("unknown VerbosityType");
 }
 
+GradientEstimationType GradientEstimationTypeFromString(std::string s)
+{
+  if(icompare("CD3", s))
+    return kCentralDifference_3;
+  else if(icompare("CD5", s))
+    return kCentralDifference_5;
+  else
+    THROW_ERROR("unknown GradientEstimationType");
+}
+
 std::string ToString(PoseEstimationStatus s)
 {
   switch(s) {
@@ -213,6 +225,16 @@ std::string ToString(DescriptorType t)
   return "Unknown";
 }
 
+std::string ToString(GradientEstimationType t)
+{
+  switch(t) {
+    case GradientEstimationType::kCentralDifference_3: return "CentralDifference_3"; break;
+    case GradientEstimationType::kCentralDifference_5: return "CentralDifference_5"; break;
+  }
+
+  return "Unknown";
+}
+
 std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
 {
   os << "numPyramidLevels = " << p.numPyramidLevels << "\n";
@@ -233,6 +255,7 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   os << "functionTolerance = " << p.functionTolerance << "\n";
   os << "gradientTolerance = " << p.gradientTolerance << "\n";
   os << "relaxTolerancesForCoarseLevel = " << p.relaxTolerancesForCoarseLevels << "\n";
+  os << "gradienEstimation: " << ToString(p.gradientEstimation) << "\n";
   os << "lossFunction = " << ToString(p.lossFunction) << "\n";
   os << "verbosity = " << ToString(p.verbosity) << "\n";
   os << "minTranslationMagToKeyFrame = " << p.minTranslationMagToKeyFrame << "\n";
