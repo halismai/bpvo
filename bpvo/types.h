@@ -160,6 +160,14 @@ enum GradientEstimationType
   kCentralDifference_5, // 5-tap central difference [-1 8 0 -8 1] / 18
 }; // GradientEstimationType
 
+enum InterpolationType
+{
+  kLinear,  // linear interpolation
+  kCosine,  // Cosine interpolation
+  kCubic,   // cubic
+  kCubicHermite, // cubic hermite (pchip)
+}; // InterpolationType
+
 struct AlgorithmParameters
 {
   //
@@ -269,6 +277,11 @@ struct AlgorithmParameters
    * Gradient estimation
    */
   GradientEstimationType gradientEstimation;
+
+  /**
+   * Interpolation type for image warping
+   */
+  InterpolationType interp;
 
   /**
    * The loss function to use
@@ -582,11 +595,13 @@ std::string ToString(PoseEstimationStatus);
 std::string ToString(KeyFramingReason);
 std::string ToString(DescriptorType);
 std::string ToString(GradientEstimationType);
+std::string ToString(InterpolationType);
 
 LossFunctionType LossFunctionTypeFromString(std::string);
 DescriptorType DescriptorTypeFromString(std::string);
 VerbosityType VerbosityTypeFromString(std::string);
 GradientEstimationType GradientEstimationTypeFromString(std::string);
+InterpolationType InterpolationTypeFromString(std::string);
 
 }; // bpvo
 

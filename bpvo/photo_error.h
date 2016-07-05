@@ -29,7 +29,7 @@ class PhotoError
   typedef EigenAlignedContainer<Point>::type PointVector;
 
  public:
-  PhotoError();
+  PhotoError(InterpolationType = InterpolationType::kLinear);
   ~PhotoError();
 
   /**

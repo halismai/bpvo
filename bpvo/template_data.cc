@@ -29,7 +29,7 @@ namespace bpvo {
 
 TemplateData::TemplateData(int pyr_level, const Matrix33& K, float b,
                            const AlgorithmParameters& p)
-  : _pyr_level(pyr_level), _params(p), _warp(K, b)
+  : _pyr_level(pyr_level), _params(p), _warp(K, b), _photo_error(p.interp)
 {
   THROW_ERROR_IF( _pyr_level < 0, "pyramid level must be >= 0" );
 }
@@ -153,7 +153,8 @@ struct ComputeResidualsBody : public ParallelForBody
 
   inline void operator()(const Range& range) const
   {
-    for(int c = range.begin(); c != range.end(); ++c) {
+    for(int c = range.begin(); c != range.end(); ++c)
+    {
       int off = c*_num_points;
       const float* I1_ptr = _desc->getChannel(c).ptr<const float>();
       _photo_error.run(_pixels + off, I1_ptr, _residuals + off);

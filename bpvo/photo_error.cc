@@ -3,6 +3,7 @@
 #include "bpvo/project_points.h"
 #include "bpvo/simd.h"
 #include "bpvo/eigen.h"
+#include "bpvo/utils.h"
 
 #include <opencv2/core/core.hpp>
 #include <vector>
@@ -15,7 +16,7 @@ namespace bpvo {
 // performance severely. We recommend not enabling this options here
 //
 #define PHOTO_ERROR_WITH_OPENCV 0
-#define PHOTO_ERROR_OPT         1 // optimized version
+#define PHOTO_ERROR_OPT         0 // optimized version
 
 #if PHOTO_ERROR_WITH_OPENCV
 #include <opencv2/imgproc/imgproc.hpp>
@@ -81,6 +82,14 @@ struct PhotoError::Impl
   typedef Eigen::Matrix<float,4,1> Vector4;
   typedef typename EigenAlignedContainer<Vector4>::type CoeffsVector;
 
+  Impl(InterpolationType interp_type)
+      : _interp_type(interp_type)
+  {
+    THROW_ERROR_IF( _interp_type != InterpolationType::kLinear ||
+                    _interp_type != InterpolationType::kCubic,
+                    "Unkown interpolation type" );
+  }
+
   void init(const Matrix34& P, const PointVector& X, ValidVector& valid, int rows, int cols)
   {
     resize(X.size());
@@ -91,8 +100,19 @@ struct PhotoError::Impl
     if(X.empty())
       return;
 
-    projectPoints(P, X[0].data(), X.size(), ImageSize(rows, cols),
-                  valid.data(), _inds.data(), _interp_coeffs[0].data());
+    switch( _interp_type )
+    {
+      case InterpolationType::kLinear:
+        {
+          projectPoints(P, X[0].data(), X.size(), ImageSize(rows, cols),
+                        valid.data(), _inds.data(), _interp_coeffs[0].data());
+        } break;
+      case InterpolationType::kCubic:
+        {
+          //computeInterpCoeffsCubic(P, X, ImageSize(rows, cols), valid.data(),
+           //                        _inds.size(), _interp_coeffs[0].data());
+        } break;
+    }
 
   }
 
@@ -224,8 +244,13 @@ struct PhotoError::Impl
   CoeffsVector _interp_coeffs;
   std::vector<int> _inds;
   const typename ValidVector::value_type* _valid_ptr = nullptr;
+
+  InterpolationType _interp_type;
 }; // PhotoError::Impl
 #else
+
+
+// Standard versionC:w
 
 inline int Floor(float v)
 {
@@ -239,14 +264,89 @@ inline int Floor(double v)
   return i - (i > v);
 }
 
+template <typename T>
+static inline void interpolateCubic(T x, T* coeffs )
+{
+  assert_is_floating_point<T>();
+
+  // from opencv, but A is changed to -0.5
+  const T A = T(-0.5);
+
+  coeffs[0] = ((A*(x + 1) - 5*A)*(x + 1) + 8*A)*(x + 1) - 4*A;
+  coeffs[1] = ((A + 2)*x - (A + 3))*x*x + 1;
+  coeffs[2] = ((A + 2)*(1 - x) - (A + 3))*(1 - x)*(1 - x) + 1;
+  coeffs[3] = T(1) - coeffs[0] - coeffs[1] - coeffs[2];
+}
+
+template <typename T>
+static inline void interpolateCosine(T x, T* coeffs)
+{
+  assert_is_floating_point<T>();
+
+  auto m = (T(1) - std::cos(x*M_PI)) / 2.0;
+  coeffs[0] = T(1) - m;
+  coeffs[1] = m;
+}
+
+template <typename T>
+static inline void interpolateCubicHermite(T x, T* coeffs, const T* y,
+                                           T bias = 0, T tension = 0)
+{
+  assert_is_floating_point<T>();
+
+  auto mu2 = x*x;
+  auto mu3 = mu2*x;
+
+  auto m0 = (y[1] - y[0]) * (1 + bias) * (1 - tension) / 2.0;
+  m0 += (y[2] - y[1]) * (1 - bias) * (1 - tension) / 2.0;
+
+  auto m1 = (y[2] - y[1])*(1 + bias) * (1 - tension) / 2.0;
+  m1 += (y[3] - y[2])*(1 - bias) * (1 - tension) / 2.0;
+
+  coeffs[0] = 2*mu3 - 3*mu2 + T(1);
+  coeffs[1] = mu3 - 2*mu2 + x;
+  coeffs[2] = mu3 - mu2;
+  coeffs[3] = -2*mu3 + 3*mu2;
+}
+
+template <typename T>
+static inline T interpolateCubicHermite(const T* y, T mu, T bias = 0, T tension = 0)
+{
+  // based on http://paulbourke.net/miscellaneous/interpolation/
+  auto mu2 = mu*mu;
+  auto mu3 = mu*mu2;
+
+  T m0, m1;
+  T a0, a1, a2, a3;
+
+  m0 = ((y[1] - y[0]) * (1 + bias) * ( 1 - tension ) / 2.0) +
+       ((y[2] - y[1]) * (1 - bias) * ( 1 - tension ) / 2.0);
+
+  m1 = ((y[2] - y[1]) * (1 + bias) * ( 1 - tension ) / 2.0) +
+       ((y[3] - y[2]) * (1 - bias) * ( 1 - tension ) / 2.0);
+
+  a0 = 2*mu3 - 3*mu2 + 1;
+  a1 = mu3 - 2*mu2 + mu;
+  a2 = mu3 - mu2;
+  a3 = -2*mu3 + 3*mu2;
+
+  return a0*y[1] + a1*m0 + a2*m1 + a3*y[2];
+}
+
 struct PhotoError::Impl
 {
   typedef Eigen::Matrix<double,2,1> Point2;
   typedef typename EigenAlignedContainer<Point2>::type Point2Vector;
 
+  Impl(InterpolationType t)
+      : _interp_type(t) {}
+
   inline void init(const Matrix34& P_, const PointVector& X, ValidVector& valid,
                    int rows, int cols)
   {
+    int border_lo = (_interp_type == kLinear || _interp_type == kCosine) ? 0 : 1;
+    int border_hi = (_interp_type == kLinear || _interp_type == kCosine) ? 1 : 3;
+
     _x.resize(X.size());
     valid.resize(X.size());
     const Eigen::Matrix<double,3,4> P = P_.cast<double>();
@@ -255,7 +355,7 @@ struct PhotoError::Impl
       _x[i] = normHomog( (P * X[i].cast<double>()) );
       int xi = Floor(_x[i].x());
       int yi = Floor(_x[i].y());
-      valid[i] = xi >= 0 && xi < cols-1 && yi >= 0 && yi < rows-1;
+      valid[i] = xi >= border_lo && xi < cols-border_hi && yi >= border_lo && yi < rows-1;
     }
 
     _valid_ptr = valid.data();
@@ -277,12 +377,72 @@ struct PhotoError::Impl
         xf -= (double) xi;
         yf -= (double) yi;
 
-        int ii = yi*_stride + xi;
+        switch(_interp_type)
+        {
+          case kLinear:
+            {
+              int ii = yi*_stride + xi;
+              double wx = (1.0 - xf);
+              double Iw = (1.0 - yf) * (I1_ptr[ii        ]*wx + I1_ptr[ii+1]*xf) +
+                  yf  * (I1_ptr[ii+_stride]*wx + I1_ptr[ii+_stride+1]*xf);
+              r_ptr[i] = float( Iw - (double) I0_ptr[i] );
+            } break;
 
-        double wx = (1.0 - xf);
-        double Iw = (1.0 - yf) * (I1_ptr[ii        ]*wx + I1_ptr[ii+1        ]*xf) +
-                           yf  * (I1_ptr[ii+_stride]*wx + I1_ptr[ii+_stride+1]*xf);
-        r_ptr[i] = float( Iw - (double) I0_ptr[i] );
+          case kCosine:
+            {
+              Eigen::Matrix<float,2,1> Cx, Cy;
+              typedef Eigen::Map<const Eigen::Matrix<float,2,1>> MapType;
+
+              auto* p1 = I1_ptr + (yi + 0)*_stride + xi;
+              auto* p2 = I1_ptr + (yi + 1)*_stride + xi;
+
+              interpolateCosine((float) xf, Cx.data());
+              interpolateCosine((float) yf, Cy.data());
+
+              float Iw = Cy.dot(Eigen::Matrix<float,2,1>(
+                      MapType(p1).dot(Cx),
+                      MapType(p2).dot(Cx)));
+              r_ptr[i] = Iw - I0_ptr[i];
+            } break;
+
+          case kCubic:
+            {
+              Eigen::Matrix<float,4,1> Cx, Cy;
+              typedef Eigen::Map<const Eigen::Matrix<float,4,1>> MapType;
+
+              interpolateCubic((float) xf, Cx.data());
+              interpolateCubic((float) yf, Cy.data());
+
+              auto* p1 = I1_ptr + (yi - 1)*_stride + xi;
+              auto* p2 = I1_ptr + (yi + 0)*_stride + xi;
+              auto* p3 = I1_ptr + (yi + 1)*_stride + xi;
+              auto* p4 = I1_ptr + (yi + 2)*_stride + xi;
+
+              float Iw = Cy.dot(Eigen::Matrix<float,4,1>(
+                      MapType(p1).dot(Cx),
+                      MapType(p2).dot(Cx),
+                      MapType(p3).dot(Cx),
+                      MapType(p4).dot(Cx)));
+              r_ptr[i] = Iw - I0_ptr[i];
+            } break;
+
+          case kCubicHermite:
+            {
+              auto* p1 = I1_ptr + (yi - 1)*_stride + xi;
+              auto* p2 = I1_ptr + (yi + 0)*_stride + xi;
+              auto* p3 = I1_ptr + (yi + 1)*_stride + xi;
+              auto* p4 = I1_ptr + (yi + 2)*_stride + xi;
+
+              Eigen::Matrix<float, 4, 1> V;
+              V[0] = interpolateCubicHermite(p1, (float) xf),
+              V[1] = interpolateCubicHermite(p2, (float) xf);
+              V[2] = interpolateCubicHermite(p3, (float) xf);
+              V[3] = interpolateCubicHermite(p4, (float) xf);
+
+              float Iw = interpolateCubicHermite(V.data(), (float) yf);
+              r_ptr[i] = Iw - I0_ptr[i];
+            } break;
+        }
       } else
       {
         r_ptr[i] = 0.0f;
@@ -294,14 +454,16 @@ struct PhotoError::Impl
   int _stride;
   const typename ValidVector::value_type* _valid_ptr = NULL;
   Point2Vector _x;
+
+  InterpolationType _interp_type;
 }; // PhotoError::Impl
 
 #endif
 
-PhotoError::PhotoError()
-  : _impl(new PhotoError::Impl) {}
+PhotoError::PhotoError(InterpolationType t)
+  : _impl(new PhotoError::Impl(t)) {}
 
-PhotoError::~PhotoError() {}
+  PhotoError::~PhotoError() {}
 
 void PhotoError::init(const Matrix34& P, const PointVector& X, ValidVector& valid, int rows, int cols)
 {

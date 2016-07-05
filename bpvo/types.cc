@@ -48,6 +48,7 @@ AlgorithmParameters::AlgorithmParameters()
     , gradientTolerance(1e-8)
     , relaxTolerancesForCoarseLevels(true)
     , gradientEstimation(GradientEstimationType::kCentralDifference_3)
+    , interp(InterpolationType::kLinear)
     , lossFunction(LossFunctionType::kTukey)
     , descriptor(DescriptorType::kIntensity)
     , verbosity(VerbosityType::kIteration)
@@ -86,7 +87,8 @@ AlgorithmParameters::AlgorithmParameters(std::string filename)
   functionTolerance = cf.get<float>("functionTolerance", 1e-6);
   gradientTolerance = cf.get<float>("gradientTolerance", 1e-6);
   relaxTolerancesForCoarseLevels = cf.get<int>("relaxTolerancesForCoarseLevels", 1);
-  gradientEstimation = GradientEstimationTypeFromString(cf.get<std::string>("GradientEstimation", "CD3"));
+  gradientEstimation = GradientEstimationTypeFromString(cf.get<std::string>("GradientEstimation", "CD5"));
+  interp = InterpolationTypeFromString(cf.get<std::string>("Interpolation", "Linear"));
   lossFunction = LossFunctionTypeFromString(cf.get<std::string>("lossFunction", "Huber"));
   descriptor = DescriptorTypeFromString(cf.get<std::string>("descriptor", "Intensity"));
   verbosity = VerbosityTypeFromString(cf.get<std::string>("Verbosity", "Iteration"));
@@ -113,6 +115,20 @@ std::string ToString(LossFunctionType t)
   }
 
   return "Unknown";
+}
+
+InterpolationType InterpolationTypeFromString(std::string s)
+{
+  if(icompare("Linear", s))
+    return kLinear;
+  else if(icompare("Cosine", s))
+    return kCosine;
+  else if(icompare("CubicHermite", s))
+    return kCubicHermite;
+  else if(icompare("Cubic", s))
+    return kCubic;
+  else
+    THROW_ERROR("unknown InterpolationType");
 }
 
 LossFunctionType LossFunctionTypeFromString(std::string s)
@@ -235,6 +251,19 @@ std::string ToString(GradientEstimationType t)
   return "Unknown";
 }
 
+std::string ToString(InterpolationType t)
+{
+  switch(t) {
+    case InterpolationType::kLinear: return "Linear"; break;
+    case InterpolationType::kCosine: return "Cosine"; break;
+    case InterpolationType::kCubic: return "Cubic"; break;
+    case InterpolationType::kCubicHermite: return "CubicHermite"; break;
+  }
+
+  return "Unknown";
+}
+
+
 std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
 {
   os << "numPyramidLevels = " << p.numPyramidLevels << "\n";
@@ -256,6 +285,7 @@ std::ostream& operator<<(std::ostream& os, const AlgorithmParameters& p)
   os << "gradientTolerance = " << p.gradientTolerance << "\n";
   os << "relaxTolerancesForCoarseLevel = " << p.relaxTolerancesForCoarseLevels << "\n";
   os << "gradienEstimation: " << ToString(p.gradientEstimation) << "\n";
+  os << "InterpolationType: " << ToString(p.interp) << "\n";
   os << "lossFunction = " << ToString(p.lossFunction) << "\n";
   os << "verbosity = " << ToString(p.verbosity) << "\n";
   os << "minTranslationMagToKeyFrame = " << p.minTranslationMagToKeyFrame << "\n";

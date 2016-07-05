@@ -47,7 +47,6 @@ assert_is_floating_point()
   static_assert(std::is_floating_point<T>::value, "value must be floating point");
 }
 
-
 // TODO the arguments are ambigious! watch out
 inline int sub2ind(const int stride, int r, int c)
 {
